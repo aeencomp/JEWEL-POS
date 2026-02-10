@@ -27,6 +27,10 @@ export const restaurants = pgTable("restaurants", {
   address: text("address"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  brandColor: text("brand_color").default("#10b981"),
+  logoUrl: text("logo_url"),
+  receiptHeader: text("receipt_header"),
+  receiptFooter: text("receipt_footer"),
 });
 
 export const restaurantsRelations = relations(restaurants, ({ many, one }) => ({
