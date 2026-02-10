@@ -27,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 import { Plus, Loader2, ChefHat, Pencil, Trash2, GripVertical } from "lucide-react";
 import type { MenuCategory, MenuItem } from "@shared/schema";
 
@@ -46,6 +47,7 @@ type ItemValues = z.infer<typeof itemSchema>;
 
 export default function PosMenu() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [catOpen, setCatOpen] = useState(false);
   const [itemOpen, setItemOpen] = useState(false);
 
@@ -76,10 +78,10 @@ export default function PosMenu() {
       queryClient.invalidateQueries({ queryKey: ["/api/menu-categories"] });
       setCatOpen(false);
       catForm.reset();
-      toast({ title: "Category created" });
+      toast({ title: t("menu.categoryCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      toast({ title: t("menu.failed"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -95,10 +97,10 @@ export default function PosMenu() {
       queryClient.invalidateQueries({ queryKey: ["/api/menu-items"] });
       setItemOpen(false);
       itemForm.reset();
-      toast({ title: "Menu item created" });
+      toast({ title: t("menu.itemCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      toast({ title: t("menu.failed"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,7 +120,7 @@ export default function PosMenu() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/menu-items"] });
-      toast({ title: "Item deleted" });
+      toast({ title: t("menu.itemDeleted") });
     },
   });
 
@@ -129,10 +131,10 @@ export default function PosMenu() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/menu-categories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/menu-items"] });
-      toast({ title: "Category deleted" });
+      toast({ title: t("menu.categoryDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Cannot delete", description: error.message, variant: "destructive" });
+      toast({ title: t("menu.cannotDelete"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -145,33 +147,33 @@ export default function PosMenu() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Menu Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your categories and menu items</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("menu.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("menu.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={catOpen} onOpenChange={setCatOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="button-add-category">
-                <Plus className="h-4 w-4 mr-2" />
-                Category
+                <Plus className="h-4 w-4 me-2" />
+                {t("menu.category")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <DialogHeader>
-                <DialogTitle>Add Category</DialogTitle>
+                <DialogTitle>{t("menu.addCategory")}</DialogTitle>
               </DialogHeader>
               <Form {...catForm}>
                 <form onSubmit={catForm.handleSubmit((v) => createCategoryMutation.mutate(v))} className="space-y-4 mt-2">
                   <FormField control={catForm.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category Name</FormLabel>
-                      <FormControl><Input placeholder="e.g. Appetizers" data-testid="input-category-name" {...field} /></FormControl>
+                      <FormLabel>{t("menu.categoryName")}</FormLabel>
+                      <FormControl><Input placeholder={t("menu.categoryName")} data-testid="input-category-name" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <Button type="submit" className="w-full" disabled={createCategoryMutation.isPending} data-testid="button-submit-category">
-                    {createCategoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Category
+                    {createCategoryMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                    {t("menu.createCategory")}
                   </Button>
                 </form>
               </Form>
@@ -181,44 +183,44 @@ export default function PosMenu() {
           <Dialog open={itemOpen} onOpenChange={setItemOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-item" disabled={!categories || categories.length === 0}>
-                <Plus className="h-4 w-4 mr-2" />
-                Menu Item
+                <Plus className="h-4 w-4 me-2" />
+                {t("menu.menuItem")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <DialogHeader>
-                <DialogTitle>Add Menu Item</DialogTitle>
+                <DialogTitle>{t("menu.addMenuItem")}</DialogTitle>
               </DialogHeader>
               <Form {...itemForm}>
                 <form onSubmit={itemForm.handleSubmit((v) => createItemMutation.mutate(v))} className="space-y-4 mt-2">
                   <FormField control={itemForm.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Item Name</FormLabel>
-                      <FormControl><Input placeholder="e.g. Caesar Salad" data-testid="input-item-name" {...field} /></FormControl>
+                      <FormLabel>{t("menu.itemName")}</FormLabel>
+                      <FormControl><Input placeholder={t("menu.itemName")} data-testid="input-item-name" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={itemForm.control} name="description" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl><Textarea placeholder="Brief description..." className="resize-none" data-testid="input-item-description" {...field} /></FormControl>
+                      <FormLabel>{t("menu.description")}</FormLabel>
+                      <FormControl><Textarea placeholder={t("menu.description")} className="resize-none" data-testid="input-item-description" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={itemForm.control} name="price" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price (IQD)</FormLabel>
+                      <FormLabel>{t("menu.priceIQD")}</FormLabel>
                       <FormControl><Input type="number" step="250" placeholder="5000" data-testid="input-item-price" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={itemForm.control} name="categoryId" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
+                      <FormLabel>{t("menu.category")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-item-category">
-                            <SelectValue placeholder="Select category" />
+                            <SelectValue placeholder={t("menu.selectCategory")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -233,8 +235,8 @@ export default function PosMenu() {
                     </FormItem>
                   )} />
                   <Button type="submit" className="w-full" disabled={createItemMutation.isPending} data-testid="button-submit-item">
-                    {createItemMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Item
+                    {createItemMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                    {t("menu.addItem")}
                   </Button>
                 </form>
               </Form>
@@ -262,8 +264,8 @@ export default function PosMenu() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <ChefHat className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">No categories yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Create your first category to start adding items</p>
+            <p className="text-lg font-medium text-muted-foreground">{t("menu.noCategoriesYet")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("menu.createFirstCategory")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -275,14 +277,14 @@ export default function PosMenu() {
                 <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-base">{category.name}</CardTitle>
-                    <Badge variant="secondary">{items.length} items</Badge>
+                    <Badge variant="secondary">{items.length} {t("pos.items")}</Badge>
                   </div>
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={() => {
                       if (items.length > 0) {
-                        toast({ title: "Cannot delete", description: "Remove all items first", variant: "destructive" });
+                        toast({ title: t("menu.cannotDelete"), description: t("menu.removeItemsFirst"), variant: "destructive" });
                       } else {
                         deleteCategoryMutation.mutate(category.id);
                       }
@@ -294,7 +296,7 @@ export default function PosMenu() {
                 </CardHeader>
                 <CardContent>
                   {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No items in this category</p>
+                    <p className="text-sm text-muted-foreground text-center py-4">{t("menu.noItemsInCategory")}</p>
                   ) : (
                     <div className="space-y-2">
                       {items.map((item) => (
@@ -307,7 +309,7 @@ export default function PosMenu() {
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium">{item.name}</p>
                               {!item.isAvailable && (
-                                <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                                <Badge variant="secondary" className="text-xs">{t("menu.unavailable")}</Badge>
                               )}
                             </div>
                             {item.description && (

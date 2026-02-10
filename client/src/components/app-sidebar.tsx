@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -26,24 +27,26 @@ import {
   ChefHat,
 } from "lucide-react";
 
-const adminItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Restaurants", url: "/restaurants", icon: Store },
-  { title: "Subscriptions", url: "/subscriptions", icon: CreditCard },
-];
-
-const restaurantItems = [
-  { title: "POS Terminal", url: "/", icon: UtensilsCrossed },
-  { title: "Menu", url: "/menu", icon: ChefHat },
-  { title: "Orders", url: "/orders", icon: ClipboardList },
-  { title: "History", url: "/history", icon: History },
-];
-
 export function AppSidebar() {
   const { user, logoutMutation } = useAuth();
+  const { t } = useLanguage();
   const [location] = useLocation();
 
   const isAdmin = user?.role === "admin";
+
+  const adminItems = [
+    { title: t("sidebar.dashboard"), url: "/", icon: LayoutDashboard },
+    { title: t("sidebar.restaurants"), url: "/restaurants", icon: Store },
+    { title: t("sidebar.subscriptions"), url: "/subscriptions", icon: CreditCard },
+  ];
+
+  const restaurantItems = [
+    { title: t("sidebar.posTerminal"), url: "/", icon: UtensilsCrossed },
+    { title: t("sidebar.menu"), url: "/menu", icon: ChefHat },
+    { title: t("sidebar.orders"), url: "/orders", icon: ClipboardList },
+    { title: t("sidebar.history"), url: "/history", icon: History },
+  ];
+
   const items = isAdmin ? adminItems : restaurantItems;
 
   return (
@@ -56,7 +59,7 @@ export function AppSidebar() {
           <div>
             <span className="font-semibold text-sm" data-testid="text-app-name">RestoPOS</span>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? "Admin Panel" : "Restaurant POS"}
+              {isAdmin ? t("sidebar.adminPanel") : t("sidebar.restaurantPOS")}
             </p>
           </div>
         </div>
@@ -64,16 +67,16 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isAdmin ? "Management" : "Point of Sale"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isAdmin ? t("sidebar.management") : t("sidebar.pointOfSale")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
                   >
-                    <Link href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/\s/g, "-")}`}>
+                    <Link href={item.url} data-testid={`link-${item.url === "/" ? "home" : item.url.replace("/", "")}`}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
@@ -96,7 +99,9 @@ export function AppSidebar() {
             <p className="text-sm font-medium truncate" data-testid="text-username">
               {user?.username}
             </p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+            <p className="text-xs text-muted-foreground">
+              {user?.role === "admin" ? t("common.admin") : t("common.restaurant")}
+            </p>
           </div>
           <Button
             size="icon"

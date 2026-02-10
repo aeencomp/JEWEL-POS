@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 import { Redirect } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { LanguageToggle } from "@/components/language-toggle";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -26,6 +28,7 @@ type RegisterValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
+  const { t } = useLanguage();
   const [isRegister, setIsRegister] = useState(false);
 
   const loginForm = useForm<LoginValues>({
@@ -51,15 +54,18 @@ export default function AuthPage() {
   };
 
   const features = [
-    { icon: UtensilsCrossed, title: "Full POS System", desc: "Manage orders, menus, and tables with ease" },
-    { icon: Shield, title: "Subscription Management", desc: "Monthly billing with flexible plans" },
-    { icon: BarChart3, title: "Revenue Tracking", desc: "Real-time analytics and reporting" },
-    { icon: Clock, title: "Order History", desc: "Complete records of all transactions" },
+    { icon: UtensilsCrossed, title: t("auth.featurePOS"), desc: t("auth.featurePOSDesc") },
+    { icon: Shield, title: t("auth.featureSubscription"), desc: t("auth.featureSubscriptionDesc") },
+    { icon: BarChart3, title: t("auth.featureRevenue"), desc: t("auth.featureRevenueDesc") },
+    { icon: Clock, title: t("auth.featureHistory"), desc: t("auth.featureHistoryDesc") },
   ];
 
   return (
     <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
+      <div className="flex-1 flex items-center justify-center p-6 bg-background relative">
+        <div className="absolute top-4 end-4">
+          <LanguageToggle />
+        </div>
         <div className="w-full max-w-sm">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
@@ -69,12 +75,12 @@ export default function AuthPage() {
               <span className="font-semibold text-lg">RestoPOS</span>
             </div>
             <h1 className="text-2xl font-bold mt-4" data-testid="text-auth-title">
-              {isRegister ? "Create an account" : "Welcome back"}
+              {isRegister ? t("auth.createAccount") : t("auth.welcomeBack")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {isRegister
-                ? "Get started with your POS platform"
-                : "Sign in to your account to continue"}
+                ? t("auth.getStarted")
+                : t("auth.signInContinue")}
             </p>
           </div>
 
@@ -86,10 +92,10 @@ export default function AuthPage() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t("auth.username")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your username"
+                          placeholder={t("auth.enterUsername")}
                           data-testid="input-login-username"
                           {...field}
                         />
@@ -103,11 +109,11 @@ export default function AuthPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t("auth.password")}</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="Enter your password"
+                          placeholder={t("auth.enterPassword")}
                           data-testid="input-login-password"
                           {...field}
                         />
@@ -123,7 +129,7 @@ export default function AuthPage() {
                   data-testid="button-login"
                 >
                   {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
+                  {t("auth.signIn")}
                 </Button>
               </form>
             </Form>
@@ -135,10 +141,10 @@ export default function AuthPage() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t("auth.username")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Choose a username"
+                          placeholder={t("auth.chooseUsername")}
                           data-testid="input-register-username"
                           {...field}
                         />
@@ -152,11 +158,11 @@ export default function AuthPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t("auth.password")}</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="Create a password"
+                          placeholder={t("auth.createPassword")}
                           data-testid="input-register-password"
                           {...field}
                         />
@@ -172,7 +178,7 @@ export default function AuthPage() {
                   data-testid="button-register"
                 >
                   {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
+                  {t("auth.createAccountBtn")}
                 </Button>
               </form>
             </Form>
@@ -186,8 +192,8 @@ export default function AuthPage() {
               data-testid="button-toggle-auth"
             >
               {isRegister
-                ? "Already have an account? Sign in"
-                : "Don't have an account? Register"}
+                ? t("auth.alreadyHaveAccount")
+                : t("auth.dontHaveAccount")}
             </button>
           </div>
         </div>
@@ -197,11 +203,10 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
         <div className="relative z-10 max-w-md text-primary-foreground">
           <h2 className="text-3xl font-bold mb-3">
-            Restaurant POS Platform
+            {t("auth.platformTitle")}
           </h2>
           <p className="text-primary-foreground/80 mb-10 text-sm leading-relaxed">
-            The complete point-of-sale system with built-in subscription management.
-            Rent POS accounts to restaurants with monthly billing.
+            {t("auth.platformDesc")}
           </p>
           <div className="space-y-5">
             {features.map((feature) => (

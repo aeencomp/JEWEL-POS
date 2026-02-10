@@ -3,9 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Store, CreditCard, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
 import type { Restaurant, Subscription } from "@shared/schema";
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
+
   const { data: restaurants, isLoading: loadingRestaurants } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants"],
   });
@@ -30,33 +33,33 @@ export default function AdminDashboard() {
 
   const stats = [
     {
-      title: "Total Restaurants",
+      title: t("dashboard.totalRestaurants"),
       value: totalRestaurants,
-      subtitle: `${activeRestaurants} active`,
+      subtitle: `${activeRestaurants} ${t("dashboard.active")}`,
       icon: Store,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/30",
     },
     {
-      title: "Active Subscriptions",
+      title: t("dashboard.activeSubscriptions"),
       value: activeSubs,
-      subtitle: `${expiringSoon} expiring soon`,
+      subtitle: `${expiringSoon} ${t("dashboard.expiringSoon")}`,
       icon: CreditCard,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
     },
     {
-      title: "Monthly Revenue",
+      title: t("dashboard.monthlyRevenue"),
       value: `${monthlyRevenue.toLocaleString()} IQD`,
-      subtitle: "Recurring income",
+      subtitle: t("dashboard.recurringIncome"),
       icon: DollarSign,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/30",
     },
     {
-      title: "Avg Revenue/Restaurant",
+      title: t("dashboard.avgRevenue"),
       value: activeSubs > 0 ? `${Math.round(monthlyRevenue / activeSubs).toLocaleString()} IQD` : "0 IQD",
-      subtitle: "Per active subscription",
+      subtitle: t("dashboard.perActiveSub"),
       icon: TrendingUp,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-50 dark:bg-purple-950/30",
@@ -66,9 +69,9 @@ export default function AdminDashboard() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Dashboard</h1>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("dashboard.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Overview of your restaurant POS platform
+          {t("dashboard.subtitle")}
         </p>
       </div>
 
@@ -104,8 +107,8 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-            <CardTitle className="text-base">Recent Restaurants</CardTitle>
-            <Badge variant="secondary">{totalRestaurants} total</Badge>
+            <CardTitle className="text-base">{t("dashboard.recentRestaurants")}</CardTitle>
+            <Badge variant="secondary">{totalRestaurants} {t("dashboard.total")}</Badge>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -123,8 +126,8 @@ export default function AdminDashboard() {
             ) : restaurants?.length === 0 ? (
               <div className="text-center py-8">
                 <Store className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-                <p className="text-sm text-muted-foreground">No restaurants yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Add your first restaurant to get started</p>
+                <p className="text-sm text-muted-foreground">{t("dashboard.noRestaurantsYet")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("dashboard.addFirstRestaurant")}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -138,7 +141,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-muted-foreground">{restaurant.ownerName}</p>
                     </div>
                     <Badge variant={restaurant.isActive ? "default" : "secondary"}>
-                      {restaurant.isActive ? "Active" : "Inactive"}
+                      {restaurant.isActive ? t("dashboard.active") : t("dashboard.inactive")}
                     </Badge>
                   </div>
                 ))}
@@ -149,8 +152,8 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-            <CardTitle className="text-base">Subscription Status</CardTitle>
-            <Badge variant="secondary">{activeSubs} active</Badge>
+            <CardTitle className="text-base">{t("dashboard.subscriptionStatus")}</CardTitle>
+            <Badge variant="secondary">{activeSubs} {t("dashboard.active")}</Badge>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -168,8 +171,8 @@ export default function AdminDashboard() {
             ) : subscriptions?.length === 0 ? (
               <div className="text-center py-8">
                 <CreditCard className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-                <p className="text-sm text-muted-foreground">No subscriptions yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Create subscriptions for restaurants</p>
+                <p className="text-sm text-muted-foreground">{t("dashboard.noSubscriptionsYet")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("dashboard.createSubscriptions")}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -180,17 +183,23 @@ export default function AdminDashboard() {
                     cancelled: "bg-gray-50 text-gray-700 dark:bg-gray-950/30 dark:text-gray-400",
                     trial: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
                   };
+                  const statusLabels: Record<string, string> = {
+                    active: t("subscriptions.active"),
+                    expired: t("subscriptions.expired"),
+                    cancelled: t("subscriptions.cancelled"),
+                    trial: t("subscriptions.trial"),
+                  };
                   return (
                     <div key={sub.id} className="flex items-center gap-3" data-testid={`card-subscription-${sub.id}`}>
                       <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium capitalize">{sub.plan} Plan</p>
-                        <p className="text-xs text-muted-foreground">{parseInt(sub.pricePerMonth).toLocaleString()} IQD/month</p>
+                        <p className="text-sm font-medium capitalize">{sub.plan} {t("dashboard.plan")}</p>
+                        <p className="text-xs text-muted-foreground">{parseInt(sub.pricePerMonth).toLocaleString()} IQD{t("dashboard.month")}</p>
                       </div>
                       <Badge variant="outline" className={statusColors[sub.status] || ""}>
-                        {sub.status}
+                        {statusLabels[sub.status] || sub.status}
                       </Badge>
                     </div>
                   );

@@ -11,9 +11,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { History, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
 import type { Order } from "@shared/schema";
 
 export default function PosHistory() {
+  const { t, language } = useLanguage();
+
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
   });
@@ -27,23 +30,31 @@ export default function PosHistory() {
   const todayRevenue = todayOrders.reduce((sum, o) => sum + parseFloat(o.total), 0);
   const totalRevenue = completedOrders.reduce((sum, o) => sum + parseFloat(o.total), 0);
 
+  const statusLabels: Record<string, string> = {
+    pending: t("orders.pending"),
+    preparing: t("orders.preparing"),
+    ready: t("orders.ready"),
+    completed: t("orders.completed"),
+    cancelled: t("orders.cancelled"),
+  };
+
   const stats = [
     {
-      title: "Today's Orders",
+      title: t("history.todayOrders"),
       value: todayOrders.length,
       icon: ShoppingCart,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/30",
     },
     {
-      title: "Today's Revenue",
+      title: t("history.todayRevenue"),
       value: `${Math.round(todayRevenue).toLocaleString()} IQD`,
       icon: DollarSign,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
     },
     {
-      title: "Total Revenue",
+      title: t("history.totalRevenue"),
       value: `${Math.round(totalRevenue).toLocaleString()} IQD`,
       icon: TrendingUp,
       color: "text-purple-600 dark:text-purple-400",
@@ -60,7 +71,7 @@ export default function PosHistory() {
   };
 
   const formatDate = (date: string | Date) =>
-    new Date(date).toLocaleDateString("en-US", {
+    new Date(date).toLocaleDateString(language === "ar" ? "ar-IQ" : "en-US", {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -70,8 +81,8 @@ export default function PosHistory() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Order History</h1>
-        <p className="text-sm text-muted-foreground mt-1">View all past orders and revenue</p>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("history.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t("history.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -101,8 +112,8 @@ export default function PosHistory() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-          <CardTitle className="text-base">All Orders</CardTitle>
-          <Badge variant="secondary">{orders?.length || 0} total</Badge>
+          <CardTitle className="text-base">{t("history.allOrders")}</CardTitle>
+          <Badge variant="secondary">{orders?.length || 0} {t("dashboard.total")}</Badge>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -114,21 +125,21 @@ export default function PosHistory() {
           ) : !orders || orders.length === 0 ? (
             <div className="text-center py-12">
               <History className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">No orders yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Orders will appear here after checkout</p>
+              <p className="text-lg font-medium text-muted-foreground">{t("history.noOrdersYet")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("history.ordersAppearAfter")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Table</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>{t("history.orderNumber")}</TableHead>
+                    <TableHead>{t("history.table")}</TableHead>
+                    <TableHead>{t("history.customer")}</TableHead>
+                    <TableHead>{t("history.status")}</TableHead>
+                    <TableHead>{t("history.payment")}</TableHead>
+                    <TableHead className="text-end">{t("history.total")}</TableHead>
+                    <TableHead>{t("history.date")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -139,13 +150,13 @@ export default function PosHistory() {
                       <TableCell className="text-muted-foreground">{order.customerName || "-"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusColors[order.status] || ""}>
-                          {order.status}
+                          {statusLabels[order.status] || order.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">{order.paymentMethod || "-"}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-bold">{parseInt(order.total).toLocaleString()} IQD</TableCell>
+                      <TableCell className="text-end font-bold">{parseInt(order.total).toLocaleString()} IQD</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{formatDate(order.createdAt)}</TableCell>
                     </TableRow>
                   ))}

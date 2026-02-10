@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 import { ClipboardList, Clock, ChefHat, Check, Loader2, Ban } from "lucide-react";
 import type { Order } from "@shared/schema";
 
 export default function PosOrders() {
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -29,7 +31,7 @@ export default function PosOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      toast({ title: "Order updated" });
+      toast({ title: t("orders.orderUpdated") });
     },
   });
 
@@ -44,14 +46,22 @@ export default function PosOrders() {
     cancelled: { color: "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400", icon: Ban },
   };
 
+  const statusLabels: Record<string, string> = {
+    pending: t("orders.pending"),
+    preparing: t("orders.preparing"),
+    ready: t("orders.ready"),
+    completed: t("orders.completed"),
+    cancelled: t("orders.cancelled"),
+  };
+
   const formatTime = (date: string | Date) =>
-    new Date(date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    new Date(date).toLocaleTimeString(language === "ar" ? "ar-IQ" : "en-US", { hour: "numeric", minute: "2-digit" });
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Active Orders</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage incoming and in-progress orders</p>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("orders.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t("orders.subtitle")}</p>
       </div>
 
       {isLoading ? (
@@ -70,8 +80,8 @@ export default function PosOrders() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <ClipboardList className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">No active orders</p>
-            <p className="text-sm text-muted-foreground mt-1">New orders will appear here</p>
+            <p className="text-lg font-medium text-muted-foreground">{t("orders.noActiveOrders")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("orders.newOrdersAppear")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -87,22 +97,22 @@ export default function PosOrders() {
                       <p className="text-xs text-muted-foreground">{formatTime(order.createdAt)}</p>
                     </div>
                     <Badge variant="outline" className={config.color}>
-                      <config.icon className="h-3 w-3 mr-1" />
-                      {order.status}
+                      <config.icon className="h-3 w-3 me-1" />
+                      {statusLabels[order.status] || order.status}
                     </Badge>
                   </div>
 
                   <div className="space-y-1 mb-3">
                     {order.tableNumber && (
-                      <p className="text-xs text-muted-foreground">Table: {order.tableNumber}</p>
+                      <p className="text-xs text-muted-foreground">{t("pos.table")}: {order.tableNumber}</p>
                     )}
                     {order.customerName && (
-                      <p className="text-xs text-muted-foreground">Customer: {order.customerName}</p>
+                      <p className="text-xs text-muted-foreground">{t("pos.customer")}: {order.customerName}</p>
                     )}
                   </div>
 
                   <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-muted/50 mb-3">
-                    <span className="text-sm font-medium">Total</span>
+                    <span className="text-sm font-medium">{t("pos.total")}</span>
                     <span className="font-bold">{parseInt(order.total).toLocaleString()} IQD</span>
                   </div>
 
@@ -114,11 +124,11 @@ export default function PosOrders() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="preparing">Preparing</SelectItem>
-                      <SelectItem value="ready">Ready</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="pending">{t("orders.pending")}</SelectItem>
+                      <SelectItem value="preparing">{t("orders.preparing")}</SelectItem>
+                      <SelectItem value="ready">{t("orders.ready")}</SelectItem>
+                      <SelectItem value="completed">{t("orders.completed")}</SelectItem>
+                      <SelectItem value="cancelled">{t("orders.cancelled")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </CardContent>
@@ -131,8 +141,8 @@ export default function PosOrders() {
       {completedOrders.length > 0 && (
         <>
           <div>
-            <h2 className="text-lg font-semibold">Recent Completed</h2>
-            <p className="text-sm text-muted-foreground mt-1">Last 10 completed or cancelled orders</p>
+            <h2 className="text-lg font-semibold">{t("orders.recentCompleted")}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{t("orders.last10")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {completedOrders.map((order) => {
@@ -143,7 +153,7 @@ export default function PosOrders() {
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="font-bold">#{order.orderNumber}</p>
                       <Badge variant="outline" className={config.color}>
-                        {order.status}
+                        {statusLabels[order.status] || order.status}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between gap-2">

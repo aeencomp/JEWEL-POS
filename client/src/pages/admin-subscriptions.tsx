@@ -20,11 +20,13 @@ import {
 } from "@/components/ui/table";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 import { CreditCard, RefreshCcw, Loader2, Calendar } from "lucide-react";
 import type { Restaurant, Subscription } from "@shared/schema";
 
 export default function AdminSubscriptions() {
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   const { data: restaurants, isLoading: loadingRestaurants } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants"],
@@ -41,10 +43,10 @@ export default function AdminSubscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      toast({ title: "Subscription updated" });
+      toast({ title: t("subscriptions.updated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+      toast({ title: t("subscriptions.updateFailed"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -55,10 +57,10 @@ export default function AdminSubscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      toast({ title: "Subscription renewed for 30 days" });
+      toast({ title: t("subscriptions.renewed30") });
     },
     onError: (error: Error) => {
-      toast({ title: "Renewal failed", description: error.message, variant: "destructive" });
+      toast({ title: t("subscriptions.renewFailed"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -74,28 +76,37 @@ export default function AdminSubscriptions() {
     trial: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
   };
 
+  const statusLabels: Record<string, string> = {
+    active: t("subscriptions.active"),
+    expired: t("subscriptions.expired"),
+    cancelled: t("subscriptions.cancelled"),
+    trial: t("subscriptions.trial"),
+  };
+
   const formatDate = (date: string | Date | null) => {
     if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
+    return new Date(date).toLocaleDateString(language === "ar" ? "ar-IQ" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
   };
 
+  const plans = [
+    { label: t("subscriptions.basicPlan"), price: "35,000 IQD", desc: t("subscriptions.basicDesc") },
+    { label: t("subscriptions.standardPlan"), price: "75,000 IQD", desc: t("subscriptions.standardDesc") },
+    { label: t("subscriptions.premiumPlan"), price: "125,000 IQD", desc: t("subscriptions.premiumDesc") },
+  ];
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Subscriptions</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage monthly subscription plans</p>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("subscriptions.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t("subscriptions.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Basic Plan", price: "35,000 IQD/mo", desc: "Essential POS features" },
-          { label: "Standard Plan", price: "75,000 IQD/mo", desc: "Advanced reporting & analytics" },
-          { label: "Premium Plan", price: "125,000 IQD/mo", desc: "Full features with priority support" },
-        ].map((plan) => (
+        {plans.map((plan) => (
           <Card key={plan.label}>
             <CardContent className="p-5 text-center">
               <p className="text-sm font-medium">{plan.label}</p>
@@ -108,8 +119,8 @@ export default function AdminSubscriptions() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-          <CardTitle className="text-base">All Subscriptions</CardTitle>
-          <Badge variant="secondary">{subscriptions?.length || 0} total</Badge>
+          <CardTitle className="text-base">{t("subscriptions.allSubscriptions")}</CardTitle>
+          <Badge variant="secondary">{subscriptions?.length || 0} {t("dashboard.total")}</Badge>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -121,9 +132,9 @@ export default function AdminSubscriptions() {
           ) : subscriptions?.length === 0 ? (
             <div className="text-center py-12">
               <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">No subscriptions</p>
+              <p className="text-lg font-medium text-muted-foreground">{t("subscriptions.noSubscriptions")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Subscriptions are created when you add restaurants
+                {t("subscriptions.createdWhenAdd")}
               </p>
             </div>
           ) : (
@@ -131,13 +142,13 @@ export default function AdminSubscriptions() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Restaurant</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("subscriptions.restaurant")}</TableHead>
+                    <TableHead>{t("subscriptions.plan")}</TableHead>
+                    <TableHead>{t("subscriptions.price")}</TableHead>
+                    <TableHead>{t("subscriptions.status")}</TableHead>
+                    <TableHead>{t("subscriptions.startDate")}</TableHead>
+                    <TableHead>{t("subscriptions.endDate")}</TableHead>
+                    <TableHead className="text-end">{t("subscriptions.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -145,10 +156,10 @@ export default function AdminSubscriptions() {
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
                       <TableCell className="font-medium">{getRestaurantName(sub.restaurantId)}</TableCell>
                       <TableCell className="capitalize">{sub.plan}</TableCell>
-                      <TableCell>{parseInt(sub.pricePerMonth).toLocaleString()} IQD/mo</TableCell>
+                      <TableCell>{parseInt(sub.pricePerMonth).toLocaleString()} IQD</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusColors[sub.status] || ""}>
-                          {sub.status}
+                          {statusLabels[sub.status] || sub.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
@@ -167,10 +178,10 @@ export default function AdminSubscriptions() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="expired">Expired</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                              <SelectItem value="trial">Trial</SelectItem>
+                              <SelectItem value="active">{t("subscriptions.active")}</SelectItem>
+                              <SelectItem value="expired">{t("subscriptions.expired")}</SelectItem>
+                              <SelectItem value="cancelled">{t("subscriptions.cancelled")}</SelectItem>
+                              <SelectItem value="trial">{t("subscriptions.trial")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -183,7 +194,7 @@ export default function AdminSubscriptions() {
                             {renewMutation.isPending ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
-                              <><RefreshCcw className="h-3 w-3 mr-1" />Renew</>
+                              <><RefreshCcw className="h-3 w-3 me-1" />{t("subscriptions.renew")}</>
                             )}
                           </Button>
                         </div>

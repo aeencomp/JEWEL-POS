@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 import {
   Plus,
   Minus,
@@ -40,6 +41,7 @@ type CartItem = {
 
 export default function PosTerminal() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -126,10 +128,10 @@ export default function PosTerminal() {
       setTableNumber("");
       setCustomerName("");
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      toast({ title: `Order #${order.orderNumber} placed successfully` });
+      toast({ title: `${t("history.orderNumber")}${order.orderNumber} ${t("pos.orderPlacedSuccess")}` });
     },
     onError: (error: Error) => {
-      toast({ title: "Order failed", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.orderFailed"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -141,12 +143,12 @@ export default function PosTerminal() {
         <div className="p-4 border-b bg-background">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative flex-1 min-w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search menu..."
+                placeholder={t("pos.searchMenu")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="ps-9"
                 data-testid="input-search-menu"
               />
             </div>
@@ -161,7 +163,7 @@ export default function PosTerminal() {
                   onClick={() => setActiveCategory(null)}
                   data-testid="button-category-all"
                 >
-                  All
+                  {t("pos.all")}
                 </Button>
                 {categories.map((cat) => (
                   <Button
@@ -195,9 +197,9 @@ export default function PosTerminal() {
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-16">
               <UtensilsCrossed className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">No menu items</p>
+              <p className="text-lg font-medium text-muted-foreground">{t("pos.noMenuItems")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {search ? "Try a different search" : "Add items from the Menu page"}
+                {search ? t("pos.tryDifferentSearch") : t("pos.addFromMenu")}
               </p>
             </div>
           ) : (
@@ -235,22 +237,22 @@ export default function PosTerminal() {
         </ScrollArea>
       </div>
 
-      <div className="w-80 lg:w-96 border-l bg-card flex flex-col">
+      <div className="w-80 lg:w-96 border-s bg-card flex flex-col">
         <div className="p-4 border-b">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
-            <h2 className="font-semibold text-sm">Current Order</h2>
-            <Badge variant="secondary" className="ml-auto">{cart.length} items</Badge>
+            <h2 className="font-semibold text-sm">{t("pos.currentOrder")}</h2>
+            <Badge variant="secondary" className="ms-auto">{cart.length} {t("pos.items")}</Badge>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-3">
             <Input
-              placeholder="Table #"
+              placeholder={t("pos.tableNumber")}
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               data-testid="input-table-number"
             />
             <Input
-              placeholder="Customer"
+              placeholder={t("pos.customer")}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               data-testid="input-customer-name"
@@ -262,8 +264,8 @@ export default function PosTerminal() {
           {cart.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">Cart is empty</p>
-              <p className="text-xs text-muted-foreground mt-1">Tap items to add them</p>
+              <p className="text-sm text-muted-foreground">{t("pos.cartEmpty")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("pos.tapToAdd")}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -272,7 +274,7 @@ export default function PosTerminal() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.price.toLocaleString()} IQD each
+                      {item.price.toLocaleString()} IQD {t("pos.each")}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -296,7 +298,7 @@ export default function PosTerminal() {
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
-                  <p className="text-sm font-medium w-24 text-right">
+                  <p className="text-sm font-medium w-24 text-end">
                     {(item.price * item.quantity).toLocaleString()} IQD
                   </p>
                   <Button
@@ -318,16 +320,16 @@ export default function PosTerminal() {
           <div className="p-4 border-t bg-card">
             <div className="space-y-1.5 mb-4">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">{t("pos.subtotal")}</span>
                 <span>{subtotal.toLocaleString()} IQD</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax (8%)</span>
+                <span className="text-muted-foreground">{t("pos.tax")}</span>
                 <span>{tax.toLocaleString()} IQD</span>
               </div>
               <Separator />
               <div className="flex justify-between text-base font-bold">
-                <span>Total</span>
+                <span>{t("pos.total")}</span>
                 <span data-testid="text-cart-total">{total.toLocaleString()} IQD</span>
               </div>
             </div>
@@ -341,7 +343,7 @@ export default function PosTerminal() {
                 {placeOrderMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <><Banknote className="h-4 w-4 mr-2" />Cash</>
+                  <><Banknote className="h-4 w-4 me-2" />{t("pos.cash")}</>
                 )}
               </Button>
               <Button
@@ -352,7 +354,7 @@ export default function PosTerminal() {
                 {placeOrderMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <><CreditCard className="h-4 w-4 mr-2" />Card</>
+                  <><CreditCard className="h-4 w-4 me-2" />{t("pos.card")}</>
                 )}
               </Button>
             </div>
@@ -365,7 +367,7 @@ export default function PosTerminal() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Check className="h-5 w-5 text-emerald-500" />
-              Order Confirmed
+              {t("pos.orderConfirmed")}
             </DialogTitle>
           </DialogHeader>
           {lastOrder && (
@@ -380,25 +382,25 @@ export default function PosTerminal() {
               <div className="space-y-1.5">
                 {lastOrder.tableNumber && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Table</span>
+                    <span className="text-muted-foreground">{t("pos.table")}</span>
                     <span>{lastOrder.tableNumber}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-muted-foreground">{t("pos.subtotal")}</span>
                   <span>{parseInt(lastOrder.subtotal).toLocaleString()} IQD</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax</span>
+                  <span className="text-muted-foreground">{t("pos.tax")}</span>
                   <span>{parseInt(lastOrder.tax).toLocaleString()} IQD</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold">
-                  <span>Total</span>
+                  <span>{t("pos.total")}</span>
                   <span>{parseInt(lastOrder.total).toLocaleString()} IQD</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Payment</span>
+                  <span className="text-muted-foreground">{t("pos.payment")}</span>
                   <Badge variant="secondary" className="capitalize">{lastOrder.paymentMethod}</Badge>
                 </div>
               </div>
@@ -407,7 +409,7 @@ export default function PosTerminal() {
                 onClick={() => setShowReceipt(false)}
                 data-testid="button-close-receipt"
               >
-                Done
+                {t("pos.done")}
               </Button>
             </div>
           )}

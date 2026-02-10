@@ -1,7 +1,7 @@
 # RestoPOS - Restaurant POS SaaS Platform
 
 ## Overview
-A multi-tenant restaurant Point of Sale (POS) system with subscription management. Platform admin manages restaurant accounts and billing, while restaurants use the POS for menu management, order taking, and checkout.
+A multi-tenant restaurant Point of Sale (POS) system with subscription management. Platform admin manages restaurant accounts and billing, while restaurants use the POS for menu management, order taking, and checkout. Bilingual (English/Arabic) with full RTL support.
 
 ## Architecture
 - **Frontend**: React + TypeScript + Vite + TailwindCSS + shadcn/ui
@@ -9,6 +9,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 - **Database**: PostgreSQL with Drizzle ORM
 - **Auth**: Passport.js with local strategy (username/password)
 - **State**: TanStack Query for data fetching
+- **i18n**: Custom context-based translation system (use-language.tsx)
 
 ## User Roles
 - **Admin**: Platform owner who manages restaurants and subscriptions
@@ -16,14 +17,25 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 
 ## Key Features
 - Admin dashboard with revenue stats
-- Restaurant account management with subscription plans (Basic $29.99, Standard $59.99, Premium $99.99)
+- Restaurant account management with subscription plans (Basic 35,000 IQD, Standard 75,000 IQD, Premium 125,000 IQD)
 - Full POS terminal with cart, order placement, and receipts
 - Menu management (categories + items)
 - Order tracking and history
+- Bilingual support (English/Arabic) with RTL layout switching
+- Currency: Iraqi Dinar (IQD) - stored as whole numbers
+
+## Internationalization (i18n)
+- `client/src/hooks/use-language.tsx` - Language context provider with all translations
+- `client/src/components/language-toggle.tsx` - Toggle button component
+- Language preference saved in localStorage
+- RTL direction set on `<html>` element via `document.documentElement.dir`
+- Uses CSS logical properties (start/end instead of left/right) for RTL compatibility
+- All page components use `t("key")` function for translated strings
 
 ## Project Structure
 - `client/src/pages/` - All page components (admin-*, pos-*)
-- `client/src/components/` - Reusable components (sidebar, theme)
+- `client/src/components/` - Reusable components (sidebar, theme, language-toggle)
+- `client/src/hooks/` - Custom hooks (use-auth, use-language, use-toast)
 - `server/routes.ts` - API endpoints
 - `server/storage.ts` - Database operations (DatabaseStorage)
 - `server/auth.ts` - Authentication setup
@@ -45,6 +57,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 All API routes use `/api/` prefix.
 
 ## Recent Changes
-- Fixed blank page / 404 after login by rewriting App.tsx routing to properly coordinate auth state with URL
-- Fixed React state update warning by using `<Redirect>` component instead of `setLocation` during render in AuthPage
+- Added bilingual support (English/Arabic) with RTL layout, language toggle in header and auth page
+- Converted currency from USD to IQD (Iraqi Dinar) across all displays, seed data, and database
+- Fixed blank page / 404 after login by rewriting App.tsx routing
 - Security: Registration forces admin role, all CRUD endpoints verify tenant ownership
