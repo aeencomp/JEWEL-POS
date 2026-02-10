@@ -381,7 +381,7 @@ export default function PosTerminal() {
       </div>
 
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Check className="h-5 w-5 text-emerald-500" />
@@ -390,37 +390,50 @@ export default function PosTerminal() {
           </DialogHeader>
           {lastOrder && (
             <div className="space-y-4">
-              <div className="text-center py-4 border rounded-md bg-muted/30">
-                {branding?.receiptHeader && (
+              <div className="text-center py-3 border rounded-md bg-muted/30">
+                {branding?.name && (
                   <p className="font-bold text-sm mb-1" style={branding?.brandColor ? { color: branding.brandColor } : undefined}>
-                    {branding.receiptHeader}
+                    {branding.name}
                   </p>
                 )}
-                <Receipt className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="font-bold text-lg" data-testid="text-order-number">#{lastOrder.orderNumber}</p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(lastOrder.createdAt).toLocaleString()}
                 </p>
+                {lastOrder.tableNumber && (
+                  <p className="text-xs text-muted-foreground mt-1">{t("pos.table")}: {lastOrder.tableNumber}</p>
+                )}
+                {lastOrder.customerName && (
+                  <p className="text-xs text-muted-foreground">{t("pos.customer")}: {lastOrder.customerName}</p>
+                )}
               </div>
 
               {lastOrderItems.length > 0 && (
-                <div className="space-y-1">
-                  {lastOrderItems.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm gap-2">
-                      <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
-                      <span className="flex-shrink-0">{(parseInt(item.price) * item.quantity).toLocaleString()} IQD</span>
-                    </div>
-                  ))}
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full text-sm" data-testid="table-order-items">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-start py-2 px-3 font-medium text-muted-foreground">{t("pos.qty")}</th>
+                        <th className="text-start py-2 px-3 font-medium text-muted-foreground">{t("pos.item")}</th>
+                        <th className="text-end py-2 px-3 font-medium text-muted-foreground">{t("pos.price")}</th>
+                        <th className="text-end py-2 px-3 font-medium text-muted-foreground">{t("pos.amount")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lastOrderItems.map((item) => (
+                        <tr key={item.id} className="border-t" data-testid={`row-receipt-item-${item.id}`}>
+                          <td className="py-2 px-3 text-center">{item.quantity}</td>
+                          <td className="py-2 px-3">{item.name}</td>
+                          <td className="py-2 px-3 text-end text-muted-foreground">{parseInt(item.price).toLocaleString()}</td>
+                          <td className="py-2 px-3 text-end font-medium">{(parseInt(item.price) * item.quantity).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                {lastOrder.tableNumber && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{t("pos.table")}</span>
-                    <span>{lastOrder.tableNumber}</span>
-                  </div>
-                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("pos.subtotal")}</span>
                   <span>{parseInt(lastOrder.subtotal).toLocaleString()} IQD</span>
@@ -430,9 +443,9 @@ export default function PosTerminal() {
                   <span>{parseInt(lastOrder.tax).toLocaleString()} IQD</span>
                 </div>
                 <Separator />
-                <div className="flex justify-between font-bold">
+                <div className="flex justify-between font-bold text-base">
                   <span>{t("pos.total")}</span>
-                  <span>{parseInt(lastOrder.total).toLocaleString()} IQD</span>
+                  <span data-testid="text-receipt-total">{parseInt(lastOrder.total).toLocaleString()} IQD</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("pos.payment")}</span>

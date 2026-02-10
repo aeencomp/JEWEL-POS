@@ -94,23 +94,23 @@ export function usePrintReceipt() {
             text-align: start;
             font-size: 11px;
             font-weight: bold;
-            padding: 2px 0;
+            padding: 4px 2px;
             border-bottom: 1px solid #000;
           }
-          .items-table th:last-child {
+          .items-table th.col-end {
             text-align: end;
           }
           .items-table td {
             font-size: 11px;
-            padding: 3px 0;
+            padding: 4px 2px;
             vertical-align: top;
+            border-bottom: 1px dotted #ccc;
           }
-          .items-table td:last-child {
+          .items-table td.col-end {
             text-align: end;
             white-space: nowrap;
           }
-          .items-table td:first-child {
-            width: 28px;
+          .items-table td.col-center {
             text-align: center;
           }
           .totals {
@@ -222,15 +222,17 @@ export function PrintableReceipt({ order, items, branding }: PrintableReceiptPro
           <tr>
             <th>{t("pos.qty")}</th>
             <th>{t("pos.item")}</th>
-            <th>{t("pos.amount")}</th>
+            <th className="col-end">{t("pos.price")}</th>
+            <th className="col-end">{t("pos.amount")}</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
-              <td>{item.quantity}</td>
+              <td className="col-center">{item.quantity}</td>
               <td>{item.name}</td>
-              <td>{(parseInt(item.price) * item.quantity).toLocaleString()} IQD</td>
+              <td className="col-end">{parseInt(item.price).toLocaleString()}</td>
+              <td className="col-end">{(parseInt(item.price) * item.quantity).toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
