@@ -169,6 +169,15 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
   id: true,
 });
 
+export const updateBrandingSchema = z.object({
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color").nullable().optional(),
+  logoUrl: z.string().url("Must be a valid URL").nullable().optional().or(z.literal("").transform(() => null)),
+  receiptHeader: z.string().max(200).nullable().optional().or(z.literal("").transform(() => null)),
+  receiptFooter: z.string().max(200).nullable().optional().or(z.literal("").transform(() => null)),
+});
+
+export type UpdateBranding = z.infer<typeof updateBrandingSchema>;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Restaurant = typeof restaurants.$inferSelect;

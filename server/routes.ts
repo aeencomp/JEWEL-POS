@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
-import { insertRestaurantSchema, insertMenuCategorySchema, insertMenuItemSchema } from "@shared/schema";
+import { insertRestaurantSchema, insertMenuCategorySchema, insertMenuItemSchema, updateBrandingSchema } from "@shared/schema";
 
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -119,6 +119,44 @@ export async function registerRoutes(
       lastPaymentDate: new Date(),
     });
     res.json(updated);
+  });
+
+  app.get("/api/restaurant/branding", requireAuth, async (req, res) => {
+    const restaurantId = req.user!.restaurantId;
+    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
+    const restaurant = await storage.getRestaurant(restaurantId);
+    if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+    res.json({
+      brandColor: restaurant.brandColor,
+      logoUrl: restaurant.logoUrl,
+      receiptHeader: restaurant.receiptHeader,
+      receiptFooter: restaurant.receiptFooter,
+      name: restaurant.name,
+    });
+  });
+
+  app.patch("/api/restaurant/branding", requireAuth, async (req, res) => {
+    const restaurantId = req.user!.restaurantId;
+    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
+    const parsed = updateBrandingSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid branding data" });
+    }
+    const { brandColor, logoUrl, receiptHeader, receiptFooter } = parsed.data;
+    const updated = await storage.updateRestaurant(restaurantId, {
+      brandColor,
+      logoUrl,
+      receiptHeader,
+      receiptFooter,
+    });
+    if (!updated) return res.status(404).json({ message: "Restaurant not found" });
+    res.json({
+      brandColor: updated.brandColor,
+      logoUrl: updated.logoUrl,
+      receiptHeader: updated.receiptHeader,
+      receiptFooter: updated.receiptFooter,
+      name: updated.name,
+    });
   });
 
   app.get("/api/menu-categories", requireAuth, async (req, res) => {

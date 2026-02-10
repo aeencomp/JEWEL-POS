@@ -20,6 +20,7 @@ import PosTerminal from "@/pages/pos-terminal";
 import PosMenu from "@/pages/pos-menu";
 import PosOrders from "@/pages/pos-orders";
 import PosHistory from "@/pages/pos-history";
+import PosBranding from "@/pages/pos-branding";
 import { Loader2 } from "lucide-react";
 
 function AdminRouter() {
@@ -40,6 +41,7 @@ function RestaurantRouter() {
       <Route path="/menu" component={PosMenu} />
       <Route path="/orders" component={PosOrders} />
       <Route path="/history" component={PosHistory} />
+      <Route path="/branding" component={PosBranding} />
       <Route component={NotFound} />
     </Switch>
   );

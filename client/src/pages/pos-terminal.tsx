@@ -39,10 +39,22 @@ type CartItem = {
   quantity: number;
 };
 
+type BrandingData = {
+  brandColor: string | null;
+  logoUrl: string | null;
+  receiptHeader: string | null;
+  receiptFooter: string | null;
+  name: string;
+};
+
 export default function PosTerminal() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  const { data: branding } = useQuery<BrandingData>({
+    queryKey: ["/api/restaurant/branding"],
+  });
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [tableNumber, setTableNumber] = useState("");
@@ -227,7 +239,7 @@ export default function PosTerminal() {
                           {item.description}
                         </p>
                       )}
-                      <p className="text-sm font-bold text-primary">{parseInt(item.price).toLocaleString()} IQD</p>
+                      <p className="text-sm font-bold" style={branding?.brandColor ? { color: branding.brandColor } : undefined} data-testid={`text-price-${item.id}`}>{parseInt(item.price).toLocaleString()} IQD</p>
                     </CardContent>
                   </Card>
                 );
@@ -373,6 +385,11 @@ export default function PosTerminal() {
           {lastOrder && (
             <div className="space-y-4">
               <div className="text-center py-4 border rounded-md bg-muted/30">
+                {branding?.receiptHeader && (
+                  <p className="font-bold text-sm mb-1" style={branding?.brandColor ? { color: branding.brandColor } : undefined}>
+                    {branding.receiptHeader}
+                  </p>
+                )}
                 <Receipt className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="font-bold text-lg" data-testid="text-order-number">#{lastOrder.orderNumber}</p>
                 <p className="text-xs text-muted-foreground">
@@ -404,6 +421,9 @@ export default function PosTerminal() {
                   <Badge variant="secondary" className="capitalize">{lastOrder.paymentMethod}</Badge>
                 </div>
               </div>
+              {branding?.receiptFooter && (
+                <p className="text-xs text-center text-muted-foreground">{branding.receiptFooter}</p>
+              )}
               <Button
                 className="w-full"
                 onClick={() => setShowReceipt(false)}

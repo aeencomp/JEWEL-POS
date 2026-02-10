@@ -21,6 +21,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 - Full POS terminal with cart, order placement, and receipts
 - Menu management (categories + items)
 - Order tracking and history
+- Restaurant branding customization (brand color, logo, receipt header/footer)
 - Bilingual support (English/Arabic) with RTL layout switching
 - Currency: Iraqi Dinar (IQD) - stored as whole numbers
 
@@ -60,6 +61,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 All API routes use `/api/` prefix.
 
 ## Recent Changes
+- Added restaurant branding customization (brand color, logo URL, receipt header/footer) with /branding settings page
 - Added separate restaurant login portal at /restaurant-portal with emerald-green branding
 - Added bilingual support (English/Arabic) with RTL layout, language toggle in header and auth page
 - Converted currency from USD to IQD (Iraqi Dinar) across all displays, seed data, and database

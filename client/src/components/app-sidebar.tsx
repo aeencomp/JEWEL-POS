@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -25,7 +26,16 @@ import {
   LogOut,
   Settings,
   ChefHat,
+  Palette,
 } from "lucide-react";
+
+type BrandingData = {
+  brandColor: string | null;
+  logoUrl: string | null;
+  receiptHeader: string | null;
+  receiptFooter: string | null;
+  name: string;
+};
 
 export function AppSidebar() {
   const { user, logoutMutation } = useAuth();
@@ -33,6 +43,11 @@ export function AppSidebar() {
   const [location] = useLocation();
 
   const isAdmin = user?.role === "admin";
+
+  const { data: branding } = useQuery<BrandingData>({
+    queryKey: ["/api/restaurant/branding"],
+    enabled: !isAdmin && !!user?.restaurantId,
+  });
 
   const adminItems = [
     { title: t("sidebar.dashboard"), url: "/", icon: LayoutDashboard },
@@ -45,6 +60,7 @@ export function AppSidebar() {
     { title: t("sidebar.menu"), url: "/menu", icon: ChefHat },
     { title: t("sidebar.orders"), url: "/orders", icon: ClipboardList },
     { title: t("sidebar.history"), url: "/history", icon: History },
+    { title: t("sidebar.branding"), url: "/branding", icon: Palette },
   ];
 
   const items = isAdmin ? adminItems : restaurantItems;
@@ -53,11 +69,25 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-            <UtensilsCrossed className="h-4 w-4 text-primary-foreground" />
-          </div>
+          {!isAdmin && branding?.logoUrl ? (
+            <img
+              src={branding.logoUrl}
+              alt=""
+              className="w-8 h-8 rounded-md object-contain"
+              data-testid="img-sidebar-logo"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-md flex items-center justify-center"
+              style={!isAdmin && branding?.brandColor ? { backgroundColor: branding.brandColor } : { backgroundColor: "hsl(var(--primary))" }}
+            >
+              <UtensilsCrossed className="h-4 w-4 text-white" />
+            </div>
+          )}
           <div>
-            <span className="font-semibold text-sm" data-testid="text-app-name">RestoPOS</span>
+            <span className="font-semibold text-sm" data-testid="text-app-name">
+              {!isAdmin && branding?.name ? branding.name : "RestoPOS"}
+            </span>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? t("sidebar.adminPanel") : t("sidebar.restaurantPOS")}
             </p>

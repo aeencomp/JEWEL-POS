@@ -41,6 +41,26 @@ type TranslationKeys = {
   "sidebar.menu": string;
   "sidebar.orders": string;
   "sidebar.history": string;
+  "sidebar.branding": string;
+
+  // Branding settings
+  "branding.title": string;
+  "branding.subtitle": string;
+  "branding.brandColor": string;
+  "branding.brandColorDesc": string;
+  "branding.logoUrl": string;
+  "branding.logoUrlDesc": string;
+  "branding.receiptHeader": string;
+  "branding.receiptHeaderDesc": string;
+  "branding.receiptFooter": string;
+  "branding.receiptFooterDesc": string;
+  "branding.saveChanges": string;
+  "branding.saving": string;
+  "branding.saved": string;
+  "branding.savedDesc": string;
+  "branding.preview": string;
+  "branding.previewReceipt": string;
+  "branding.resetColor": string;
 
   // Admin Dashboard
   "dashboard.title": string;
@@ -270,6 +290,25 @@ const translations: Record<Language, TranslationKeys> = {
     "sidebar.menu": "Menu",
     "sidebar.orders": "Orders",
     "sidebar.history": "History",
+    "sidebar.branding": "Branding",
+
+    "branding.title": "Branding",
+    "branding.subtitle": "Customize your restaurant's look and feel",
+    "branding.brandColor": "Brand Color",
+    "branding.brandColorDesc": "Main color used across your POS interface and receipts",
+    "branding.logoUrl": "Logo URL",
+    "branding.logoUrlDesc": "Link to your restaurant logo image",
+    "branding.receiptHeader": "Receipt Header",
+    "branding.receiptHeaderDesc": "Custom text shown at the top of receipts",
+    "branding.receiptFooter": "Receipt Footer",
+    "branding.receiptFooterDesc": "Custom text shown at the bottom of receipts (e.g. thank you message)",
+    "branding.saveChanges": "Save Changes",
+    "branding.saving": "Saving...",
+    "branding.saved": "Branding Updated",
+    "branding.savedDesc": "Your branding changes have been saved",
+    "branding.preview": "Preview",
+    "branding.previewReceipt": "Receipt Preview",
+    "branding.resetColor": "Reset",
 
     "dashboard.title": "Dashboard",
     "dashboard.subtitle": "Overview of your restaurant POS platform",
@@ -487,6 +526,25 @@ const translations: Record<Language, TranslationKeys> = {
     "sidebar.menu": "القائمة",
     "sidebar.orders": "الطلبات",
     "sidebar.history": "السجل",
+    "sidebar.branding": "العلامة التجارية",
+
+    "branding.title": "العلامة التجارية",
+    "branding.subtitle": "خصص مظهر مطعمك",
+    "branding.brandColor": "لون العلامة",
+    "branding.brandColorDesc": "اللون الرئيسي المستخدم في واجهة نقاط البيع والإيصالات",
+    "branding.logoUrl": "رابط الشعار",
+    "branding.logoUrlDesc": "رابط صورة شعار مطعمك",
+    "branding.receiptHeader": "رأس الإيصال",
+    "branding.receiptHeaderDesc": "نص مخصص يظهر في أعلى الإيصالات",
+    "branding.receiptFooter": "تذييل الإيصال",
+    "branding.receiptFooterDesc": "نص مخصص يظهر في أسفل الإيصالات (مثل رسالة شكر)",
+    "branding.saveChanges": "حفظ التغييرات",
+    "branding.saving": "جاري الحفظ...",
+    "branding.saved": "تم تحديث العلامة التجارية",
+    "branding.savedDesc": "تم حفظ تغييرات العلامة التجارية",
+    "branding.preview": "معاينة",
+    "branding.previewReceipt": "معاينة الإيصال",
+    "branding.resetColor": "إعادة تعيين",
 
     "dashboard.title": "لوحة التحكم",
     "dashboard.subtitle": "نظرة عامة على منصة نقاط البيع للمطاعم",
