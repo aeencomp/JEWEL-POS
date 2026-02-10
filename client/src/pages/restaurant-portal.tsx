@@ -153,14 +153,6 @@ export default function RestaurantPortal() {
             {t("portal.contactAdmin")}
           </p>
 
-          <div className="mt-8 pt-6 border-t text-center">
-            <p className="text-sm text-muted-foreground mb-2">{t("portal.adminQuestion")}</p>
-            <Link href="/auth">
-              <Button variant="outline" size="sm" data-testid="link-admin-login">
-                {t("portal.goToAdmin")}
-              </Button>
-            </Link>
-          </div>
         </div>
       </div>
     </div>
