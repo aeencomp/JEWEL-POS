@@ -207,8 +207,8 @@ export default function PosMenu() {
                   )} />
                   <FormField control={itemForm.control} name="price" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price ($)</FormLabel>
-                      <FormControl><Input type="number" step="0.01" placeholder="9.99" data-testid="input-item-price" {...field} /></FormControl>
+                      <FormLabel>Price (IQD)</FormLabel>
+                      <FormControl><Input type="number" step="250" placeholder="5000" data-testid="input-item-price" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -314,7 +314,7 @@ export default function PosMenu() {
                               <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                             )}
                           </div>
-                          <p className="text-sm font-bold">${parseFloat(item.price).toFixed(2)}</p>
+                          <p className="text-sm font-bold">{parseInt(item.price).toLocaleString()} IQD</p>
                           <Switch
                             checked={item.isAvailable}
                             onCheckedChange={(checked) =>

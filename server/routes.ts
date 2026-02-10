@@ -55,9 +55,9 @@ export async function registerRoutes(
       });
 
       const planPrices: Record<string, string> = {
-        basic: "29.99",
-        standard: "59.99",
-        premium: "99.99",
+        basic: "35000",
+        standard: "75000",
+        premium: "125000",
       };
 
       const endDate = new Date();

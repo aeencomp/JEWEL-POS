@@ -41,7 +41,7 @@ const createRestaurantSchema = z.object({
 
 type CreateRestaurantValues = z.infer<typeof createRestaurantSchema>;
 
-const planPrices = { basic: "29.99", standard: "59.99", premium: "99.99" };
+const planPrices = { basic: "35000", standard: "75000", premium: "125000" };
 
 export default function AdminRestaurants() {
   const { toast } = useToast();
@@ -175,9 +175,9 @@ export default function AdminRestaurants() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="basic">Basic - $29.99/mo</SelectItem>
-                        <SelectItem value="standard">Standard - $59.99/mo</SelectItem>
-                        <SelectItem value="premium">Premium - $99.99/mo</SelectItem>
+                        <SelectItem value="basic">Basic - 35,000 IQD/mo</SelectItem>
+                        <SelectItem value="standard">Standard - 75,000 IQD/mo</SelectItem>
+                        <SelectItem value="premium">Premium - 125,000 IQD/mo</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -295,7 +295,7 @@ export default function AdminRestaurants() {
                     <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-muted/50 mb-3">
                       <div>
                         <p className="text-xs font-medium capitalize">{sub.plan} Plan</p>
-                        <p className="text-xs text-muted-foreground">${sub.pricePerMonth}/mo</p>
+                        <p className="text-xs text-muted-foreground">{parseInt(sub.pricePerMonth).toLocaleString()} IQD/mo</p>
                       </div>
                       <Badge variant="outline" className="text-xs capitalize">{sub.status}</Badge>
                     </div>

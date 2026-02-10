@@ -105,14 +105,14 @@ export default function PosTerminal() {
       const orderData = {
         tableNumber: tableNumber || null,
         customerName: customerName || null,
-        subtotal: subtotal.toFixed(2),
-        tax: tax.toFixed(2),
-        total: total.toFixed(2),
+        subtotal: Math.round(subtotal).toString(),
+        tax: Math.round(tax).toString(),
+        total: Math.round(total).toString(),
         paymentMethod,
         items: cart.map((c) => ({
           menuItemId: c.menuItemId,
           name: c.name,
-          price: c.price.toFixed(2),
+          price: Math.round(c.price).toString(),
           quantity: c.quantity,
         })),
       };
@@ -225,7 +225,7 @@ export default function PosTerminal() {
                           {item.description}
                         </p>
                       )}
-                      <p className="text-sm font-bold text-primary">${parseFloat(item.price).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-primary">{parseInt(item.price).toLocaleString()} IQD</p>
                     </CardContent>
                   </Card>
                 );
@@ -272,7 +272,7 @@ export default function PosTerminal() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      ${item.price.toFixed(2)} each
+                      {item.price.toLocaleString()} IQD each
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -296,8 +296,8 @@ export default function PosTerminal() {
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
-                  <p className="text-sm font-medium w-16 text-right">
-                    ${(item.price * item.quantity).toFixed(2)}
+                  <p className="text-sm font-medium w-24 text-right">
+                    {(item.price * item.quantity).toLocaleString()} IQD
                   </p>
                   <Button
                     size="icon"
@@ -319,16 +319,16 @@ export default function PosTerminal() {
             <div className="space-y-1.5 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{subtotal.toLocaleString()} IQD</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Tax (8%)</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>{tax.toLocaleString()} IQD</span>
               </div>
               <Separator />
               <div className="flex justify-between text-base font-bold">
                 <span>Total</span>
-                <span data-testid="text-cart-total">${total.toFixed(2)}</span>
+                <span data-testid="text-cart-total">{total.toLocaleString()} IQD</span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -386,16 +386,16 @@ export default function PosTerminal() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${lastOrder.subtotal}</span>
+                  <span>{parseInt(lastOrder.subtotal).toLocaleString()} IQD</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
-                  <span>${lastOrder.tax}</span>
+                  <span>{parseInt(lastOrder.tax).toLocaleString()} IQD</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${lastOrder.total}</span>
+                  <span>{parseInt(lastOrder.total).toLocaleString()} IQD</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Payment</span>

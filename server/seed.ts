@@ -48,7 +48,7 @@ export async function seedDatabase() {
   await storage.createSubscription({
     restaurantId: restaurant1.id,
     plan: "premium",
-    pricePerMonth: "99.99",
+    pricePerMonth: "125000",
     status: "active",
     startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     endDate: endDate1,
@@ -60,7 +60,7 @@ export async function seedDatabase() {
   await storage.createSubscription({
     restaurantId: restaurant2.id,
     plan: "standard",
-    pricePerMonth: "59.99",
+    pricePerMonth: "75000",
     status: "active",
     startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
     endDate: endDate2,
@@ -70,7 +70,7 @@ export async function seedDatabase() {
   await storage.createSubscription({
     restaurantId: restaurant3.id,
     plan: "basic",
-    pricePerMonth: "29.99",
+    pricePerMonth: "35000",
     status: "expired",
     startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
     endDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -97,24 +97,24 @@ export async function seedDatabase() {
   const cat4 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Desserts", sortOrder: 3 });
   const cat5 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Drinks", sortOrder: 4 });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Bruschetta", description: "Toasted bread with tomatoes, garlic, and basil", price: "8.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Caprese Salad", description: "Fresh mozzarella, tomatoes, and basil drizzle", price: "10.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Garlic Bread", description: "Warm bread with garlic butter", price: "5.99", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Bruschetta", description: "Toasted bread with tomatoes, garlic, and basil", price: "7500", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Caprese Salad", description: "Fresh mozzarella, tomatoes, and basil drizzle", price: "9000", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Garlic Bread", description: "Warm bread with garlic butter", price: "4500", isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Spaghetti Carbonara", description: "Classic carbonara with pancetta and egg", price: "14.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Penne Arrabbiata", description: "Spicy tomato sauce with chili flakes", price: "12.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Fettuccine Alfredo", description: "Creamy parmesan sauce", price: "13.99", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Spaghetti Carbonara", description: "Classic carbonara with pancetta and egg", price: "15000", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Penne Arrabbiata", description: "Spicy tomato sauce with chili flakes", price: "12000", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Fettuccine Alfredo", description: "Creamy parmesan sauce", price: "13500", isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Margherita Pizza", description: "Tomato sauce, mozzarella, and fresh basil", price: "11.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Pepperoni Pizza", description: "Classic pepperoni with mozzarella", price: "13.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Quattro Formaggi", description: "Four cheese pizza blend", price: "15.99", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Margherita Pizza", description: "Tomato sauce, mozzarella, and fresh basil", price: "10000", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Pepperoni Pizza", description: "Classic pepperoni with mozzarella", price: "13500", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Quattro Formaggi", description: "Four cheese pizza blend", price: "16000", isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat4.id, name: "Tiramisu", description: "Classic Italian coffee dessert", price: "7.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat4.id, name: "Panna Cotta", description: "Vanilla cream dessert with berry sauce", price: "6.99", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat4.id, name: "Tiramisu", description: "Classic Italian coffee dessert", price: "8000", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat4.id, name: "Panna Cotta", description: "Vanilla cream dessert with berry sauce", price: "6500", isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "Espresso", description: "Single shot espresso", price: "2.99", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "Sparkling Water", description: "San Pellegrino 500ml", price: "3.49", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "House Wine (Glass)", description: "Red or white house selection", price: "8.99", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "Espresso", description: "Single shot espresso", price: "2500", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "Sparkling Water", description: "San Pellegrino 500ml", price: "3000", isAvailable: true });
+  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "House Wine (Glass)", description: "Red or white house selection", price: "8500", isAvailable: true });
 
   console.log("Seed data created successfully");
   console.log("Admin login: admin / admin123");

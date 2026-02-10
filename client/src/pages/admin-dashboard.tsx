@@ -47,7 +47,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Monthly Revenue",
-      value: `$${monthlyRevenue.toFixed(2)}`,
+      value: `${monthlyRevenue.toLocaleString()} IQD`,
       subtitle: "Recurring income",
       icon: DollarSign,
       color: "text-amber-600 dark:text-amber-400",
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Avg Revenue/Restaurant",
-      value: activeSubs > 0 ? `$${(monthlyRevenue / activeSubs).toFixed(2)}` : "$0.00",
+      value: activeSubs > 0 ? `${Math.round(monthlyRevenue / activeSubs).toLocaleString()} IQD` : "0 IQD",
       subtitle: "Per active subscription",
       icon: TrendingUp,
       color: "text-purple-600 dark:text-purple-400",
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium capitalize">{sub.plan} Plan</p>
-                        <p className="text-xs text-muted-foreground">${sub.pricePerMonth}/month</p>
+                        <p className="text-xs text-muted-foreground">{parseInt(sub.pricePerMonth).toLocaleString()} IQD/month</p>
                       </div>
                       <Badge variant="outline" className={statusColors[sub.status] || ""}>
                         {sub.status}

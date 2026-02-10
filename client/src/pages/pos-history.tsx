@@ -37,14 +37,14 @@ export default function PosHistory() {
     },
     {
       title: "Today's Revenue",
-      value: `$${todayRevenue.toFixed(2)}`,
+      value: `${Math.round(todayRevenue).toLocaleString()} IQD`,
       icon: DollarSign,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
     },
     {
       title: "Total Revenue",
-      value: `$${totalRevenue.toFixed(2)}`,
+      value: `${Math.round(totalRevenue).toLocaleString()} IQD`,
       icon: TrendingUp,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-50 dark:bg-purple-950/30",
@@ -145,7 +145,7 @@ export default function PosHistory() {
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">{order.paymentMethod || "-"}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-bold">${order.total}</TableCell>
+                      <TableCell className="text-right font-bold">{parseInt(order.total).toLocaleString()} IQD</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{formatDate(order.createdAt)}</TableCell>
                     </TableRow>
                   ))}

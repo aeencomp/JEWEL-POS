@@ -103,7 +103,7 @@ export default function PosOrders() {
 
                   <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-muted/50 mb-3">
                     <span className="text-sm font-medium">Total</span>
-                    <span className="font-bold">${order.total}</span>
+                    <span className="font-bold">{parseInt(order.total).toLocaleString()} IQD</span>
                   </div>
 
                   <Select
@@ -148,7 +148,7 @@ export default function PosOrders() {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">{formatTime(order.createdAt)}</p>
-                      <p className="font-bold text-sm">${order.total}</p>
+                      <p className="font-bold text-sm">{parseInt(order.total).toLocaleString()} IQD</p>
                     </div>
                   </CardContent>
                 </Card>

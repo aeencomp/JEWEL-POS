@@ -92,9 +92,9 @@ export default function AdminSubscriptions() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Basic Plan", price: "$29.99/mo", desc: "Essential POS features" },
-          { label: "Standard Plan", price: "$59.99/mo", desc: "Advanced reporting & analytics" },
-          { label: "Premium Plan", price: "$99.99/mo", desc: "Full features with priority support" },
+          { label: "Basic Plan", price: "35,000 IQD/mo", desc: "Essential POS features" },
+          { label: "Standard Plan", price: "75,000 IQD/mo", desc: "Advanced reporting & analytics" },
+          { label: "Premium Plan", price: "125,000 IQD/mo", desc: "Full features with priority support" },
         ].map((plan) => (
           <Card key={plan.label}>
             <CardContent className="p-5 text-center">
@@ -145,7 +145,7 @@ export default function AdminSubscriptions() {
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
                       <TableCell className="font-medium">{getRestaurantName(sub.restaurantId)}</TableCell>
                       <TableCell className="capitalize">{sub.plan}</TableCell>
-                      <TableCell>${sub.pricePerMonth}/mo</TableCell>
+                      <TableCell>{parseInt(sub.pricePerMonth).toLocaleString()} IQD/mo</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusColors[sub.status] || ""}>
                           {sub.status}
