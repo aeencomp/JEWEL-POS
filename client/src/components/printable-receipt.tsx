@@ -239,14 +239,6 @@ export function PrintableReceipt({ order, items, branding }: PrintableReceiptPro
       </table>
 
       <div className="totals">
-        <div className="row">
-          <span>{t("pos.subtotal")}:</span>
-          <span>{parseInt(order.subtotal).toLocaleString()} IQD</span>
-        </div>
-        <div className="row">
-          <span>{t("pos.tax")}:</span>
-          <span>{parseInt(order.tax).toLocaleString()} IQD</span>
-        </div>
         <div className="row grand-total">
           <span>{t("pos.total")}:</span>
           <span>{parseInt(order.total).toLocaleString()} IQD</span>

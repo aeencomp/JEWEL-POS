@@ -101,9 +101,7 @@ export default function PosTerminal() {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const taxRate = 0.08;
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  const total = subtotal;
 
   const filteredItems = useMemo(() => {
     let items = menuItems?.filter((item) => item.isAvailable) || [];
@@ -124,7 +122,7 @@ export default function PosTerminal() {
         tableNumber: tableNumber || null,
         customerName: customerName || null,
         subtotal: Math.round(subtotal).toString(),
-        tax: Math.round(tax).toString(),
+        tax: "0",
         total: Math.round(total).toString(),
         paymentMethod,
         items: cart.map((c) => ({
@@ -337,15 +335,6 @@ export default function PosTerminal() {
         {cart.length > 0 && (
           <div className="p-4 border-t bg-card">
             <div className="space-y-1.5 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t("pos.subtotal")}</span>
-                <span>{subtotal.toLocaleString()} IQD</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t("pos.tax")}</span>
-                <span>{tax.toLocaleString()} IQD</span>
-              </div>
-              <Separator />
               <div className="flex justify-between text-base font-bold">
                 <span>{t("pos.total")}</span>
                 <span data-testid="text-cart-total">{total.toLocaleString()} IQD</span>
@@ -434,14 +423,6 @@ export default function PosTerminal() {
               )}
 
               <div className="space-y-1.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("pos.subtotal")}</span>
-                  <span>{parseInt(lastOrder.subtotal).toLocaleString()} IQD</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("pos.tax")}</span>
-                  <span>{parseInt(lastOrder.tax).toLocaleString()} IQD</span>
-                </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-base">
                   <span>{t("pos.total")}</span>
