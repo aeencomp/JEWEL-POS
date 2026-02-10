@@ -61,6 +61,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 All API routes use `/api/` prefix.
 
 ## Recent Changes
+- Added printable receipt feature: after placing an order, receipt dialog shows item details and a "Print Receipt" button that opens a print-friendly receipt window with restaurant branding, order items table, totals, and footer
 - Added restaurant branding customization (brand color, logo URL, receipt header/footer) with /branding settings page
 - Added separate restaurant login portal at /restaurant-portal with emerald-green branding
 - Added bilingual support (English/Arabic) with RTL layout, language toggle in header and auth page

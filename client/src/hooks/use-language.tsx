@@ -163,6 +163,15 @@ type TranslationKeys = {
   "pos.done": string;
   "pos.table": string;
   "pos.payment": string;
+  "pos.printReceipt": string;
+  "pos.receipt": string;
+  "pos.orderDate": string;
+  "pos.qty": string;
+  "pos.item": string;
+  "pos.price": string;
+  "pos.amount": string;
+  "pos.thankYou": string;
+  "pos.poweredBy": string;
 
   // Menu Management
   "menu.title": string;
@@ -407,6 +416,15 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.done": "Done",
     "pos.table": "Table",
     "pos.payment": "Payment",
+    "pos.printReceipt": "Print Receipt",
+    "pos.receipt": "Receipt",
+    "pos.orderDate": "Date",
+    "pos.qty": "Qty",
+    "pos.item": "Item",
+    "pos.price": "Price",
+    "pos.amount": "Amount",
+    "pos.thankYou": "Thank you for your visit!",
+    "pos.poweredBy": "Powered by RestoPOS",
 
     "menu.title": "Menu Management",
     "menu.subtitle": "Manage your categories and menu items",
@@ -643,6 +661,15 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.done": "تم",
     "pos.table": "الطاولة",
     "pos.payment": "الدفع",
+    "pos.printReceipt": "طباعة الإيصال",
+    "pos.receipt": "إيصال",
+    "pos.orderDate": "التاريخ",
+    "pos.qty": "الكمية",
+    "pos.item": "الصنف",
+    "pos.price": "السعر",
+    "pos.amount": "المبلغ",
+    "pos.thankYou": "شكراً لزيارتكم!",
+    "pos.poweredBy": "مدعوم من RestoPOS",
 
     "menu.title": "إدارة القائمة",
     "menu.subtitle": "إدارة التصنيفات وعناصر القائمة",

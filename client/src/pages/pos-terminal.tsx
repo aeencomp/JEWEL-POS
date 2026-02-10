@@ -29,8 +29,10 @@ import {
   Receipt,
   Check,
   X,
+  Printer,
 } from "lucide-react";
-import type { MenuCategory, MenuItem, Order } from "@shared/schema";
+import type { MenuCategory, MenuItem, Order, OrderItem } from "@shared/schema";
+import { PrintableReceipt, usePrintReceipt } from "@/components/printable-receipt";
 
 type CartItem = {
   menuItemId: number;
@@ -61,6 +63,8 @@ export default function PosTerminal() {
   const [customerName, setCustomerName] = useState("");
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [lastOrderItems, setLastOrderItems] = useState<OrderItem[]>([]);
+  const { printRef, handlePrint } = usePrintReceipt();
 
   const { data: categories, isLoading: loadingCats } = useQuery<MenuCategory[]>({
     queryKey: ["/api/menu-categories"],
@@ -133,8 +137,10 @@ export default function PosTerminal() {
       const res = await apiRequest("POST", "/api/orders", orderData);
       return await res.json();
     },
-    onSuccess: (order: Order) => {
+    onSuccess: (data: Order & { items?: OrderItem[] }) => {
+      const { items: orderItems, ...order } = data;
       setLastOrder(order);
+      setLastOrderItems(orderItems || []);
       setShowReceipt(true);
       setCart([]);
       setTableNumber("");
@@ -396,6 +402,18 @@ export default function PosTerminal() {
                   {new Date(lastOrder.createdAt).toLocaleString()}
                 </p>
               </div>
+
+              {lastOrderItems.length > 0 && (
+                <div className="space-y-1">
+                  {lastOrderItems.map((item) => (
+                    <div key={item.id} className="flex justify-between text-sm gap-2">
+                      <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
+                      <span className="flex-shrink-0">{(parseInt(item.price) * item.quantity).toLocaleString()} IQD</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 {lastOrder.tableNumber && (
                   <div className="flex justify-between text-sm">
@@ -424,17 +442,38 @@ export default function PosTerminal() {
               {branding?.receiptFooter && (
                 <p className="text-xs text-center text-muted-foreground">{branding.receiptFooter}</p>
               )}
-              <Button
-                className="w-full"
-                onClick={() => setShowReceipt(false)}
-                data-testid="button-close-receipt"
-              >
-                {t("pos.done")}
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handlePrint}
+                  data-testid="button-print-receipt"
+                >
+                  <Printer className="h-4 w-4 me-2" />
+                  {t("pos.printReceipt")}
+                </Button>
+                <Button
+                  onClick={() => setShowReceipt(false)}
+                  data-testid="button-close-receipt"
+                >
+                  {t("pos.done")}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }} aria-hidden="true">
+        <div ref={printRef}>
+          {lastOrder && (
+            <PrintableReceipt
+              order={lastOrder}
+              items={lastOrderItems}
+              branding={branding}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

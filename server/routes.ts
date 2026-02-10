@@ -253,19 +253,33 @@ export async function registerRoutes(
       status: "pending",
     });
 
+    const createdItems = [];
     if (items && Array.isArray(items)) {
       for (const item of items) {
-        await storage.createOrderItem({
+        const orderItem = await storage.createOrderItem({
           orderId: order.id,
           menuItemId: item.menuItemId,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
         });
+        createdItems.push(orderItem);
       }
     }
 
-    res.status(201).json(order);
+    res.status(201).json({ ...order, items: createdItems });
+  });
+
+  app.get("/api/orders/:id/items", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const restaurantId = req.user!.restaurantId;
+    if (!restaurantId) return res.status(403).json({ message: "Forbidden" });
+    const order = await storage.getOrder(id);
+    if (!order || order.restaurantId !== restaurantId) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    const items = await storage.getOrderItems(id);
+    res.json(items);
   });
 
   app.patch("/api/orders/:id", requireAuth, async (req, res) => {
