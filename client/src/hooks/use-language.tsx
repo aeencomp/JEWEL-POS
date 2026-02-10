@@ -201,6 +201,30 @@ type TranslationKeys = {
   "history.noOrdersYet": string;
   "history.ordersAppearAfter": string;
 
+  // Auth page extra
+  "auth.restaurantQuestion": string;
+  "auth.goToRestaurant": string;
+
+  // Restaurant Portal
+  "portal.restaurantEdition": string;
+  "portal.heroTitle": string;
+  "portal.heroDesc": string;
+  "portal.featureMenu": string;
+  "portal.featureMenuDesc": string;
+  "portal.featureOrders": string;
+  "portal.featureOrdersDesc": string;
+  "portal.featureCheckout": string;
+  "portal.featureCheckoutDesc": string;
+  "portal.featureTracking": string;
+  "portal.featureTrackingDesc": string;
+  "portal.welcomeTitle": string;
+  "portal.welcomeDesc": string;
+  "portal.usernamePlaceholder": string;
+  "portal.signIn": string;
+  "portal.contactAdmin": string;
+  "portal.adminQuestion": string;
+  "portal.goToAdmin": string;
+
   // Common
   "common.notFound": string;
   "common.pageNotFound": string;
@@ -399,6 +423,28 @@ const translations: Record<Language, TranslationKeys> = {
     "history.noOrdersYet": "No orders yet",
     "history.ordersAppearAfter": "Orders will appear here after checkout",
 
+    "auth.restaurantQuestion": "Are you a restaurant?",
+    "auth.goToRestaurant": "Go to Restaurant Portal",
+
+    "portal.restaurantEdition": "Restaurant Edition",
+    "portal.heroTitle": "Your Restaurant POS System",
+    "portal.heroDesc": "Access your point-of-sale terminal, manage your menu, track orders, and view sales history — all in one place.",
+    "portal.featureMenu": "Menu Management",
+    "portal.featureMenuDesc": "Add, edit, and organize your menu items and categories",
+    "portal.featureOrders": "Order Management",
+    "portal.featureOrdersDesc": "Track incoming orders from pending to completed",
+    "portal.featureCheckout": "Fast Checkout",
+    "portal.featureCheckoutDesc": "Quick cash and card payments with instant receipts",
+    "portal.featureTracking": "Sales Tracking",
+    "portal.featureTrackingDesc": "Daily revenue reports and complete order history",
+    "portal.welcomeTitle": "Restaurant Login",
+    "portal.welcomeDesc": "Sign in to access your POS terminal and manage your restaurant",
+    "portal.usernamePlaceholder": "Your restaurant username",
+    "portal.signIn": "Access POS Terminal",
+    "portal.contactAdmin": "Credentials are provided by your platform administrator",
+    "portal.adminQuestion": "Are you a platform admin?",
+    "portal.goToAdmin": "Go to Admin Login",
+
     "common.notFound": "404 Page Not Found",
     "common.pageNotFound": "Did you forget to add the page to the router?",
     "common.admin": "admin",
@@ -593,6 +639,28 @@ const translations: Record<Language, TranslationKeys> = {
     "history.date": "التاريخ",
     "history.noOrdersYet": "لا توجد طلبات بعد",
     "history.ordersAppearAfter": "ستظهر الطلبات هنا بعد إتمام عملية الدفع",
+
+    "auth.restaurantQuestion": "هل أنت مطعم؟",
+    "auth.goToRestaurant": "الذهاب لبوابة المطعم",
+
+    "portal.restaurantEdition": "نسخة المطاعم",
+    "portal.heroTitle": "نظام نقاط البيع لمطعمك",
+    "portal.heroDesc": "ادخل إلى محطة نقاط البيع، وأدر قائمتك، وتتبع الطلبات، واعرض سجل المبيعات — كل ذلك في مكان واحد.",
+    "portal.featureMenu": "إدارة القائمة",
+    "portal.featureMenuDesc": "إضافة وتعديل وتنظيم عناصر القائمة والتصنيفات",
+    "portal.featureOrders": "إدارة الطلبات",
+    "portal.featureOrdersDesc": "تتبع الطلبات الواردة من الانتظار إلى الاكتمال",
+    "portal.featureCheckout": "دفع سريع",
+    "portal.featureCheckoutDesc": "مدفوعات نقدية وبطاقات سريعة مع إيصالات فورية",
+    "portal.featureTracking": "تتبع المبيعات",
+    "portal.featureTrackingDesc": "تقارير الإيرادات اليومية وسجل الطلبات الكامل",
+    "portal.welcomeTitle": "دخول المطعم",
+    "portal.welcomeDesc": "سجّل الدخول للوصول إلى محطة نقاط البيع وإدارة مطعمك",
+    "portal.usernamePlaceholder": "اسم مستخدم مطعمك",
+    "portal.signIn": "الدخول إلى نقاط البيع",
+    "portal.contactAdmin": "يتم توفير بيانات الدخول من قبل مدير المنصة",
+    "portal.adminQuestion": "هل أنت مدير المنصة؟",
+    "portal.goToAdmin": "الذهاب لدخول المدير",
 
     "common.notFound": "404 الصفحة غير موجودة",
     "common.pageNotFound": "هل نسيت إضافة الصفحة إلى الموجّه؟",

@@ -12,6 +12,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import RestaurantPortal from "@/pages/restaurant-portal";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminRestaurants from "@/pages/admin-restaurants";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
@@ -87,13 +88,16 @@ function AppContent() {
   }
 
   if (!user) {
-    if (location !== "/auth") {
-      return <Redirect to="/auth" />;
+    if (location === "/auth") {
+      return <AuthPage />;
     }
-    return <AuthPage />;
+    if (location === "/restaurant-portal") {
+      return <RestaurantPortal />;
+    }
+    return <Redirect to="/restaurant-portal" />;
   }
 
-  if (location === "/auth") {
+  if (location === "/auth" || location === "/restaurant-portal") {
     return <Redirect to="/" />;
   }
 

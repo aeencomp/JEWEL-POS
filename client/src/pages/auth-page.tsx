@@ -12,6 +12,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Link } from "wouter";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -63,8 +65,9 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex">
       <div className="flex-1 flex items-center justify-center p-6 bg-background relative">
-        <div className="absolute top-4 end-4">
+        <div className="absolute top-4 end-4 flex items-center gap-1">
           <LanguageToggle />
+          <ThemeToggle />
         </div>
         <div className="w-full max-w-sm">
           <div className="mb-8">
@@ -195,6 +198,15 @@ export default function AuthPage() {
                 ? t("auth.alreadyHaveAccount")
                 : t("auth.dontHaveAccount")}
             </button>
+          </div>
+
+          <div className="mt-8 pt-6 border-t text-center">
+            <p className="text-sm text-muted-foreground mb-2">{t("auth.restaurantQuestion")}</p>
+            <Link href="/restaurant-portal">
+              <Button variant="outline" size="sm" data-testid="link-restaurant-portal">
+                {t("auth.goToRestaurant")}
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

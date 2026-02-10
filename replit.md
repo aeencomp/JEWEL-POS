@@ -47,9 +47,12 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 - Restaurant (Bella Italia): `bellaitalia` / `bella123`
 
 ## Routing Architecture
+- Two separate login portals:
+  - `/restaurant-portal` — Restaurant staff login (default for unauthenticated users), emerald-green branding
+  - `/auth` — Admin/platform owner login, blue/primary branding with registration
 - Auth state + URL coordinated in `AppContent` component (client/src/App.tsx)
-- When not logged in: renders AuthPage at `/auth`, redirects all other URLs to `/auth`
-- When logged in: renders MainLayout, redirects `/auth` to `/`
+- When not logged in: renders respective auth page, defaults to `/restaurant-portal`
+- When logged in: renders MainLayout, redirects auth pages to `/`
 - MainLayout renders role-based routers (AdminRouter / RestaurantRouter) inside sidebar layout
 - No nested `<Route>` wrapping — avoids wouter path stripping issues
 
@@ -57,6 +60,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 All API routes use `/api/` prefix.
 
 ## Recent Changes
+- Added separate restaurant login portal at /restaurant-portal with emerald-green branding
 - Added bilingual support (English/Arabic) with RTL layout, language toggle in header and auth page
 - Converted currency from USD to IQD (Iraqi Dinar) across all displays, seed data, and database
 - Fixed blank page / 404 after login by rewriting App.tsx routing
