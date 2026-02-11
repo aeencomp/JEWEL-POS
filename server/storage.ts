@@ -14,7 +14,7 @@ import {
   type LayawayPayment, type InsertLayawayPayment,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { pool } from "./db";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -31,6 +31,7 @@ export interface IStorage {
   getStore(id: number): Promise<Store | undefined>;
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: number, data: Partial<InsertStore>): Promise<Store | undefined>;
+  deleteStore(id: number): Promise<void>;
 
   getSubscriptions(): Promise<Subscription[]>;
   getSubscription(id: number): Promise<Subscription | undefined>;
@@ -112,6 +113,24 @@ export class DatabaseStorage implements IStorage {
   async updateStore(id: number, data: Partial<InsertStore>): Promise<Store | undefined> {
     const [updated] = await db.update(stores).set(data).where(eq(stores.id, id)).returning();
     return updated || undefined;
+  }
+
+  async deleteStore(id: number): Promise<void> {
+    await db.delete(layawayPayments).where(
+      inArray(layawayPayments.layawayId, db.select({ id: layawayPlans.id }).from(layawayPlans).where(eq(layawayPlans.storeId, id)))
+    );
+    await db.delete(layawayPlans).where(eq(layawayPlans.storeId, id));
+    await db.delete(orderItems).where(
+      inArray(orderItems.orderId, db.select({ id: orders.id }).from(orders).where(eq(orders.storeId, id)))
+    );
+    await db.delete(orders).where(eq(orders.storeId, id));
+    await db.delete(repairOrders).where(eq(repairOrders.storeId, id));
+    await db.delete(customers).where(eq(customers.storeId, id));
+    await db.delete(inventoryItems).where(eq(inventoryItems.storeId, id));
+    await db.delete(categories).where(eq(categories.storeId, id));
+    await db.delete(subscriptions).where(eq(subscriptions.storeId, id));
+    await db.delete(users).where(eq(users.storeId, id));
+    await db.delete(stores).where(eq(stores.id, id));
   }
 
   async getSubscriptions(): Promise<Subscription[]> {

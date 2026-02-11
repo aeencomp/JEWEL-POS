@@ -42,6 +42,7 @@ type TranslationKeys = {
   "admin.status": string;
   "admin.actions": string;
   "admin.addStore": string;
+  "admin.deleteStoreConfirm": string;
   "admin.editStore": string;
   "admin.phone": string;
   "admin.email": string;
@@ -245,6 +246,7 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.status": "Status",
     "admin.actions": "Actions",
     "admin.addStore": "Add Store",
+    "admin.deleteStoreConfirm": "This will permanently delete this store and all its data including inventory, orders, customers, repairs, and layaway plans. This action cannot be undone.",
     "admin.editStore": "Edit Store",
     "admin.phone": "Phone",
     "admin.email": "Email",
@@ -446,6 +448,7 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.status": "الحالة",
     "admin.actions": "الإجراءات",
     "admin.addStore": "إضافة متجر",
+    "admin.deleteStoreConfirm": "سيؤدي هذا إلى حذف المتجر نهائياً وجميع بياناته بما في ذلك المخزون والطلبات والعملاء والإصلاحات وخطط التقسيط. لا يمكن التراجع عن هذا الإجراء.",
     "admin.editStore": "تعديل المتجر",
     "admin.phone": "الهاتف",
     "admin.email": "البريد الإلكتروني",

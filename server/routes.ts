@@ -93,6 +93,14 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.delete("/api/stores/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const store = await storage.getStore(id);
+    if (!store) return res.status(404).json({ message: "Store not found" });
+    await storage.deleteStore(id);
+    res.sendStatus(200);
+  });
+
   app.get("/api/subscriptions", requireAdmin, async (req, res) => {
     const subs = await storage.getSubscriptions();
     res.json(subs);

@@ -7,10 +7,22 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -49,6 +61,7 @@ import {
   MapPin,
   Power,
   PowerOff,
+  Trash2,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
@@ -69,6 +82,7 @@ export default function AdminStores() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
 
   const { data: stores, isLoading } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
@@ -116,6 +130,25 @@ export default function AdminStores() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/stores/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      setDeleteTarget(null);
+      toast({ title: t("common.delete") });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("common.delete"),
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -405,36 +438,70 @@ export default function AdminStores() {
                   )}
                 </div>
 
-                <Button
-                  variant={store.isActive ? "outline" : "default"}
-                  className="w-full"
-                  size="sm"
-                  onClick={() =>
-                    toggleMutation.mutate({
-                      id: store.id,
-                      isActive: !store.isActive,
-                    })
-                  }
-                  disabled={toggleMutation.isPending}
-                  data-testid={`button-toggle-${store.id}`}
-                >
-                  {store.isActive ? (
-                    <>
-                      <PowerOff className="h-3 w-3 me-2" />
-                      {t("common.inactive")}
-                    </>
-                  ) : (
-                    <>
-                      <Power className="h-3 w-3 me-2" />
-                      {t("common.active")}
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={store.isActive ? "outline" : "default"}
+                    className="flex-1"
+                    size="sm"
+                    onClick={() =>
+                      toggleMutation.mutate({
+                        id: store.id,
+                        isActive: !store.isActive,
+                      })
+                    }
+                    disabled={toggleMutation.isPending}
+                    data-testid={`button-toggle-${store.id}`}
+                  >
+                    {store.isActive ? (
+                      <>
+                        <PowerOff className="h-3 w-3 me-2" />
+                        {t("common.inactive")}
+                      </>
+                    ) : (
+                      <>
+                        <Power className="h-3 w-3 me-2" />
+                        {t("common.active")}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="text-destructive flex-shrink-0"
+                    onClick={() => setDeleteTarget(store)}
+                    data-testid={`button-delete-store-${store.id}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.delete")} - {deleteTarget?.name}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("admin.deleteStoreConfirm")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground border-destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
