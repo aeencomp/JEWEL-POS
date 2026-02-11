@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,12 +22,14 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
-import { CreditCard, RefreshCcw, Loader2 } from "lucide-react";
+import { CreditCard, RefreshCcw, Loader2, Check } from "lucide-react";
 import type { Store, Subscription } from "@shared/schema";
 
 export default function AdminSubscriptions() {
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const [editingPrice, setEditingPrice] = useState<number | null>(null);
+  const [priceValue, setPriceValue] = useState("");
 
   const { data: stores, isLoading: loadingStores } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
@@ -42,6 +46,25 @@ export default function AdminSubscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      toast({ title: t("admin.subscriptions") });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("admin.subscriptions"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const priceMutation = useMutation({
+    mutationFn: async ({ id, pricePerMonth }: { id: number; pricePerMonth: string }) => {
+      const res = await apiRequest("PATCH", `/api/subscriptions/${id}`, { pricePerMonth });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      setEditingPrice(null);
       toast({ title: t("admin.subscriptions") });
     },
     onError: (error: Error) => {
@@ -157,8 +180,51 @@ export default function AdminSubscriptions() {
                           </Badge>
                         </TableCell>
                         <TableCell data-testid={`text-sub-price-${sub.id}`}>
-                          {parseInt(sub.pricePerMonth).toLocaleString()}{" "}
-                          {t("common.currency")}
+                          {editingPrice === sub.id ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                value={priceValue}
+                                onChange={(e) => setPriceValue(e.target.value)}
+                                className="w-28"
+                                data-testid={`input-price-${sub.id}`}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && priceValue) {
+                                    priceMutation.mutate({ id: sub.id, pricePerMonth: priceValue });
+                                  }
+                                  if (e.key === "Escape") setEditingPrice(null);
+                                }}
+                                autoFocus
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (priceValue) priceMutation.mutate({ id: sub.id, pricePerMonth: priceValue });
+                                }}
+                                disabled={priceMutation.isPending || !priceValue}
+                                data-testid={`button-save-price-${sub.id}`}
+                              >
+                                {priceMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Check className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              className="hover:underline cursor-pointer text-start"
+                              onClick={() => {
+                                setEditingPrice(sub.id);
+                                setPriceValue(parseInt(sub.pricePerMonth).toString());
+                              }}
+                              data-testid={`button-edit-price-${sub.id}`}
+                            >
+                              {parseInt(sub.pricePerMonth).toLocaleString()}{" "}
+                              {t("common.currency")}
+                            </button>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge
