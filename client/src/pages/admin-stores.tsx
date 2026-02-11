@@ -62,6 +62,7 @@ import {
   Power,
   PowerOff,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
@@ -78,10 +79,21 @@ const createStoreSchema = z.object({
 
 type CreateStoreValues = z.infer<typeof createStoreSchema>;
 
+const editStoreSchema = z.object({
+  name: z.string().min(1, "Store name is required"),
+  ownerName: z.string().min(1, "Owner name is required"),
+  phone: z.string().min(1, "Phone is required"),
+  email: z.string().email("Invalid email").or(z.literal("")).optional(),
+  address: z.string().optional(),
+});
+
+type EditStoreValues = z.infer<typeof editStoreSchema>;
+
 export default function AdminStores() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [editStore, setEditStore] = useState<Store | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
 
   const { data: stores, isLoading } = useQuery<Store[]>({
@@ -122,6 +134,47 @@ export default function AdminStores() {
       });
     },
   });
+
+  const editForm = useForm<EditStoreValues>({
+    resolver: zodResolver(editStoreSchema),
+    defaultValues: {
+      name: "",
+      ownerName: "",
+      phone: "",
+      email: "",
+      address: "",
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, values }: { id: number; values: EditStoreValues }) => {
+      const res = await apiRequest("PATCH", `/api/stores/${id}`, values);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      setEditStore(null);
+      toast({ title: t("admin.editStore") });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("admin.editStore"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const openEditDialog = (store: Store) => {
+    editForm.reset({
+      name: store.name,
+      ownerName: store.ownerName,
+      phone: store.phone || "",
+      email: store.email || "",
+      address: store.address || "",
+    });
+    setEditStore(store);
+  };
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
@@ -467,6 +520,15 @@ export default function AdminStores() {
                   <Button
                     variant="outline"
                     size="icon"
+                    className="flex-shrink-0"
+                    onClick={() => openEditDialog(store)}
+                    data-testid={`button-edit-store-${store.id}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
                     className="text-destructive flex-shrink-0"
                     onClick={() => setDeleteTarget(store)}
                     data-testid={`button-delete-store-${store.id}`}
@@ -479,6 +541,132 @@ export default function AdminStores() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!editStore} onOpenChange={(v) => !v && setEditStore(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("admin.editStore")}</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit((v) =>
+                editStore && editMutation.mutate({ id: editStore.id, values: v })
+              )}
+              className="space-y-4 mt-2"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("admin.storeName")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("admin.storeName")}
+                          data-testid="input-edit-store-name"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="ownerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("admin.owner")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("admin.owner")}
+                          data-testid="input-edit-owner-name"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("admin.phone")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+964 xxx xxx xxxx"
+                          data-testid="input-edit-phone"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("admin.email")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="email@example.com"
+                          data-testid="input-edit-email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={editForm.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.address")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("admin.address")}
+                        data-testid="input-edit-address"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditStore(null)}
+                  data-testid="button-cancel-edit"
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editMutation.isPending}
+                  data-testid="button-save-edit"
+                >
+                  {editMutation.isPending && (
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  )}
+                  {t("common.save")}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
