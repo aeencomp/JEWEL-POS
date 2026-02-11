@@ -201,8 +201,17 @@ export async function registerRoutes(
   app.post("/api/inventory", requireAuth, async (req, res) => {
     const storeId = req.user!.storeId;
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const body = { ...req.body };
+    if (body.weightGrams === "" || body.weightGrams === undefined) body.weightGrams = null;
+    if (body.caratWeight === "" || body.caratWeight === undefined) body.caratWeight = null;
+    if (body.costPrice === "") body.costPrice = "0";
+    if (body.sellingPrice === "") body.sellingPrice = "0";
+    if (body.description === "") body.description = null;
+    if (body.purity === "") body.purity = null;
+    if (body.gemstone === "") body.gemstone = null;
+    if (body.imageUrl === "") body.imageUrl = null;
     const item = await storage.createInventoryItem({
-      ...req.body,
+      ...body,
       storeId,
     });
     res.status(201).json(item);
@@ -214,7 +223,14 @@ export async function registerRoutes(
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const items = await storage.getInventoryItems(storeId);
     if (!items.find((i) => i.id === id)) return res.status(404).json({ message: "Item not found" });
-    const updated = await storage.updateInventoryItem(id, req.body);
+    const body = { ...req.body };
+    if (body.weightGrams === "") body.weightGrams = null;
+    if (body.caratWeight === "") body.caratWeight = null;
+    if (body.description === "") body.description = null;
+    if (body.purity === "") body.purity = null;
+    if (body.gemstone === "") body.gemstone = null;
+    if (body.imageUrl === "") body.imageUrl = null;
+    const updated = await storage.updateInventoryItem(id, body);
     res.json(updated);
   });
 
