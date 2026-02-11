@@ -22,7 +22,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
-import { CreditCard, RefreshCcw, Loader2, Check } from "lucide-react";
+import { CreditCard, RefreshCcw, Loader2, Check, Pencil } from "lucide-react";
 import type { Store, Subscription } from "@shared/schema";
 
 export default function AdminSubscriptions() {
@@ -214,7 +214,7 @@ export default function AdminSubscriptions() {
                             </div>
                           ) : (
                             <button
-                              className="hover:underline cursor-pointer text-start"
+                              className="flex items-center gap-1.5 hover:underline cursor-pointer text-start group"
                               onClick={() => {
                                 setEditingPrice(sub.id);
                                 setPriceValue(parseInt(sub.pricePerMonth).toString());
@@ -223,6 +223,7 @@ export default function AdminSubscriptions() {
                             >
                               {parseInt(sub.pricePerMonth).toLocaleString()}{" "}
                               {t("common.currency")}
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
                             </button>
                           )}
                         </TableCell>
