@@ -46,7 +46,7 @@ export default function AuthPage() {
   }
 
   const onLogin = (values: LoginValues) => {
-    loginMutation.mutate(values);
+    loginMutation.mutate({ ...values, portal: "admin" });
   };
 
   const onRegister = (values: RegisterValues) => {

@@ -77,8 +77,24 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    const portal = req.body.portal;
+    passport.authenticate("local", (err: any, user: any) => {
+      if (err) return next(err);
+      if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+      if (portal === "store" && user.role !== "store") {
+        return res.status(403).json({ message: "This login is for store staff only. Please use the admin portal." });
+      }
+      if (portal === "admin" && user.role !== "admin") {
+        return res.status(403).json({ message: "This login is for administrators only. Please use the store portal." });
+      }
+
+      req.login(user, (loginErr) => {
+        if (loginErr) return next(loginErr);
+        res.status(200).json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {

@@ -17,7 +17,7 @@ type AuthContextType = {
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
+type LoginData = Pick<InsertUser, "username" | "password"> & { portal?: string };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
