@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/form";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Link } from "wouter";
 import { Gem, Lock, User, Loader2, ShoppingCart, Package, Wrench, CreditCard } from "lucide-react";
 
 const loginSchema = z.object({
@@ -121,15 +120,6 @@ export default function StorePortal() {
               </Button>
             </form>
           </Form>
-
-          <div className="mt-8 pt-6 border-t text-center">
-            <p className="text-sm text-muted-foreground mb-2">{t("auth.adminPortal")}</p>
-            <Link href="/auth">
-              <Button variant="outline" size="sm" data-testid="link-admin-portal">
-                {t("auth.adminPortal")}
-              </Button>
-            </Link>
-          </div>
         </div>
       </div>
 
