@@ -1,7 +1,7 @@
-# RestoPOS - Restaurant POS SaaS Platform
+# JewelPOS - Jewelry Store POS SaaS Platform
 
 ## Overview
-A multi-tenant restaurant Point of Sale (POS) system with subscription management. Platform admin manages restaurant accounts and billing, while restaurants use the POS for menu management, order taking, and checkout. Bilingual (English/Arabic) with full RTL support.
+A multi-tenant jewelry Point of Sale (POS) system with subscription management. Platform admin manages store accounts and billing, while jewelry stores use the POS for inventory management, sales, repair orders, layaway plans, and checkout. Bilingual (English/Arabic) with full RTL support.
 
 ## Architecture
 - **Frontend**: React + TypeScript + Vite + TailwindCSS + shadcn/ui
@@ -12,16 +12,19 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 - **i18n**: Custom context-based translation system (use-language.tsx)
 
 ## User Roles
-- **Admin**: Platform owner who manages restaurants and subscriptions
-- **Restaurant**: Restaurant staff who use the POS system
+- **Admin**: Platform owner who manages stores and subscriptions
+- **Store**: Jewelry store staff who use the POS system
 
 ## Key Features
 - Admin dashboard with revenue stats
-- Restaurant account management with subscription plans (Basic 35,000 IQD, Standard 75,000 IQD, Premium 125,000 IQD)
-- Full POS terminal with cart, order placement, and receipts
-- Menu management (categories + items)
-- Order tracking and history
-- Restaurant branding customization (brand color, logo, receipt header/footer)
+- Store account management with subscription plans (Basic 35,000 IQD, Standard 75,000 IQD, Premium 125,000 IQD)
+- Full POS terminal with cart, customer selection, order placement, and receipts
+- Inventory management (categories + items with metal type, purity, weight, gemstone, carat weight)
+- Customer database with purchase history
+- Repair order tracking (received, in progress, ready, delivered)
+- Layaway plans with installment payments
+- Order history and tracking
+- Store branding customization (brand color, logo, receipt header/footer)
 - Bilingual support (English/Arabic) with RTL layout switching
 - Currency: Iraqi Dinar (IQD) - stored as whole numbers
 
@@ -34,7 +37,7 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 - All page components use `t("key")` function for translated strings
 
 ## Project Structure
-- `client/src/pages/` - All page components (admin-*, pos-*)
+- `client/src/pages/` - All page components (admin-*, pos-*, store-*)
 - `client/src/components/` - Reusable components (sidebar, theme, language-toggle)
 - `client/src/hooks/` - Custom hooks (use-auth, use-language, use-toast)
 - `server/routes.ts` - API endpoints
@@ -43,28 +46,51 @@ A multi-tenant restaurant Point of Sale (POS) system with subscription managemen
 - `server/seed.ts` - Initial seed data
 - `shared/schema.ts` - Drizzle models + Zod schemas
 
+## Database Tables
+- `users` - Admin and store staff accounts
+- `stores` - Jewelry store entities
+- `subscriptions` - Store subscription plans
+- `categories` - Inventory categories (Rings, Necklaces, etc.)
+- `inventory_items` - Jewelry items with metal/gemstone details
+- `customers` - Store customer database
+- `orders` / `order_items` - Sales transactions
+- `repair_orders` - Repair service tracking
+- `layaway_plans` / `layaway_payments` - Layaway installment system
+
 ## Seed Credentials
 - Admin: `admin` / `admin123`
-- Restaurant (Bella Italia): `bellaitalia` / `bella123`
+- Store (Al-Noor Jewelers): `alnoor` / `alnoor123`
 
 ## Routing Architecture
 - Two separate login portals:
-  - `/restaurant-portal` — Restaurant staff login (default for unauthenticated users), emerald-green branding
-  - `/auth` — Admin/platform owner login, blue/primary branding with registration
+  - `/store-portal` — Store staff login (default for unauthenticated users), amber/gold branding
+  - `/auth` — Admin/platform owner login, primary branding with registration
 - Auth state + URL coordinated in `AppContent` component (client/src/App.tsx)
-- When not logged in: renders respective auth page, defaults to `/restaurant-portal`
+- When not logged in: renders respective auth page, defaults to `/store-portal`
 - When logged in: renders MainLayout, redirects auth pages to `/`
-- MainLayout renders role-based routers (AdminRouter / RestaurantRouter) inside sidebar layout
-- No nested `<Route>` wrapping — avoids wouter path stripping issues
+- MainLayout renders role-based routers (AdminRouter / StoreRouter) inside sidebar layout
+
+## Store-side Pages
+- `/` - POS Terminal (sales checkout)
+- `/inventory` - Inventory management with categories
+- `/customers` - Customer database
+- `/orders` - Order history
+- `/repairs` - Repair order management
+- `/layaway` - Layaway plan management
+- `/branding` - Store branding settings
+
+## Admin-side Pages
+- `/` - Dashboard with stats
+- `/restaurants` - Store management (route path kept for compatibility)
+- `/subscriptions` - Subscription management
 
 ## API Prefix
 All API routes use `/api/` prefix.
 
 ## Recent Changes
-- Added printable receipt feature: after placing an order, receipt dialog shows item details and a "Print Receipt" button that opens a print-friendly receipt window with restaurant branding, order items table, totals, and footer
-- Added restaurant branding customization (brand color, logo URL, receipt header/footer) with /branding settings page
-- Added separate restaurant login portal at /restaurant-portal with emerald-green branding
-- Added bilingual support (English/Arabic) with RTL layout, language toggle in header and auth page
-- Converted currency from USD to IQD (Iraqi Dinar) across all displays, seed data, and database
-- Fixed blank page / 404 after login by rewriting App.tsx routing
-- Security: Registration forces admin role, all CRUD endpoints verify tenant ownership
+- Completely rebuilt from RestoPOS to JewelPOS (jewelry store POS)
+- New database schema with jewelry-specific fields (metal type, purity, weight, gemstone, carat weight)
+- Added customer database, repair orders, and layaway system
+- Separate store login portal at /store-portal with amber/gold branding
+- Bilingual support (English/Arabic) with full jewelry-specific translations
+- Currency: Iraqi Dinar (IQD) across all displays and database

@@ -20,13 +20,15 @@ import {
   LayoutDashboard,
   Store,
   CreditCard,
-  UtensilsCrossed,
+  ShoppingCart,
+  Package,
+  Users,
   ClipboardList,
-  History,
-  LogOut,
-  Settings,
-  ChefHat,
+  Wrench,
+  Clock,
   Palette,
+  LogOut,
+  Gem,
 } from "lucide-react";
 
 type BrandingData = {
@@ -45,25 +47,27 @@ export function AppSidebar() {
   const isAdmin = user?.role === "admin";
 
   const { data: branding } = useQuery<BrandingData>({
-    queryKey: ["/api/restaurant/branding"],
-    enabled: !isAdmin && !!user?.restaurantId,
+    queryKey: ["/api/store/branding"],
+    enabled: !isAdmin && !!user?.storeId,
   });
 
   const adminItems = [
-    { title: t("sidebar.dashboard"), url: "/", icon: LayoutDashboard },
-    { title: t("sidebar.restaurants"), url: "/restaurants", icon: Store },
-    { title: t("sidebar.subscriptions"), url: "/subscriptions", icon: CreditCard },
+    { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
+    { title: t("nav.stores"), url: "/restaurants", icon: Store },
+    { title: t("nav.subscriptions"), url: "/subscriptions", icon: CreditCard },
   ];
 
-  const restaurantItems = [
-    { title: t("sidebar.posTerminal"), url: "/", icon: UtensilsCrossed },
-    { title: t("sidebar.menu"), url: "/menu", icon: ChefHat },
-    { title: t("sidebar.orders"), url: "/orders", icon: ClipboardList },
-    { title: t("sidebar.history"), url: "/history", icon: History },
-    { title: t("sidebar.branding"), url: "/branding", icon: Palette },
+  const storeItems = [
+    { title: t("nav.pos"), url: "/", icon: ShoppingCart },
+    { title: t("nav.inventory"), url: "/inventory", icon: Package },
+    { title: t("nav.customers"), url: "/customers", icon: Users },
+    { title: t("nav.orders"), url: "/orders", icon: ClipboardList },
+    { title: t("nav.repairs"), url: "/repairs", icon: Wrench },
+    { title: t("nav.layaway"), url: "/layaway", icon: Clock },
+    { title: t("nav.branding"), url: "/branding", icon: Palette },
   ];
 
-  const items = isAdmin ? adminItems : restaurantItems;
+  const items = isAdmin ? adminItems : storeItems;
 
   return (
     <Sidebar>
@@ -81,15 +85,15 @@ export function AppSidebar() {
               className="w-8 h-8 rounded-md flex items-center justify-center"
               style={!isAdmin && branding?.brandColor ? { backgroundColor: branding.brandColor } : { backgroundColor: "hsl(var(--primary))" }}
             >
-              <UtensilsCrossed className="h-4 w-4 text-white" />
+              <Gem className="h-4 w-4 text-white" />
             </div>
           )}
           <div>
             <span className="font-semibold text-sm" data-testid="text-app-name">
-              {!isAdmin && branding?.name ? branding.name : "RestoPOS"}
+              {!isAdmin && branding?.name ? branding.name : "JewelPOS"}
             </span>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? t("sidebar.adminPanel") : t("sidebar.restaurantPOS")}
+              {isAdmin ? t("auth.adminPortal") : t("auth.storePortal")}
             </p>
           </div>
         </div>
@@ -97,7 +101,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isAdmin ? t("sidebar.management") : t("sidebar.pointOfSale")}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isAdmin ? t("nav.dashboard") : t("nav.pos")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -130,7 +134,7 @@ export function AppSidebar() {
               {user?.username}
             </p>
             <p className="text-xs text-muted-foreground">
-              {user?.role === "admin" ? t("common.admin") : t("common.restaurant")}
+              {isAdmin ? t("auth.adminPortal") : t("auth.storePortal")}
             </p>
           </div>
           <Button

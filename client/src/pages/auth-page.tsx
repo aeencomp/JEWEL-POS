@@ -3,10 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { Redirect } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, UtensilsCrossed, Shield, BarChart3, Clock } from "lucide-react";
+import { Loader2, Gem, Shield, BarChart3, Clock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,15 +50,8 @@ export default function AuthPage() {
   };
 
   const onRegister = (values: RegisterValues) => {
-    registerMutation.mutate({ ...values, role: "admin", restaurantId: null });
+    registerMutation.mutate({ ...values, role: "admin", storeId: null });
   };
-
-  const features = [
-    { icon: UtensilsCrossed, title: t("auth.featurePOS"), desc: t("auth.featurePOSDesc") },
-    { icon: Shield, title: t("auth.featureSubscription"), desc: t("auth.featureSubscriptionDesc") },
-    { icon: BarChart3, title: t("auth.featureRevenue"), desc: t("auth.featureRevenueDesc") },
-    { icon: Clock, title: t("auth.featureHistory"), desc: t("auth.featureHistoryDesc") },
-  ];
 
   return (
     <div className="min-h-screen flex">
@@ -73,17 +64,17 @@ export default function AuthPage() {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                <UtensilsCrossed className="h-4 w-4 text-primary-foreground" />
+                <Gem className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-semibold text-lg">RestoPOS</span>
+              <span className="font-semibold text-lg">JewelPOS</span>
             </div>
             <h1 className="text-2xl font-bold mt-4" data-testid="text-auth-title">
-              {isRegister ? t("auth.createAccount") : t("auth.welcomeBack")}
+              {isRegister ? t("auth.register") : t("auth.adminLoginTitle")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {isRegister
-                ? t("auth.getStarted")
-                : t("auth.signInContinue")}
+                ? t("auth.adminLoginSubtitle")
+                : t("auth.adminLoginSubtitle")}
             </p>
           </div>
 
@@ -98,7 +89,7 @@ export default function AuthPage() {
                       <FormLabel>{t("auth.username")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("auth.enterUsername")}
+                          placeholder={t("auth.username")}
                           data-testid="input-login-username"
                           {...field}
                         />
@@ -116,7 +107,7 @@ export default function AuthPage() {
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder={t("auth.enterPassword")}
+                          placeholder={t("auth.password")}
                           data-testid="input-login-password"
                           {...field}
                         />
@@ -132,7 +123,7 @@ export default function AuthPage() {
                   data-testid="button-login"
                 >
                   {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t("auth.signIn")}
+                  {t("auth.loginButton")}
                 </Button>
               </form>
             </Form>
@@ -147,7 +138,7 @@ export default function AuthPage() {
                       <FormLabel>{t("auth.username")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("auth.chooseUsername")}
+                          placeholder={t("auth.username")}
                           data-testid="input-register-username"
                           {...field}
                         />
@@ -165,7 +156,7 @@ export default function AuthPage() {
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder={t("auth.createPassword")}
+                          placeholder={t("auth.password")}
                           data-testid="input-register-password"
                           {...field}
                         />
@@ -181,7 +172,7 @@ export default function AuthPage() {
                   data-testid="button-register"
                 >
                   {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t("auth.createAccountBtn")}
+                  {t("auth.registerButton")}
                 </Button>
               </form>
             </Form>
@@ -194,17 +185,15 @@ export default function AuthPage() {
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               data-testid="button-toggle-auth"
             >
-              {isRegister
-                ? t("auth.alreadyHaveAccount")
-                : t("auth.dontHaveAccount")}
+              {isRegister ? t("auth.hasAccount") : t("auth.noAccount")}
             </button>
           </div>
 
           <div className="mt-8 pt-6 border-t text-center">
-            <p className="text-sm text-muted-foreground mb-2">{t("auth.restaurantQuestion")}</p>
-            <Link href="/restaurant-portal">
-              <Button variant="outline" size="sm" data-testid="link-restaurant-portal">
-                {t("auth.goToRestaurant")}
+            <p className="text-sm text-muted-foreground mb-2">{t("auth.storePortal")}</p>
+            <Link href="/store-portal">
+              <Button variant="outline" size="sm" data-testid="link-store-portal">
+                {t("auth.storePortal")}
               </Button>
             </Link>
           </div>
@@ -215,23 +204,39 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
         <div className="relative z-10 max-w-md text-primary-foreground">
           <h2 className="text-3xl font-bold mb-3">
-            {t("auth.platformTitle")}
+            JewelPOS
           </h2>
           <p className="text-primary-foreground/80 mb-10 text-sm leading-relaxed">
-            {t("auth.platformDesc")}
+            {t("auth.adminLoginSubtitle")}
           </p>
           <div className="space-y-5">
-            {features.map((feature) => (
-              <div key={feature.title} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-md bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
-                  <feature.icon className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">{feature.title}</h3>
-                  <p className="text-primary-foreground/70 text-xs mt-0.5">{feature.desc}</p>
-                </div>
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-md bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
+                <Gem className="h-5 w-5 text-primary-foreground" />
               </div>
-            ))}
+              <div>
+                <h3 className="font-semibold text-sm">{t("pos.terminal")}</h3>
+                <p className="text-primary-foreground/70 text-xs mt-0.5">{t("auth.adminLoginSubtitle")}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-md bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
+                <Shield className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">{t("admin.subscriptions")}</h3>
+                <p className="text-primary-foreground/70 text-xs mt-0.5">{t("admin.subscriptions")}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-md bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">{t("admin.revenue")}</h3>
+                <p className="text-primary-foreground/70 text-xs mt-0.5">{t("admin.revenue")}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

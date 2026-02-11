@@ -12,36 +12,40 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
-import RestaurantPortal from "@/pages/restaurant-portal";
+import StorePortal from "@/pages/store-portal";
 import AdminDashboard from "@/pages/admin-dashboard";
-import AdminRestaurants from "@/pages/admin-restaurants";
+import AdminStores from "@/pages/admin-stores";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import PosTerminal from "@/pages/pos-terminal";
-import PosMenu from "@/pages/pos-menu";
-import PosOrders from "@/pages/pos-orders";
-import PosHistory from "@/pages/pos-history";
-import PosBranding from "@/pages/pos-branding";
+import InventoryManagement from "@/pages/inventory-management";
+import CustomersPage from "@/pages/customers-page";
+import OrdersHistory from "@/pages/orders-history";
+import RepairOrders from "@/pages/repair-orders";
+import LayawayPage from "@/pages/layaway-page";
+import StoreBranding from "@/pages/store-branding";
 import { Loader2 } from "lucide-react";
 
 function AdminRouter() {
   return (
     <Switch>
       <Route path="/" component={AdminDashboard} />
-      <Route path="/restaurants" component={AdminRestaurants} />
+      <Route path="/restaurants" component={AdminStores} />
       <Route path="/subscriptions" component={AdminSubscriptions} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function RestaurantRouter() {
+function StoreRouter() {
   return (
     <Switch>
       <Route path="/" component={PosTerminal} />
-      <Route path="/menu" component={PosMenu} />
-      <Route path="/orders" component={PosOrders} />
-      <Route path="/history" component={PosHistory} />
-      <Route path="/branding" component={PosBranding} />
+      <Route path="/inventory" component={InventoryManagement} />
+      <Route path="/customers" component={CustomersPage} />
+      <Route path="/orders" component={OrdersHistory} />
+      <Route path="/repairs" component={RepairOrders} />
+      <Route path="/layaway" component={LayawayPage} />
+      <Route path="/branding" component={StoreBranding} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -69,7 +73,7 @@ function MainLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            {isAdmin ? <AdminRouter /> : <RestaurantRouter />}
+            {isAdmin ? <AdminRouter /> : <StoreRouter />}
           </main>
         </div>
       </div>
@@ -93,13 +97,13 @@ function AppContent() {
     if (location === "/auth") {
       return <AuthPage />;
     }
-    if (location === "/restaurant-portal") {
-      return <RestaurantPortal />;
+    if (location === "/store-portal") {
+      return <StorePortal />;
     }
-    return <Redirect to="/restaurant-portal" />;
+    return <Redirect to="/store-portal" />;
   }
 
-  if (location === "/auth" || location === "/restaurant-portal") {
+  if (location === "/auth" || location === "/store-portal") {
     return <Redirect to="/" />;
   }
 
