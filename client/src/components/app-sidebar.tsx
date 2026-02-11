@@ -40,15 +40,16 @@ type BrandingData = {
 };
 
 export function AppSidebar() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logoutMutation, isImpersonating } = useAuth();
   const { t } = useLanguage();
   const [location] = useLocation();
 
   const isAdmin = user?.role === "admin";
+  const showStoreNav = !isAdmin || isImpersonating;
 
   const { data: branding } = useQuery<BrandingData>({
     queryKey: ["/api/store/branding"],
-    enabled: !isAdmin && !!user?.storeId,
+    enabled: showStoreNav,
   });
 
   const adminItems = [
@@ -67,13 +68,13 @@ export function AppSidebar() {
     { title: t("nav.branding"), url: "/branding", icon: Palette },
   ];
 
-  const items = isAdmin ? adminItems : storeItems;
+  const items = showStoreNav ? storeItems : adminItems;
 
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          {!isAdmin && branding?.logoUrl ? (
+          {showStoreNav && branding?.logoUrl ? (
             <img
               src={branding.logoUrl}
               alt=""
@@ -83,17 +84,17 @@ export function AppSidebar() {
           ) : (
             <div
               className="w-8 h-8 rounded-md flex items-center justify-center"
-              style={!isAdmin && branding?.brandColor ? { backgroundColor: branding.brandColor } : { backgroundColor: "hsl(var(--primary))" }}
+              style={showStoreNav && branding?.brandColor ? { backgroundColor: branding.brandColor } : { backgroundColor: "hsl(var(--primary))" }}
             >
               <Gem className="h-4 w-4 text-white" />
             </div>
           )}
           <div>
             <span className="font-semibold text-sm" data-testid="text-app-name">
-              {!isAdmin && branding?.name ? branding.name : "JewelPOS"}
+              {showStoreNav && branding?.name ? branding.name : "JewelPOS"}
             </span>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? t("auth.adminPortal") : t("auth.storePortal")}
+              {showStoreNav ? t("auth.storePortal") : t("auth.adminPortal")}
             </p>
           </div>
         </div>
@@ -101,7 +102,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isAdmin ? t("nav.dashboard") : t("nav.pos")}</SidebarGroupLabel>
+          <SidebarGroupLabel>{showStoreNav ? t("nav.pos") : t("nav.dashboard")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -134,7 +135,7 @@ export function AppSidebar() {
               {user?.username}
             </p>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? t("auth.adminPortal") : t("auth.storePortal")}
+              {showStoreNav ? t("auth.storePortal") : t("auth.adminPortal")}
             </p>
           </div>
           <Button

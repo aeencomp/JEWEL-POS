@@ -7,6 +7,13 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
+declare module "express-session" {
+  interface SessionData {
+    impersonatingStoreId?: number;
+    impersonatingStoreName?: string;
+  }
+}
+
 declare global {
   namespace Express {
     interface User extends SelectUser {}
@@ -106,6 +113,11 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    const userData: any = { ...req.user };
+    if (req.session.impersonatingStoreId) {
+      userData.impersonatingStoreId = req.session.impersonatingStoreId;
+      userData.impersonatingStoreName = req.session.impersonatingStoreName;
+    }
+    res.json(userData);
   });
 }

@@ -8,13 +8,22 @@ import { User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+type UserWithImpersonation = SelectUser & {
+  impersonatingStoreId?: number;
+  impersonatingStoreName?: string;
+};
+
 type AuthContextType = {
-  user: SelectUser | null;
+  user: UserWithImpersonation | null;
   isLoading: boolean;
   error: Error | null;
+  isImpersonating: boolean;
+  impersonatingStoreName: string | null;
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  impersonateMutation: UseMutationResult<UserWithImpersonation, Error, number>;
+  stopImpersonateMutation: UseMutationResult<SelectUser, Error, void>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password"> & { portal?: string };
@@ -82,15 +91,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const impersonateMutation = useMutation({
+    mutationFn: async (storeId: number) => {
+      const res = await apiRequest("POST", `/api/admin/impersonate/${storeId}`);
+      return await res.json();
+    },
+    onSuccess: (data: UserWithImpersonation) => {
+      queryClient.setQueryData(["/api/user"], data);
+      queryClient.invalidateQueries({ queryKey: ["/api/store/branding"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repairs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/layaways"] });
+      window.location.href = "/";
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Impersonation failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const stopImpersonateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/stop-impersonate");
+      return await res.json();
+    },
+    onSuccess: (data: SelectUser) => {
+      queryClient.setQueryData(["/api/user"], data);
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      window.location.href = "/";
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to stop impersonation",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const isImpersonating = !!(user as UserWithImpersonation)?.impersonatingStoreId;
+  const impersonatingStoreName = (user as UserWithImpersonation)?.impersonatingStoreName || null;
+
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
+        user: (user as UserWithImpersonation) ?? null,
         isLoading,
         error,
+        isImpersonating,
+        impersonatingStoreName,
         loginMutation,
         logoutMutation,
         registerMutation,
+        impersonateMutation,
+        stopImpersonateMutation,
       }}
     >
       {children}

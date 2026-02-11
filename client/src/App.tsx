@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageProvider } from "@/hooks/use-language";
+import { LanguageProvider, useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
@@ -23,7 +23,8 @@ import OrdersHistory from "@/pages/orders-history";
 import RepairOrders from "@/pages/repair-orders";
 import LayawayPage from "@/pages/layaway-page";
 import StoreBranding from "@/pages/store-branding";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function AdminRouter() {
   return (
@@ -51,9 +52,34 @@ function StoreRouter() {
   );
 }
 
+function ImpersonationBanner() {
+  const { impersonatingStoreName, stopImpersonateMutation } = useAuth();
+  const { t } = useLanguage();
+
+  return (
+    <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-amber-500 text-white sticky top-0 z-[60]">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <span>{t("admin.viewingAs")}: {impersonatingStoreName}</span>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="bg-white/20 border-white/40 text-white"
+        onClick={() => stopImpersonateMutation.mutate()}
+        disabled={stopImpersonateMutation.isPending}
+        data-testid="button-stop-impersonate"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        <span className="ms-1">{t("admin.backToAdmin")}</span>
+      </Button>
+    </div>
+  );
+}
+
 function MainLayout() {
-  const { user } = useAuth();
+  const { user, isImpersonating } = useAuth();
   const isAdmin = user?.role === "admin";
+  const showStoreView = !isAdmin || isImpersonating;
 
   const style = {
     "--sidebar-width": "15rem",
@@ -65,6 +91,7 @@ function MainLayout() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
+          {isImpersonating && <ImpersonationBanner />}
           <header className="flex items-center justify-between gap-2 p-2 border-b bg-background sticky top-0 z-50">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-1">
@@ -73,7 +100,7 @@ function MainLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            {isAdmin ? <AdminRouter /> : <StoreRouter />}
+            {showStoreView ? <StoreRouter /> : <AdminRouter />}
           </main>
         </div>
       </div>

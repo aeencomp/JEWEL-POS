@@ -52,6 +52,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Store as StoreIcon,
   Plus,
@@ -63,6 +64,7 @@ import {
   PowerOff,
   Trash2,
   Pencil,
+  Eye,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
@@ -93,6 +95,7 @@ type EditStoreValues = z.infer<typeof editStoreSchema>;
 export default function AdminStores() {
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { impersonateMutation } = useAuth();
   const [open, setOpen] = useState(false);
   const [editStore, setEditStore] = useState<Store | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
@@ -519,6 +522,17 @@ export default function AdminStores() {
                         {t("common.active")}
                       </>
                     )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="flex-shrink-0"
+                    onClick={() => impersonateMutation.mutate(store.id)}
+                    disabled={impersonateMutation.isPending}
+                    data-testid={`button-impersonate-store-${store.id}`}
+                    title={t("admin.viewStore")}
+                  >
+                    <Eye className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"

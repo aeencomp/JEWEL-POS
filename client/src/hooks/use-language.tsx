@@ -50,6 +50,9 @@ type TranslationKeys = {
   "admin.username": string;
   "admin.password": string;
   "admin.newPasswordPlaceholder": string;
+  "admin.viewStore": string;
+  "admin.viewingAs": string;
+  "admin.backToAdmin": string;
   "admin.selectPlan": string;
   "admin.subscriptions": string;
   "admin.renew": string;
@@ -255,6 +258,9 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.username": "Username",
     "admin.password": "Password",
     "admin.newPasswordPlaceholder": "Leave empty to keep current password",
+    "admin.viewStore": "View Store",
+    "admin.viewingAs": "Viewing as",
+    "admin.backToAdmin": "Back to Admin",
     "admin.selectPlan": "Select Plan",
     "admin.subscriptions": "Subscriptions",
     "admin.renew": "Renew",
@@ -458,6 +464,9 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.username": "اسم المستخدم",
     "admin.password": "كلمة المرور",
     "admin.newPasswordPlaceholder": "اتركه فارغاً للإبقاء على كلمة المرور الحالية",
+    "admin.viewStore": "عرض المتجر",
+    "admin.viewingAs": "العرض كـ",
+    "admin.backToAdmin": "العودة للإدارة",
     "admin.selectPlan": "اختر الخطة",
     "admin.subscriptions": "الاشتراكات",
     "admin.renew": "تجديد",

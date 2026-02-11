@@ -16,19 +16,51 @@ function requireAdmin(req: any, res: any, next: any) {
   next();
 }
 
+function getEffectiveStoreId(req: any): number | null {
+  if (req.user.role === "admin" && req.session.impersonatingStoreId) {
+    return req.session.impersonatingStoreId;
+  }
+  return req.user.storeId;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   setupAuth(app);
 
+  app.post("/api/admin/impersonate/:storeId", requireAdmin, async (req, res) => {
+    const storeId = parseInt(req.params.storeId);
+    const store = await storage.getStore(storeId);
+    if (!store) return res.status(404).json({ message: "Store not found" });
+    req.session.impersonatingStoreId = storeId;
+    req.session.impersonatingStoreName = store.name;
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ message: "Failed to save session" });
+      const userData: any = { ...req.user };
+      userData.impersonatingStoreId = storeId;
+      userData.impersonatingStoreName = store.name;
+      res.json(userData);
+    });
+  });
+
+  app.post("/api/admin/stop-impersonate", requireAdmin, async (req, res) => {
+    delete req.session.impersonatingStoreId;
+    delete req.session.impersonatingStoreName;
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ message: "Failed to save session" });
+      res.json(req.user);
+    });
+  });
+
   app.get("/api/stores", requireAuth, async (req, res) => {
     if (req.user!.role === "admin") {
       const storesList = await storage.getStores();
       res.json(storesList);
     } else {
-      if (req.user!.storeId) {
-        const store = await storage.getStore(req.user!.storeId);
+      const effectiveStoreId = getEffectiveStoreId(req);
+      if (effectiveStoreId) {
+        const store = await storage.getStore(effectiveStoreId);
         res.json(store ? [store] : []);
       } else {
         res.json([]);
@@ -142,7 +174,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/store/branding", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const store = await storage.getStore(storeId);
     if (!store) return res.status(404).json({ message: "Store not found" });
@@ -156,7 +188,7 @@ export async function registerRoutes(
   });
 
   app.patch("/api/store/branding", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const parsed = updateBrandingSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -180,14 +212,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/categories", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
     const cats = await storage.getCategories(storeId);
     res.json(cats);
   });
 
   app.post("/api/categories", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const category = await storage.createCategory({
       ...req.body,
@@ -199,7 +231,7 @@ export async function registerRoutes(
 
   app.delete("/api/categories/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const cats = await storage.getCategories(storeId);
     if (!cats.find((c) => c.id === id)) return res.status(404).json({ message: "Category not found" });
@@ -212,14 +244,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/inventory", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
     const items = await storage.getInventoryItems(storeId);
     res.json(items);
   });
 
   app.post("/api/inventory", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const body = { ...req.body };
     if (body.weightGrams === "" || body.weightGrams === undefined) body.weightGrams = null;
@@ -239,7 +271,7 @@ export async function registerRoutes(
 
   app.patch("/api/inventory/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const items = await storage.getInventoryItems(storeId);
     if (!items.find((i) => i.id === id)) return res.status(404).json({ message: "Item not found" });
@@ -256,7 +288,7 @@ export async function registerRoutes(
 
   app.delete("/api/inventory/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const items = await storage.getInventoryItems(storeId);
     if (!items.find((i) => i.id === id)) return res.status(404).json({ message: "Item not found" });
@@ -265,14 +297,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/customers", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
     const customerList = await storage.getCustomers(storeId);
     res.json(customerList);
   });
 
   app.post("/api/customers", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const customer = await storage.createCustomer({ ...req.body, storeId });
     res.status(201).json(customer);
@@ -280,7 +312,7 @@ export async function registerRoutes(
 
   app.patch("/api/customers/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const custs = await storage.getCustomers(storeId);
     if (!custs.find((c) => c.id === id)) return res.status(404).json({ message: "Customer not found" });
@@ -289,14 +321,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/orders", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
     const ordersList = await storage.getOrders(storeId);
     res.json(ordersList);
   });
 
   app.post("/api/orders", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
 
     const orderNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
@@ -336,7 +368,7 @@ export async function registerRoutes(
 
   app.get("/api/orders/:id/items", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const order = await storage.getOrder(id);
     if (!order || order.storeId !== storeId) {
@@ -348,7 +380,7 @@ export async function registerRoutes(
 
   app.patch("/api/orders/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const order = await storage.getOrder(id);
     if (!order || order.storeId !== storeId) {
@@ -359,14 +391,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/repairs", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
     const repairs = await storage.getRepairOrders(storeId);
     res.json(repairs);
   });
 
   app.post("/api/repairs", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const ticketNumber = `RPR-${Date.now().toString(36).toUpperCase()}`;
     const repair = await storage.createRepairOrder({
@@ -380,7 +412,7 @@ export async function registerRoutes(
 
   app.patch("/api/repairs/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const repair = await storage.getRepairOrder(id);
     if (!repair || repair.storeId !== storeId) {
@@ -391,14 +423,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/layaways", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
     const plans = await storage.getLayawayPlans(storeId);
     res.json(plans);
   });
 
   app.post("/api/layaways", requireAuth, async (req, res) => {
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const plan = await storage.createLayawayPlan({
       ...req.body,
@@ -410,7 +442,7 @@ export async function registerRoutes(
 
   app.patch("/api/layaways/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const plan = await storage.getLayawayPlan(id);
     if (!plan || plan.storeId !== storeId) {
@@ -422,7 +454,7 @@ export async function registerRoutes(
 
   app.get("/api/layaways/:id/payments", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const plan = await storage.getLayawayPlan(id);
     if (!plan || plan.storeId !== storeId) {
@@ -434,7 +466,7 @@ export async function registerRoutes(
 
   app.post("/api/layaways/:id/payments", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const storeId = req.user!.storeId;
+    const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const plan = await storage.getLayawayPlan(id);
     if (!plan || plan.storeId !== storeId) {

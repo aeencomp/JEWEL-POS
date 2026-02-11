@@ -87,7 +87,16 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 ## API Prefix
 All API routes use `/api/` prefix.
 
+## Impersonation Feature
+- Admin can click Eye icon on store cards to "impersonate" a store
+- Session-based: stores `impersonatingStoreId` in express session
+- Backend: `POST /api/admin/impersonate/:storeId` and `POST /api/admin/stop-impersonate`
+- All store-side routes use `getEffectiveStoreId(req)` to check impersonation
+- Frontend: amber banner shows "Viewing as: [Store Name]" with "Back to Admin" button
+- Sidebar and router switch to store view during impersonation
+
 ## Recent Changes
+- Added admin store impersonation feature (view any store's POS as admin)
 - Completely rebuilt from RestoPOS to JewelPOS (jewelry store POS)
 - New database schema with jewelry-specific fields (metal type, purity, weight, gemstone, carat weight)
 - Added customer database, repair orders, and layaway system
