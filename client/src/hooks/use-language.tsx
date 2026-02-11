@@ -3,754 +3,609 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 type Language = "en" | "ar";
 
 type TranslationKeys = {
-  // Auth page
-  "auth.welcomeBack": string;
-  "auth.createAccount": string;
-  "auth.getStarted": string;
-  "auth.signInContinue": string;
+  "nav.dashboard": string;
+  "nav.stores": string;
+  "nav.subscriptions": string;
+  "nav.pos": string;
+  "nav.inventory": string;
+  "nav.customers": string;
+  "nav.orders": string;
+  "nav.repairs": string;
+  "nav.layaway": string;
+  "nav.branding": string;
+  "nav.logout": string;
+
+  "auth.login": string;
+  "auth.register": string;
   "auth.username": string;
   "auth.password": string;
-  "auth.enterUsername": string;
-  "auth.enterPassword": string;
-  "auth.chooseUsername": string;
-  "auth.createPassword": string;
-  "auth.signIn": string;
-  "auth.createAccountBtn": string;
-  "auth.alreadyHaveAccount": string;
-  "auth.dontHaveAccount": string;
-  "auth.platformTitle": string;
-  "auth.platformDesc": string;
-  "auth.featurePOS": string;
-  "auth.featurePOSDesc": string;
-  "auth.featureSubscription": string;
-  "auth.featureSubscriptionDesc": string;
-  "auth.featureRevenue": string;
-  "auth.featureRevenueDesc": string;
-  "auth.featureHistory": string;
-  "auth.featureHistoryDesc": string;
+  "auth.loginButton": string;
+  "auth.registerButton": string;
+  "auth.noAccount": string;
+  "auth.hasAccount": string;
+  "auth.adminPortal": string;
+  "auth.storePortal": string;
+  "auth.storeLoginTitle": string;
+  "auth.storeLoginSubtitle": string;
+  "auth.adminLoginTitle": string;
+  "auth.adminLoginSubtitle": string;
 
-  // Sidebar
-  "sidebar.adminPanel": string;
-  "sidebar.restaurantPOS": string;
-  "sidebar.management": string;
-  "sidebar.pointOfSale": string;
-  "sidebar.dashboard": string;
-  "sidebar.restaurants": string;
-  "sidebar.subscriptions": string;
-  "sidebar.posTerminal": string;
-  "sidebar.menu": string;
-  "sidebar.orders": string;
-  "sidebar.history": string;
-  "sidebar.branding": string;
+  "admin.dashboard": string;
+  "admin.totalStores": string;
+  "admin.activeStores": string;
+  "admin.revenue": string;
+  "admin.expiringSoon": string;
+  "admin.recentStores": string;
+  "admin.storeName": string;
+  "admin.owner": string;
+  "admin.plan": string;
+  "admin.status": string;
+  "admin.actions": string;
+  "admin.addStore": string;
+  "admin.editStore": string;
+  "admin.phone": string;
+  "admin.email": string;
+  "admin.address": string;
+  "admin.username": string;
+  "admin.password": string;
+  "admin.selectPlan": string;
+  "admin.subscriptions": string;
+  "admin.renew": string;
+  "admin.daysLeft": string;
 
-  // Branding settings
-  "branding.title": string;
-  "branding.subtitle": string;
-  "branding.brandColor": string;
-  "branding.brandColorDesc": string;
-  "branding.logoUrl": string;
-  "branding.logoUrlDesc": string;
-  "branding.receiptHeader": string;
-  "branding.receiptHeaderDesc": string;
-  "branding.receiptFooter": string;
-  "branding.receiptFooterDesc": string;
-  "branding.saveChanges": string;
-  "branding.saving": string;
-  "branding.saved": string;
-  "branding.savedDesc": string;
-  "branding.preview": string;
-  "branding.previewReceipt": string;
-  "branding.resetColor": string;
-
-  // Admin Dashboard
-  "dashboard.title": string;
-  "dashboard.subtitle": string;
-  "dashboard.totalRestaurants": string;
-  "dashboard.activeSubscriptions": string;
-  "dashboard.monthlyRevenue": string;
-  "dashboard.avgRevenue": string;
-  "dashboard.active": string;
-  "dashboard.inactive": string;
-  "dashboard.expiringSoon": string;
-  "dashboard.recurringIncome": string;
-  "dashboard.perActiveSub": string;
-  "dashboard.recentRestaurants": string;
-  "dashboard.subscriptionStatus": string;
-  "dashboard.noRestaurantsYet": string;
-  "dashboard.addFirstRestaurant": string;
-  "dashboard.noSubscriptionsYet": string;
-  "dashboard.createSubscriptions": string;
-  "dashboard.plan": string;
-  "dashboard.month": string;
-  "dashboard.total": string;
-
-  // Admin Restaurants
-  "restaurants.title": string;
-  "restaurants.subtitle": string;
-  "restaurants.addRestaurant": string;
-  "restaurants.addNew": string;
-  "restaurants.restaurantName": string;
-  "restaurants.ownerName": string;
-  "restaurants.phone": string;
-  "restaurants.email": string;
-  "restaurants.address": string;
-  "restaurants.subscriptionPlan": string;
-  "restaurants.selectPlan": string;
-  "restaurants.loginCredentials": string;
-  "restaurants.loginUsername": string;
-  "restaurants.loginPassword": string;
-  "restaurants.create": string;
-  "restaurants.searchPlaceholder": string;
-  "restaurants.noRestaurantsFound": string;
-  "restaurants.tryDifferentSearch": string;
-  "restaurants.addFirstToStart": string;
-  "restaurants.deactivate": string;
-  "restaurants.activate": string;
-  "restaurants.createdSuccess": string;
-  "restaurants.statusUpdated": string;
-  "restaurants.failedCreate": string;
-
-  // Subscriptions
-  "subscriptions.title": string;
-  "subscriptions.subtitle": string;
-  "subscriptions.basicPlan": string;
-  "subscriptions.standardPlan": string;
-  "subscriptions.premiumPlan": string;
-  "subscriptions.basicDesc": string;
-  "subscriptions.standardDesc": string;
-  "subscriptions.premiumDesc": string;
-  "subscriptions.allSubscriptions": string;
-  "subscriptions.noSubscriptions": string;
-  "subscriptions.createdWhenAdd": string;
-  "subscriptions.restaurant": string;
-  "subscriptions.plan": string;
-  "subscriptions.price": string;
-  "subscriptions.status": string;
-  "subscriptions.startDate": string;
-  "subscriptions.endDate": string;
-  "subscriptions.actions": string;
-  "subscriptions.renew": string;
-  "subscriptions.renewed30": string;
-  "subscriptions.updated": string;
-  "subscriptions.updateFailed": string;
-  "subscriptions.renewFailed": string;
-  "subscriptions.active": string;
-  "subscriptions.expired": string;
-  "subscriptions.cancelled": string;
-  "subscriptions.trial": string;
-
-  // POS Terminal
-  "pos.searchMenu": string;
-  "pos.all": string;
-  "pos.noMenuItems": string;
-  "pos.tryDifferentSearch": string;
-  "pos.addFromMenu": string;
-  "pos.currentOrder": string;
-  "pos.items": string;
-  "pos.tableNumber": string;
-  "pos.customer": string;
-  "pos.cartEmpty": string;
-  "pos.tapToAdd": string;
-  "pos.each": string;
-  "pos.subtotal": string;
-  "pos.tax": string;
+  "pos.terminal": string;
+  "pos.searchItems": string;
+  "pos.allCategories": string;
+  "pos.addToCart": string;
+  "pos.cart": string;
+  "pos.emptyCart": string;
   "pos.total": string;
-  "pos.cash": string;
-  "pos.card": string;
-  "pos.orderConfirmed": string;
-  "pos.orderPlacedSuccess": string;
-  "pos.orderFailed": string;
-  "pos.done": string;
-  "pos.table": string;
-  "pos.payment": string;
+  "pos.discount": string;
+  "pos.grandTotal": string;
+  "pos.payByCash": string;
+  "pos.payByCard": string;
+  "pos.payByTransfer": string;
+  "pos.clearCart": string;
+  "pos.orderPlaced": string;
+  "pos.orderNumber": string;
   "pos.printReceipt": string;
-  "pos.receipt": string;
-  "pos.orderDate": string;
+  "pos.close": string;
+  "pos.customer": string;
+  "pos.selectCustomer": string;
+  "pos.walkIn": string;
   "pos.qty": string;
   "pos.item": string;
   "pos.price": string;
   "pos.amount": string;
-  "pos.thankYou": string;
-  "pos.poweredBy": string;
+  "pos.payment": string;
+  "pos.noItems": string;
 
-  // Menu Management
-  "menu.title": string;
-  "menu.subtitle": string;
-  "menu.category": string;
-  "menu.menuItem": string;
-  "menu.addCategory": string;
-  "menu.addMenuItem": string;
-  "menu.categoryName": string;
-  "menu.createCategory": string;
-  "menu.itemName": string;
-  "menu.description": string;
-  "menu.priceIQD": string;
-  "menu.selectCategory": string;
-  "menu.addItem": string;
-  "menu.noCategoriesYet": string;
-  "menu.createFirstCategory": string;
-  "menu.noItemsInCategory": string;
-  "menu.unavailable": string;
-  "menu.categoryCreated": string;
-  "menu.itemCreated": string;
-  "menu.itemDeleted": string;
-  "menu.categoryDeleted": string;
-  "menu.cannotDelete": string;
-  "menu.removeItemsFirst": string;
-  "menu.failed": string;
+  "inventory.title": string;
+  "inventory.addItem": string;
+  "inventory.editItem": string;
+  "inventory.sku": string;
+  "inventory.name": string;
+  "inventory.category": string;
+  "inventory.metalType": string;
+  "inventory.purity": string;
+  "inventory.weight": string;
+  "inventory.gemstone": string;
+  "inventory.caratWeight": string;
+  "inventory.costPrice": string;
+  "inventory.sellingPrice": string;
+  "inventory.quantity": string;
+  "inventory.available": string;
+  "inventory.description": string;
+  "inventory.imageUrl": string;
+  "inventory.gold": string;
+  "inventory.silver": string;
+  "inventory.platinum": string;
+  "inventory.whiteGold": string;
+  "inventory.roseGold": string;
+  "inventory.other": string;
+  "inventory.categories": string;
+  "inventory.addCategory": string;
+  "inventory.deleteCategory": string;
+  "inventory.noItems": string;
+  "inventory.profit": string;
 
-  // Orders
+  "customers.title": string;
+  "customers.addCustomer": string;
+  "customers.editCustomer": string;
+  "customers.name": string;
+  "customers.phone": string;
+  "customers.email": string;
+  "customers.address": string;
+  "customers.notes": string;
+  "customers.noCustomers": string;
+  "customers.purchaseHistory": string;
+
   "orders.title": string;
-  "orders.subtitle": string;
-  "orders.noActiveOrders": string;
-  "orders.newOrdersAppear": string;
-  "orders.recentCompleted": string;
-  "orders.last10": string;
-  "orders.orderUpdated": string;
-  "orders.pending": string;
-  "orders.preparing": string;
-  "orders.ready": string;
+  "orders.orderNumber": string;
+  "orders.customer": string;
+  "orders.total": string;
+  "orders.payment": string;
+  "orders.status": string;
+  "orders.date": string;
+  "orders.items": string;
+  "orders.noOrders": string;
   "orders.completed": string;
   "orders.cancelled": string;
+  "orders.refunded": string;
+  "orders.pending": string;
 
-  // History
-  "history.title": string;
-  "history.subtitle": string;
-  "history.todayOrders": string;
-  "history.todayRevenue": string;
-  "history.totalRevenue": string;
-  "history.allOrders": string;
-  "history.orderNumber": string;
-  "history.table": string;
-  "history.customer": string;
-  "history.status": string;
-  "history.payment": string;
-  "history.total": string;
-  "history.date": string;
-  "history.noOrdersYet": string;
-  "history.ordersAppearAfter": string;
+  "repairs.title": string;
+  "repairs.addRepair": string;
+  "repairs.ticketNumber": string;
+  "repairs.customerName": string;
+  "repairs.customerPhone": string;
+  "repairs.itemDescription": string;
+  "repairs.issueDescription": string;
+  "repairs.estimatedCost": string;
+  "repairs.finalCost": string;
+  "repairs.status": string;
+  "repairs.estimatedDate": string;
+  "repairs.noRepairs": string;
+  "repairs.received": string;
+  "repairs.inProgress": string;
+  "repairs.ready": string;
+  "repairs.delivered": string;
+  "repairs.cancelled": string;
+  "repairs.updateStatus": string;
 
-  // Auth page extra
-  "auth.restaurantQuestion": string;
-  "auth.goToRestaurant": string;
+  "layaway.title": string;
+  "layaway.addPlan": string;
+  "layaway.customerName": string;
+  "layaway.customerPhone": string;
+  "layaway.item": string;
+  "layaway.totalPrice": string;
+  "layaway.amountPaid": string;
+  "layaway.remaining": string;
+  "layaway.status": string;
+  "layaway.dueDate": string;
+  "layaway.noPlans": string;
+  "layaway.makePayment": string;
+  "layaway.paymentAmount": string;
+  "layaway.paymentMethod": string;
+  "layaway.payments": string;
+  "layaway.active": string;
+  "layaway.completed": string;
+  "layaway.cancelled": string;
+  "layaway.defaulted": string;
 
-  // Restaurant Portal
-  "portal.restaurantEdition": string;
-  "portal.heroTitle": string;
-  "portal.heroDesc": string;
-  "portal.featureMenu": string;
-  "portal.featureMenuDesc": string;
-  "portal.featureOrders": string;
-  "portal.featureOrdersDesc": string;
-  "portal.featureCheckout": string;
-  "portal.featureCheckoutDesc": string;
-  "portal.featureTracking": string;
-  "portal.featureTrackingDesc": string;
-  "portal.welcomeTitle": string;
-  "portal.welcomeDesc": string;
-  "portal.usernamePlaceholder": string;
-  "portal.signIn": string;
-  "portal.contactAdmin": string;
-  "portal.adminQuestion": string;
-  "portal.goToAdmin": string;
+  "branding.title": string;
+  "branding.brandColor": string;
+  "branding.logoUrl": string;
+  "branding.receiptHeader": string;
+  "branding.receiptFooter": string;
+  "branding.save": string;
+  "branding.saved": string;
 
-  // Common
-  "common.notFound": string;
-  "common.pageNotFound": string;
-  "common.admin": string;
-  "common.restaurant": string;
+  "common.save": string;
+  "common.cancel": string;
+  "common.delete": string;
+  "common.edit": string;
+  "common.add": string;
+  "common.search": string;
+  "common.loading": string;
+  "common.noData": string;
+  "common.active": string;
+  "common.inactive": string;
+  "common.expired": string;
+  "common.basic": string;
+  "common.standard": string;
+  "common.premium": string;
+  "common.currency": string;
+
+  "receipt.receipt": string;
+  "receipt.date": string;
+  "receipt.orderNo": string;
+  "receipt.thankYou": string;
+  "receipt.print": string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
   en: {
-    "auth.welcomeBack": "Welcome back",
-    "auth.createAccount": "Create an account",
-    "auth.getStarted": "Get started with your POS platform",
-    "auth.signInContinue": "Sign in to your account to continue",
+    "nav.dashboard": "Dashboard",
+    "nav.stores": "Stores",
+    "nav.subscriptions": "Subscriptions",
+    "nav.pos": "POS Terminal",
+    "nav.inventory": "Inventory",
+    "nav.customers": "Customers",
+    "nav.orders": "Orders",
+    "nav.repairs": "Repairs",
+    "nav.layaway": "Layaway",
+    "nav.branding": "Branding",
+    "nav.logout": "Logout",
+
+    "auth.login": "Login",
+    "auth.register": "Register",
     "auth.username": "Username",
     "auth.password": "Password",
-    "auth.enterUsername": "Enter your username",
-    "auth.enterPassword": "Enter your password",
-    "auth.chooseUsername": "Choose a username",
-    "auth.createPassword": "Create a password",
-    "auth.signIn": "Sign In",
-    "auth.createAccountBtn": "Create Account",
-    "auth.alreadyHaveAccount": "Already have an account? Sign in",
-    "auth.dontHaveAccount": "Don't have an account? Register",
-    "auth.platformTitle": "Restaurant POS Platform",
-    "auth.platformDesc": "The complete point-of-sale system with built-in subscription management. Rent POS accounts to restaurants with monthly billing.",
-    "auth.featurePOS": "Full POS System",
-    "auth.featurePOSDesc": "Manage orders, menus, and tables with ease",
-    "auth.featureSubscription": "Subscription Management",
-    "auth.featureSubscriptionDesc": "Monthly billing with flexible plans",
-    "auth.featureRevenue": "Revenue Tracking",
-    "auth.featureRevenueDesc": "Real-time analytics and reporting",
-    "auth.featureHistory": "Order History",
-    "auth.featureHistoryDesc": "Complete records of all transactions",
+    "auth.loginButton": "Sign In",
+    "auth.registerButton": "Create Account",
+    "auth.noAccount": "Don't have an account? Register",
+    "auth.hasAccount": "Already have an account? Sign in",
+    "auth.adminPortal": "Admin Portal",
+    "auth.storePortal": "Store Portal",
+    "auth.storeLoginTitle": "Store Login",
+    "auth.storeLoginSubtitle": "Sign in to access your jewelry store POS",
+    "auth.adminLoginTitle": "Admin Login",
+    "auth.adminLoginSubtitle": "Sign in to manage stores and subscriptions",
 
-    "sidebar.adminPanel": "Admin Panel",
-    "sidebar.restaurantPOS": "Restaurant POS",
-    "sidebar.management": "Management",
-    "sidebar.pointOfSale": "Point of Sale",
-    "sidebar.dashboard": "Dashboard",
-    "sidebar.restaurants": "Restaurants",
-    "sidebar.subscriptions": "Subscriptions",
-    "sidebar.posTerminal": "POS Terminal",
-    "sidebar.menu": "Menu",
-    "sidebar.orders": "Orders",
-    "sidebar.history": "History",
-    "sidebar.branding": "Branding",
+    "admin.dashboard": "Admin Dashboard",
+    "admin.totalStores": "Total Stores",
+    "admin.activeStores": "Active Stores",
+    "admin.revenue": "Revenue",
+    "admin.expiringSoon": "Expiring Soon",
+    "admin.recentStores": "Recent Stores",
+    "admin.storeName": "Store Name",
+    "admin.owner": "Owner",
+    "admin.plan": "Plan",
+    "admin.status": "Status",
+    "admin.actions": "Actions",
+    "admin.addStore": "Add Store",
+    "admin.editStore": "Edit Store",
+    "admin.phone": "Phone",
+    "admin.email": "Email",
+    "admin.address": "Address",
+    "admin.username": "Username",
+    "admin.password": "Password",
+    "admin.selectPlan": "Select Plan",
+    "admin.subscriptions": "Subscriptions",
+    "admin.renew": "Renew",
+    "admin.daysLeft": "Days Left",
 
-    "branding.title": "Branding",
-    "branding.subtitle": "Customize your restaurant's look and feel",
-    "branding.brandColor": "Brand Color",
-    "branding.brandColorDesc": "Main color used across your POS interface and receipts",
-    "branding.logoUrl": "Logo URL",
-    "branding.logoUrlDesc": "Link to your restaurant logo image",
-    "branding.receiptHeader": "Receipt Header",
-    "branding.receiptHeaderDesc": "Custom text shown at the top of receipts",
-    "branding.receiptFooter": "Receipt Footer",
-    "branding.receiptFooterDesc": "Custom text shown at the bottom of receipts (e.g. thank you message)",
-    "branding.saveChanges": "Save Changes",
-    "branding.saving": "Saving...",
-    "branding.saved": "Branding Updated",
-    "branding.savedDesc": "Your branding changes have been saved",
-    "branding.preview": "Preview",
-    "branding.previewReceipt": "Receipt Preview",
-    "branding.resetColor": "Reset",
-
-    "dashboard.title": "Dashboard",
-    "dashboard.subtitle": "Overview of your restaurant POS platform",
-    "dashboard.totalRestaurants": "Total Restaurants",
-    "dashboard.activeSubscriptions": "Active Subscriptions",
-    "dashboard.monthlyRevenue": "Monthly Revenue",
-    "dashboard.avgRevenue": "Avg Revenue/Restaurant",
-    "dashboard.active": "active",
-    "dashboard.inactive": "Inactive",
-    "dashboard.expiringSoon": "expiring soon",
-    "dashboard.recurringIncome": "Recurring income",
-    "dashboard.perActiveSub": "Per active subscription",
-    "dashboard.recentRestaurants": "Recent Restaurants",
-    "dashboard.subscriptionStatus": "Subscription Status",
-    "dashboard.noRestaurantsYet": "No restaurants yet",
-    "dashboard.addFirstRestaurant": "Add your first restaurant to get started",
-    "dashboard.noSubscriptionsYet": "No subscriptions yet",
-    "dashboard.createSubscriptions": "Create subscriptions for restaurants",
-    "dashboard.plan": "Plan",
-    "dashboard.month": "/month",
-    "dashboard.total": "total",
-
-    "restaurants.title": "Restaurants",
-    "restaurants.subtitle": "Manage restaurant accounts and access",
-    "restaurants.addRestaurant": "Add Restaurant",
-    "restaurants.addNew": "Add New Restaurant",
-    "restaurants.restaurantName": "Restaurant Name",
-    "restaurants.ownerName": "Owner Name",
-    "restaurants.phone": "Phone",
-    "restaurants.email": "Email",
-    "restaurants.address": "Address",
-    "restaurants.subscriptionPlan": "Subscription Plan",
-    "restaurants.selectPlan": "Select a plan",
-    "restaurants.loginCredentials": "Login Credentials",
-    "restaurants.loginUsername": "Login username",
-    "restaurants.loginPassword": "Login password",
-    "restaurants.create": "Create Restaurant",
-    "restaurants.searchPlaceholder": "Search restaurants...",
-    "restaurants.noRestaurantsFound": "No restaurants found",
-    "restaurants.tryDifferentSearch": "Try a different search term",
-    "restaurants.addFirstToStart": "Add your first restaurant to get started",
-    "restaurants.deactivate": "Deactivate",
-    "restaurants.activate": "Activate",
-    "restaurants.createdSuccess": "Restaurant created successfully",
-    "restaurants.statusUpdated": "Restaurant status updated",
-    "restaurants.failedCreate": "Failed to create restaurant",
-
-    "subscriptions.title": "Subscriptions",
-    "subscriptions.subtitle": "Manage monthly subscription plans",
-    "subscriptions.basicPlan": "Basic Plan",
-    "subscriptions.standardPlan": "Standard Plan",
-    "subscriptions.premiumPlan": "Premium Plan",
-    "subscriptions.basicDesc": "Essential POS features",
-    "subscriptions.standardDesc": "Advanced reporting & analytics",
-    "subscriptions.premiumDesc": "Full features with priority support",
-    "subscriptions.allSubscriptions": "All Subscriptions",
-    "subscriptions.noSubscriptions": "No subscriptions",
-    "subscriptions.createdWhenAdd": "Subscriptions are created when you add restaurants",
-    "subscriptions.restaurant": "Restaurant",
-    "subscriptions.plan": "Plan",
-    "subscriptions.price": "Price",
-    "subscriptions.status": "Status",
-    "subscriptions.startDate": "Start Date",
-    "subscriptions.endDate": "End Date",
-    "subscriptions.actions": "Actions",
-    "subscriptions.renew": "Renew",
-    "subscriptions.renewed30": "Subscription renewed for 30 days",
-    "subscriptions.updated": "Subscription updated",
-    "subscriptions.updateFailed": "Update failed",
-    "subscriptions.renewFailed": "Renewal failed",
-    "subscriptions.active": "Active",
-    "subscriptions.expired": "Expired",
-    "subscriptions.cancelled": "Cancelled",
-    "subscriptions.trial": "Trial",
-
-    "pos.searchMenu": "Search menu...",
-    "pos.all": "All",
-    "pos.noMenuItems": "No menu items",
-    "pos.tryDifferentSearch": "Try a different search",
-    "pos.addFromMenu": "Add items from the Menu page",
-    "pos.currentOrder": "Current Order",
-    "pos.items": "items",
-    "pos.tableNumber": "Table #",
-    "pos.customer": "Customer",
-    "pos.cartEmpty": "Cart is empty",
-    "pos.tapToAdd": "Tap items to add them",
-    "pos.each": "each",
-    "pos.subtotal": "Subtotal",
-    "pos.tax": "Tax (8%)",
+    "pos.terminal": "POS Terminal",
+    "pos.searchItems": "Search items...",
+    "pos.allCategories": "All Categories",
+    "pos.addToCart": "Add to Cart",
+    "pos.cart": "Cart",
+    "pos.emptyCart": "Cart is empty",
     "pos.total": "Total",
-    "pos.cash": "Cash",
-    "pos.card": "Card",
-    "pos.orderConfirmed": "Order Confirmed",
-    "pos.orderPlacedSuccess": "placed successfully",
-    "pos.orderFailed": "Order failed",
-    "pos.done": "Done",
-    "pos.table": "Table",
-    "pos.payment": "Payment",
+    "pos.discount": "Discount",
+    "pos.grandTotal": "Grand Total",
+    "pos.payByCash": "Pay by Cash",
+    "pos.payByCard": "Pay by Card",
+    "pos.payByTransfer": "Pay by Transfer",
+    "pos.clearCart": "Clear Cart",
+    "pos.orderPlaced": "Order Placed Successfully",
+    "pos.orderNumber": "Order #",
     "pos.printReceipt": "Print Receipt",
-    "pos.receipt": "Receipt",
-    "pos.orderDate": "Date",
+    "pos.close": "Close",
+    "pos.customer": "Customer",
+    "pos.selectCustomer": "Select Customer",
+    "pos.walkIn": "Walk-in Customer",
     "pos.qty": "Qty",
     "pos.item": "Item",
     "pos.price": "Price",
     "pos.amount": "Amount",
-    "pos.thankYou": "Thank you for your visit!",
-    "pos.poweredBy": "Powered by RestoPOS",
+    "pos.payment": "Payment",
+    "pos.noItems": "No items found",
 
-    "menu.title": "Menu Management",
-    "menu.subtitle": "Manage your categories and menu items",
-    "menu.category": "Category",
-    "menu.menuItem": "Menu Item",
-    "menu.addCategory": "Add Category",
-    "menu.addMenuItem": "Add Menu Item",
-    "menu.categoryName": "Category Name",
-    "menu.createCategory": "Create Category",
-    "menu.itemName": "Item Name",
-    "menu.description": "Description",
-    "menu.priceIQD": "Price (IQD)",
-    "menu.selectCategory": "Select category",
-    "menu.addItem": "Add Item",
-    "menu.noCategoriesYet": "No categories yet",
-    "menu.createFirstCategory": "Create your first category to start adding items",
-    "menu.noItemsInCategory": "No items in this category",
-    "menu.unavailable": "Unavailable",
-    "menu.categoryCreated": "Category created",
-    "menu.itemCreated": "Menu item created",
-    "menu.itemDeleted": "Item deleted",
-    "menu.categoryDeleted": "Category deleted",
-    "menu.cannotDelete": "Cannot delete",
-    "menu.removeItemsFirst": "Remove all items first",
-    "menu.failed": "Failed",
+    "inventory.title": "Inventory",
+    "inventory.addItem": "Add Item",
+    "inventory.editItem": "Edit Item",
+    "inventory.sku": "SKU",
+    "inventory.name": "Name",
+    "inventory.category": "Category",
+    "inventory.metalType": "Metal Type",
+    "inventory.purity": "Purity",
+    "inventory.weight": "Weight (g)",
+    "inventory.gemstone": "Gemstone",
+    "inventory.caratWeight": "Carat Weight",
+    "inventory.costPrice": "Cost Price",
+    "inventory.sellingPrice": "Selling Price",
+    "inventory.quantity": "Quantity",
+    "inventory.available": "Available",
+    "inventory.description": "Description",
+    "inventory.imageUrl": "Image URL",
+    "inventory.gold": "Gold",
+    "inventory.silver": "Silver",
+    "inventory.platinum": "Platinum",
+    "inventory.whiteGold": "White Gold",
+    "inventory.roseGold": "Rose Gold",
+    "inventory.other": "Other",
+    "inventory.categories": "Categories",
+    "inventory.addCategory": "Add Category",
+    "inventory.deleteCategory": "Delete Category",
+    "inventory.noItems": "No items in inventory",
+    "inventory.profit": "Profit",
 
-    "orders.title": "Active Orders",
-    "orders.subtitle": "Manage incoming and in-progress orders",
-    "orders.noActiveOrders": "No active orders",
-    "orders.newOrdersAppear": "New orders will appear here",
-    "orders.recentCompleted": "Recent Completed",
-    "orders.last10": "Last 10 completed or cancelled orders",
-    "orders.orderUpdated": "Order updated",
-    "orders.pending": "Pending",
-    "orders.preparing": "Preparing",
-    "orders.ready": "Ready",
+    "customers.title": "Customers",
+    "customers.addCustomer": "Add Customer",
+    "customers.editCustomer": "Edit Customer",
+    "customers.name": "Name",
+    "customers.phone": "Phone",
+    "customers.email": "Email",
+    "customers.address": "Address",
+    "customers.notes": "Notes",
+    "customers.noCustomers": "No customers found",
+    "customers.purchaseHistory": "Purchase History",
+
+    "orders.title": "Orders",
+    "orders.orderNumber": "Order #",
+    "orders.customer": "Customer",
+    "orders.total": "Total",
+    "orders.payment": "Payment",
+    "orders.status": "Status",
+    "orders.date": "Date",
+    "orders.items": "Items",
+    "orders.noOrders": "No orders found",
     "orders.completed": "Completed",
     "orders.cancelled": "Cancelled",
+    "orders.refunded": "Refunded",
+    "orders.pending": "Pending",
 
-    "history.title": "Order History",
-    "history.subtitle": "View all past orders and revenue",
-    "history.todayOrders": "Today's Orders",
-    "history.todayRevenue": "Today's Revenue",
-    "history.totalRevenue": "Total Revenue",
-    "history.allOrders": "All Orders",
-    "history.orderNumber": "Order #",
-    "history.table": "Table",
-    "history.customer": "Customer",
-    "history.status": "Status",
-    "history.payment": "Payment",
-    "history.total": "Total",
-    "history.date": "Date",
-    "history.noOrdersYet": "No orders yet",
-    "history.ordersAppearAfter": "Orders will appear here after checkout",
+    "repairs.title": "Repairs",
+    "repairs.addRepair": "Add Repair",
+    "repairs.ticketNumber": "Ticket #",
+    "repairs.customerName": "Customer Name",
+    "repairs.customerPhone": "Customer Phone",
+    "repairs.itemDescription": "Item Description",
+    "repairs.issueDescription": "Issue Description",
+    "repairs.estimatedCost": "Estimated Cost",
+    "repairs.finalCost": "Final Cost",
+    "repairs.status": "Status",
+    "repairs.estimatedDate": "Estimated Date",
+    "repairs.noRepairs": "No repair tickets found",
+    "repairs.received": "Received",
+    "repairs.inProgress": "In Progress",
+    "repairs.ready": "Ready for Pickup",
+    "repairs.delivered": "Delivered",
+    "repairs.cancelled": "Cancelled",
+    "repairs.updateStatus": "Update Status",
 
-    "auth.restaurantQuestion": "Are you a restaurant?",
-    "auth.goToRestaurant": "Go to Restaurant Portal",
+    "layaway.title": "Layaway Plans",
+    "layaway.addPlan": "Add Layaway Plan",
+    "layaway.customerName": "Customer Name",
+    "layaway.customerPhone": "Customer Phone",
+    "layaway.item": "Item",
+    "layaway.totalPrice": "Total Price",
+    "layaway.amountPaid": "Amount Paid",
+    "layaway.remaining": "Remaining",
+    "layaway.status": "Status",
+    "layaway.dueDate": "Due Date",
+    "layaway.noPlans": "No layaway plans found",
+    "layaway.makePayment": "Make Payment",
+    "layaway.paymentAmount": "Payment Amount",
+    "layaway.paymentMethod": "Payment Method",
+    "layaway.payments": "Payments",
+    "layaway.active": "Active",
+    "layaway.completed": "Completed",
+    "layaway.cancelled": "Cancelled",
+    "layaway.defaulted": "Defaulted",
 
-    "portal.restaurantEdition": "Restaurant Edition",
-    "portal.heroTitle": "Your Restaurant POS System",
-    "portal.heroDesc": "Access your point-of-sale terminal, manage your menu, track orders, and view sales history — all in one place.",
-    "portal.featureMenu": "Menu Management",
-    "portal.featureMenuDesc": "Add, edit, and organize your menu items and categories",
-    "portal.featureOrders": "Order Management",
-    "portal.featureOrdersDesc": "Track incoming orders from pending to completed",
-    "portal.featureCheckout": "Fast Checkout",
-    "portal.featureCheckoutDesc": "Quick cash and card payments with instant receipts",
-    "portal.featureTracking": "Sales Tracking",
-    "portal.featureTrackingDesc": "Daily revenue reports and complete order history",
-    "portal.welcomeTitle": "Restaurant Login",
-    "portal.welcomeDesc": "Sign in to access your POS terminal and manage your restaurant",
-    "portal.usernamePlaceholder": "Your restaurant username",
-    "portal.signIn": "Access POS Terminal",
-    "portal.contactAdmin": "Credentials are provided by your platform administrator",
-    "portal.adminQuestion": "Are you a platform admin?",
-    "portal.goToAdmin": "Go to Admin Login",
+    "branding.title": "Branding",
+    "branding.brandColor": "Brand Color",
+    "branding.logoUrl": "Logo URL",
+    "branding.receiptHeader": "Receipt Header",
+    "branding.receiptFooter": "Receipt Footer",
+    "branding.save": "Save Changes",
+    "branding.saved": "Branding saved successfully",
 
-    "common.notFound": "404 Page Not Found",
-    "common.pageNotFound": "Did you forget to add the page to the router?",
-    "common.admin": "admin",
-    "common.restaurant": "restaurant",
+    "common.save": "Save",
+    "common.cancel": "Cancel",
+    "common.delete": "Delete",
+    "common.edit": "Edit",
+    "common.add": "Add",
+    "common.search": "Search...",
+    "common.loading": "Loading...",
+    "common.noData": "No data available",
+    "common.active": "Active",
+    "common.inactive": "Inactive",
+    "common.expired": "Expired",
+    "common.basic": "Basic",
+    "common.standard": "Standard",
+    "common.premium": "Premium",
+    "common.currency": "IQD",
+
+    "receipt.receipt": "Receipt",
+    "receipt.date": "Date",
+    "receipt.orderNo": "Order No.",
+    "receipt.thankYou": "Thank you for your purchase!",
+    "receipt.print": "Print",
   },
   ar: {
-    "auth.welcomeBack": "مرحباً بعودتك",
-    "auth.createAccount": "إنشاء حساب",
-    "auth.getStarted": "ابدأ مع منصة نقاط البيع الخاصة بك",
-    "auth.signInContinue": "سجّل الدخول إلى حسابك للمتابعة",
+    "nav.dashboard": "لوحة التحكم",
+    "nav.stores": "المتاجر",
+    "nav.subscriptions": "الاشتراكات",
+    "nav.pos": "نقطة البيع",
+    "nav.inventory": "المخزون",
+    "nav.customers": "العملاء",
+    "nav.orders": "الطلبات",
+    "nav.repairs": "الإصلاحات",
+    "nav.layaway": "التقسيط",
+    "nav.branding": "الهوية التجارية",
+    "nav.logout": "تسجيل الخروج",
+
+    "auth.login": "تسجيل الدخول",
+    "auth.register": "إنشاء حساب",
     "auth.username": "اسم المستخدم",
     "auth.password": "كلمة المرور",
-    "auth.enterUsername": "أدخل اسم المستخدم",
-    "auth.enterPassword": "أدخل كلمة المرور",
-    "auth.chooseUsername": "اختر اسم مستخدم",
-    "auth.createPassword": "أنشئ كلمة مرور",
-    "auth.signIn": "تسجيل الدخول",
-    "auth.createAccountBtn": "إنشاء حساب",
-    "auth.alreadyHaveAccount": "لديك حساب بالفعل؟ سجّل الدخول",
-    "auth.dontHaveAccount": "ليس لديك حساب؟ سجّل الآن",
-    "auth.platformTitle": "منصة نقاط البيع للمطاعم",
-    "auth.platformDesc": "نظام نقاط البيع المتكامل مع إدارة الاشتراكات المدمجة. أجّر حسابات نقاط البيع للمطاعم بفواتير شهرية.",
-    "auth.featurePOS": "نظام نقاط بيع كامل",
-    "auth.featurePOSDesc": "إدارة الطلبات والقوائم والطاولات بسهولة",
-    "auth.featureSubscription": "إدارة الاشتراكات",
-    "auth.featureSubscriptionDesc": "فوترة شهرية مع خطط مرنة",
-    "auth.featureRevenue": "تتبع الإيرادات",
-    "auth.featureRevenueDesc": "تحليلات وتقارير فورية",
-    "auth.featureHistory": "سجل الطلبات",
-    "auth.featureHistoryDesc": "سجلات كاملة لجميع المعاملات",
+    "auth.loginButton": "تسجيل الدخول",
+    "auth.registerButton": "إنشاء حساب",
+    "auth.noAccount": "ليس لديك حساب؟ سجّل الآن",
+    "auth.hasAccount": "لديك حساب بالفعل؟ سجّل الدخول",
+    "auth.adminPortal": "بوابة الإدارة",
+    "auth.storePortal": "بوابة المتجر",
+    "auth.storeLoginTitle": "دخول المتجر",
+    "auth.storeLoginSubtitle": "سجّل الدخول للوصول إلى نقطة بيع المجوهرات",
+    "auth.adminLoginTitle": "دخول المدير",
+    "auth.adminLoginSubtitle": "سجّل الدخول لإدارة المتاجر والاشتراكات",
 
-    "sidebar.adminPanel": "لوحة الإدارة",
-    "sidebar.restaurantPOS": "نقاط بيع المطعم",
-    "sidebar.management": "الإدارة",
-    "sidebar.pointOfSale": "نقاط البيع",
-    "sidebar.dashboard": "لوحة التحكم",
-    "sidebar.restaurants": "المطاعم",
-    "sidebar.subscriptions": "الاشتراكات",
-    "sidebar.posTerminal": "محطة البيع",
-    "sidebar.menu": "القائمة",
-    "sidebar.orders": "الطلبات",
-    "sidebar.history": "السجل",
-    "sidebar.branding": "العلامة التجارية",
+    "admin.dashboard": "لوحة تحكم المدير",
+    "admin.totalStores": "إجمالي المتاجر",
+    "admin.activeStores": "المتاجر النشطة",
+    "admin.revenue": "الإيرادات",
+    "admin.expiringSoon": "تنتهي قريباً",
+    "admin.recentStores": "المتاجر الأخيرة",
+    "admin.storeName": "اسم المتجر",
+    "admin.owner": "المالك",
+    "admin.plan": "الخطة",
+    "admin.status": "الحالة",
+    "admin.actions": "الإجراءات",
+    "admin.addStore": "إضافة متجر",
+    "admin.editStore": "تعديل المتجر",
+    "admin.phone": "الهاتف",
+    "admin.email": "البريد الإلكتروني",
+    "admin.address": "العنوان",
+    "admin.username": "اسم المستخدم",
+    "admin.password": "كلمة المرور",
+    "admin.selectPlan": "اختر الخطة",
+    "admin.subscriptions": "الاشتراكات",
+    "admin.renew": "تجديد",
+    "admin.daysLeft": "أيام متبقية",
 
-    "branding.title": "العلامة التجارية",
-    "branding.subtitle": "خصص مظهر مطعمك",
-    "branding.brandColor": "لون العلامة",
-    "branding.brandColorDesc": "اللون الرئيسي المستخدم في واجهة نقاط البيع والإيصالات",
-    "branding.logoUrl": "رابط الشعار",
-    "branding.logoUrlDesc": "رابط صورة شعار مطعمك",
-    "branding.receiptHeader": "رأس الإيصال",
-    "branding.receiptHeaderDesc": "نص مخصص يظهر في أعلى الإيصالات",
-    "branding.receiptFooter": "تذييل الإيصال",
-    "branding.receiptFooterDesc": "نص مخصص يظهر في أسفل الإيصالات (مثل رسالة شكر)",
-    "branding.saveChanges": "حفظ التغييرات",
-    "branding.saving": "جاري الحفظ...",
-    "branding.saved": "تم تحديث العلامة التجارية",
-    "branding.savedDesc": "تم حفظ تغييرات العلامة التجارية",
-    "branding.preview": "معاينة",
-    "branding.previewReceipt": "معاينة الإيصال",
-    "branding.resetColor": "إعادة تعيين",
-
-    "dashboard.title": "لوحة التحكم",
-    "dashboard.subtitle": "نظرة عامة على منصة نقاط البيع للمطاعم",
-    "dashboard.totalRestaurants": "إجمالي المطاعم",
-    "dashboard.activeSubscriptions": "الاشتراكات النشطة",
-    "dashboard.monthlyRevenue": "الإيرادات الشهرية",
-    "dashboard.avgRevenue": "متوسط الإيرادات/مطعم",
-    "dashboard.active": "نشط",
-    "dashboard.inactive": "غير نشط",
-    "dashboard.expiringSoon": "تنتهي قريباً",
-    "dashboard.recurringIncome": "دخل متكرر",
-    "dashboard.perActiveSub": "لكل اشتراك نشط",
-    "dashboard.recentRestaurants": "المطاعم الحديثة",
-    "dashboard.subscriptionStatus": "حالة الاشتراكات",
-    "dashboard.noRestaurantsYet": "لا توجد مطاعم بعد",
-    "dashboard.addFirstRestaurant": "أضف أول مطعم للبدء",
-    "dashboard.noSubscriptionsYet": "لا توجد اشتراكات بعد",
-    "dashboard.createSubscriptions": "أنشئ اشتراكات للمطاعم",
-    "dashboard.plan": "خطة",
-    "dashboard.month": "/شهر",
-    "dashboard.total": "الإجمالي",
-
-    "restaurants.title": "المطاعم",
-    "restaurants.subtitle": "إدارة حسابات المطاعم والوصول",
-    "restaurants.addRestaurant": "إضافة مطعم",
-    "restaurants.addNew": "إضافة مطعم جديد",
-    "restaurants.restaurantName": "اسم المطعم",
-    "restaurants.ownerName": "اسم المالك",
-    "restaurants.phone": "الهاتف",
-    "restaurants.email": "البريد الإلكتروني",
-    "restaurants.address": "العنوان",
-    "restaurants.subscriptionPlan": "خطة الاشتراك",
-    "restaurants.selectPlan": "اختر خطة",
-    "restaurants.loginCredentials": "بيانات تسجيل الدخول",
-    "restaurants.loginUsername": "اسم المستخدم للدخول",
-    "restaurants.loginPassword": "كلمة المرور للدخول",
-    "restaurants.create": "إنشاء المطعم",
-    "restaurants.searchPlaceholder": "البحث في المطاعم...",
-    "restaurants.noRestaurantsFound": "لم يتم العثور على مطاعم",
-    "restaurants.tryDifferentSearch": "جرّب مصطلح بحث مختلف",
-    "restaurants.addFirstToStart": "أضف أول مطعم للبدء",
-    "restaurants.deactivate": "تعطيل",
-    "restaurants.activate": "تفعيل",
-    "restaurants.createdSuccess": "تم إنشاء المطعم بنجاح",
-    "restaurants.statusUpdated": "تم تحديث حالة المطعم",
-    "restaurants.failedCreate": "فشل في إنشاء المطعم",
-
-    "subscriptions.title": "الاشتراكات",
-    "subscriptions.subtitle": "إدارة خطط الاشتراك الشهرية",
-    "subscriptions.basicPlan": "الخطة الأساسية",
-    "subscriptions.standardPlan": "الخطة القياسية",
-    "subscriptions.premiumPlan": "الخطة المتميزة",
-    "subscriptions.basicDesc": "ميزات نقاط البيع الأساسية",
-    "subscriptions.standardDesc": "تقارير وتحليلات متقدمة",
-    "subscriptions.premiumDesc": "جميع الميزات مع دعم ذو أولوية",
-    "subscriptions.allSubscriptions": "جميع الاشتراكات",
-    "subscriptions.noSubscriptions": "لا توجد اشتراكات",
-    "subscriptions.createdWhenAdd": "تُنشأ الاشتراكات عند إضافة المطاعم",
-    "subscriptions.restaurant": "المطعم",
-    "subscriptions.plan": "الخطة",
-    "subscriptions.price": "السعر",
-    "subscriptions.status": "الحالة",
-    "subscriptions.startDate": "تاريخ البدء",
-    "subscriptions.endDate": "تاريخ الانتهاء",
-    "subscriptions.actions": "الإجراءات",
-    "subscriptions.renew": "تجديد",
-    "subscriptions.renewed30": "تم تجديد الاشتراك لمدة 30 يوماً",
-    "subscriptions.updated": "تم تحديث الاشتراك",
-    "subscriptions.updateFailed": "فشل التحديث",
-    "subscriptions.renewFailed": "فشل التجديد",
-    "subscriptions.active": "نشط",
-    "subscriptions.expired": "منتهي",
-    "subscriptions.cancelled": "ملغي",
-    "subscriptions.trial": "تجريبي",
-
-    "pos.searchMenu": "البحث في القائمة...",
-    "pos.all": "الكل",
-    "pos.noMenuItems": "لا توجد عناصر في القائمة",
-    "pos.tryDifferentSearch": "جرّب بحثاً مختلفاً",
-    "pos.addFromMenu": "أضف عناصر من صفحة القائمة",
-    "pos.currentOrder": "الطلب الحالي",
-    "pos.items": "عناصر",
-    "pos.tableNumber": "طاولة #",
-    "pos.customer": "الزبون",
-    "pos.cartEmpty": "السلة فارغة",
-    "pos.tapToAdd": "اضغط على العناصر لإضافتها",
-    "pos.each": "للواحدة",
-    "pos.subtotal": "المجموع الفرعي",
-    "pos.tax": "الضريبة (8%)",
-    "pos.total": "الإجمالي",
-    "pos.cash": "نقداً",
-    "pos.card": "بطاقة",
-    "pos.orderConfirmed": "تم تأكيد الطلب",
-    "pos.orderPlacedSuccess": "تم تقديمه بنجاح",
-    "pos.orderFailed": "فشل الطلب",
-    "pos.done": "تم",
-    "pos.table": "الطاولة",
-    "pos.payment": "الدفع",
+    "pos.terminal": "نقطة البيع",
+    "pos.searchItems": "البحث عن المنتجات...",
+    "pos.allCategories": "جميع الفئات",
+    "pos.addToCart": "إضافة للسلة",
+    "pos.cart": "السلة",
+    "pos.emptyCart": "السلة فارغة",
+    "pos.total": "المجموع",
+    "pos.discount": "الخصم",
+    "pos.grandTotal": "المجموع الكلي",
+    "pos.payByCash": "دفع نقدي",
+    "pos.payByCard": "دفع بالبطاقة",
+    "pos.payByTransfer": "دفع بالتحويل",
+    "pos.clearCart": "إفراغ السلة",
+    "pos.orderPlaced": "تم إنشاء الطلب بنجاح",
+    "pos.orderNumber": "طلب رقم #",
     "pos.printReceipt": "طباعة الإيصال",
-    "pos.receipt": "إيصال",
-    "pos.orderDate": "التاريخ",
+    "pos.close": "إغلاق",
+    "pos.customer": "العميل",
+    "pos.selectCustomer": "اختر العميل",
+    "pos.walkIn": "عميل زائر",
     "pos.qty": "الكمية",
-    "pos.item": "الصنف",
+    "pos.item": "المنتج",
     "pos.price": "السعر",
     "pos.amount": "المبلغ",
-    "pos.thankYou": "شكراً لزيارتكم!",
-    "pos.poweredBy": "مدعوم من RestoPOS",
+    "pos.payment": "الدفع",
+    "pos.noItems": "لا توجد منتجات",
 
-    "menu.title": "إدارة القائمة",
-    "menu.subtitle": "إدارة التصنيفات وعناصر القائمة",
-    "menu.category": "تصنيف",
-    "menu.menuItem": "عنصر القائمة",
-    "menu.addCategory": "إضافة تصنيف",
-    "menu.addMenuItem": "إضافة عنصر قائمة",
-    "menu.categoryName": "اسم التصنيف",
-    "menu.createCategory": "إنشاء التصنيف",
-    "menu.itemName": "اسم العنصر",
-    "menu.description": "الوصف",
-    "menu.priceIQD": "السعر (د.ع)",
-    "menu.selectCategory": "اختر التصنيف",
-    "menu.addItem": "إضافة عنصر",
-    "menu.noCategoriesYet": "لا توجد تصنيفات بعد",
-    "menu.createFirstCategory": "أنشئ أول تصنيف لبدء إضافة العناصر",
-    "menu.noItemsInCategory": "لا توجد عناصر في هذا التصنيف",
-    "menu.unavailable": "غير متوفر",
-    "menu.categoryCreated": "تم إنشاء التصنيف",
-    "menu.itemCreated": "تم إنشاء عنصر القائمة",
-    "menu.itemDeleted": "تم حذف العنصر",
-    "menu.categoryDeleted": "تم حذف التصنيف",
-    "menu.cannotDelete": "لا يمكن الحذف",
-    "menu.removeItemsFirst": "أزل جميع العناصر أولاً",
-    "menu.failed": "فشل",
+    "inventory.title": "المخزون",
+    "inventory.addItem": "إضافة منتج",
+    "inventory.editItem": "تعديل المنتج",
+    "inventory.sku": "رمز المنتج",
+    "inventory.name": "الاسم",
+    "inventory.category": "الفئة",
+    "inventory.metalType": "نوع المعدن",
+    "inventory.purity": "العيار",
+    "inventory.weight": "الوزن (جرام)",
+    "inventory.gemstone": "الحجر الكريم",
+    "inventory.caratWeight": "وزن القيراط",
+    "inventory.costPrice": "سعر التكلفة",
+    "inventory.sellingPrice": "سعر البيع",
+    "inventory.quantity": "الكمية",
+    "inventory.available": "متوفر",
+    "inventory.description": "الوصف",
+    "inventory.imageUrl": "رابط الصورة",
+    "inventory.gold": "ذهب",
+    "inventory.silver": "فضة",
+    "inventory.platinum": "بلاتين",
+    "inventory.whiteGold": "ذهب أبيض",
+    "inventory.roseGold": "ذهب وردي",
+    "inventory.other": "أخرى",
+    "inventory.categories": "الفئات",
+    "inventory.addCategory": "إضافة فئة",
+    "inventory.deleteCategory": "حذف الفئة",
+    "inventory.noItems": "لا توجد منتجات في المخزون",
+    "inventory.profit": "الربح",
 
-    "orders.title": "الطلبات النشطة",
-    "orders.subtitle": "إدارة الطلبات الواردة والجاري تحضيرها",
-    "orders.noActiveOrders": "لا توجد طلبات نشطة",
-    "orders.newOrdersAppear": "ستظهر الطلبات الجديدة هنا",
-    "orders.recentCompleted": "المكتملة مؤخراً",
-    "orders.last10": "آخر 10 طلبات مكتملة أو ملغاة",
-    "orders.orderUpdated": "تم تحديث الطلب",
-    "orders.pending": "قيد الانتظار",
-    "orders.preparing": "قيد التحضير",
-    "orders.ready": "جاهز",
+    "customers.title": "العملاء",
+    "customers.addCustomer": "إضافة عميل",
+    "customers.editCustomer": "تعديل العميل",
+    "customers.name": "الاسم",
+    "customers.phone": "الهاتف",
+    "customers.email": "البريد الإلكتروني",
+    "customers.address": "العنوان",
+    "customers.notes": "ملاحظات",
+    "customers.noCustomers": "لا يوجد عملاء",
+    "customers.purchaseHistory": "سجل المشتريات",
+
+    "orders.title": "الطلبات",
+    "orders.orderNumber": "طلب رقم #",
+    "orders.customer": "العميل",
+    "orders.total": "المجموع",
+    "orders.payment": "الدفع",
+    "orders.status": "الحالة",
+    "orders.date": "التاريخ",
+    "orders.items": "المنتجات",
+    "orders.noOrders": "لا توجد طلبات",
     "orders.completed": "مكتمل",
     "orders.cancelled": "ملغي",
+    "orders.refunded": "مسترجع",
+    "orders.pending": "قيد الانتظار",
 
-    "history.title": "سجل الطلبات",
-    "history.subtitle": "عرض جميع الطلبات السابقة والإيرادات",
-    "history.todayOrders": "طلبات اليوم",
-    "history.todayRevenue": "إيرادات اليوم",
-    "history.totalRevenue": "إجمالي الإيرادات",
-    "history.allOrders": "جميع الطلبات",
-    "history.orderNumber": "رقم الطلب",
-    "history.table": "الطاولة",
-    "history.customer": "الزبون",
-    "history.status": "الحالة",
-    "history.payment": "الدفع",
-    "history.total": "الإجمالي",
-    "history.date": "التاريخ",
-    "history.noOrdersYet": "لا توجد طلبات بعد",
-    "history.ordersAppearAfter": "ستظهر الطلبات هنا بعد إتمام عملية الدفع",
+    "repairs.title": "الإصلاحات",
+    "repairs.addRepair": "إضافة إصلاح",
+    "repairs.ticketNumber": "تذكرة رقم #",
+    "repairs.customerName": "اسم العميل",
+    "repairs.customerPhone": "هاتف العميل",
+    "repairs.itemDescription": "وصف القطعة",
+    "repairs.issueDescription": "وصف المشكلة",
+    "repairs.estimatedCost": "التكلفة المتوقعة",
+    "repairs.finalCost": "التكلفة النهائية",
+    "repairs.status": "الحالة",
+    "repairs.estimatedDate": "التاريخ المتوقع",
+    "repairs.noRepairs": "لا توجد تذاكر إصلاح",
+    "repairs.received": "مستلم",
+    "repairs.inProgress": "قيد التنفيذ",
+    "repairs.ready": "جاهز للاستلام",
+    "repairs.delivered": "تم التسليم",
+    "repairs.cancelled": "ملغي",
+    "repairs.updateStatus": "تحديث الحالة",
 
-    "auth.restaurantQuestion": "هل أنت مطعم؟",
-    "auth.goToRestaurant": "الذهاب لبوابة المطعم",
+    "layaway.title": "خطط التقسيط",
+    "layaway.addPlan": "إضافة خطة تقسيط",
+    "layaway.customerName": "اسم العميل",
+    "layaway.customerPhone": "هاتف العميل",
+    "layaway.item": "المنتج",
+    "layaway.totalPrice": "السعر الإجمالي",
+    "layaway.amountPaid": "المبلغ المدفوع",
+    "layaway.remaining": "المبلغ المتبقي",
+    "layaway.status": "الحالة",
+    "layaway.dueDate": "تاريخ الاستحقاق",
+    "layaway.noPlans": "لا توجد خطط تقسيط",
+    "layaway.makePayment": "تسجيل دفعة",
+    "layaway.paymentAmount": "مبلغ الدفعة",
+    "layaway.paymentMethod": "طريقة الدفع",
+    "layaway.payments": "الدفعات",
+    "layaway.active": "نشط",
+    "layaway.completed": "مكتمل",
+    "layaway.cancelled": "ملغي",
+    "layaway.defaulted": "متعثر",
 
-    "portal.restaurantEdition": "نسخة المطاعم",
-    "portal.heroTitle": "نظام نقاط البيع لمطعمك",
-    "portal.heroDesc": "ادخل إلى محطة نقاط البيع، وأدر قائمتك، وتتبع الطلبات، واعرض سجل المبيعات — كل ذلك في مكان واحد.",
-    "portal.featureMenu": "إدارة القائمة",
-    "portal.featureMenuDesc": "إضافة وتعديل وتنظيم عناصر القائمة والتصنيفات",
-    "portal.featureOrders": "إدارة الطلبات",
-    "portal.featureOrdersDesc": "تتبع الطلبات الواردة من الانتظار إلى الاكتمال",
-    "portal.featureCheckout": "دفع سريع",
-    "portal.featureCheckoutDesc": "مدفوعات نقدية وبطاقات سريعة مع إيصالات فورية",
-    "portal.featureTracking": "تتبع المبيعات",
-    "portal.featureTrackingDesc": "تقارير الإيرادات اليومية وسجل الطلبات الكامل",
-    "portal.welcomeTitle": "دخول المطعم",
-    "portal.welcomeDesc": "سجّل الدخول للوصول إلى محطة نقاط البيع وإدارة مطعمك",
-    "portal.usernamePlaceholder": "اسم مستخدم مطعمك",
-    "portal.signIn": "الدخول إلى نقاط البيع",
-    "portal.contactAdmin": "يتم توفير بيانات الدخول من قبل مدير المنصة",
-    "portal.adminQuestion": "هل أنت مدير المنصة؟",
-    "portal.goToAdmin": "الذهاب لدخول المدير",
+    "branding.title": "الهوية التجارية",
+    "branding.brandColor": "لون العلامة التجارية",
+    "branding.logoUrl": "رابط الشعار",
+    "branding.receiptHeader": "رأس الإيصال",
+    "branding.receiptFooter": "تذييل الإيصال",
+    "branding.save": "حفظ التغييرات",
+    "branding.saved": "تم حفظ الهوية التجارية بنجاح",
 
-    "common.notFound": "404 الصفحة غير موجودة",
-    "common.pageNotFound": "هل نسيت إضافة الصفحة إلى الموجّه؟",
-    "common.admin": "مدير",
-    "common.restaurant": "مطعم",
+    "common.save": "حفظ",
+    "common.cancel": "إلغاء",
+    "common.delete": "حذف",
+    "common.edit": "تعديل",
+    "common.add": "إضافة",
+    "common.search": "بحث...",
+    "common.loading": "جاري التحميل...",
+    "common.noData": "لا توجد بيانات",
+    "common.active": "نشط",
+    "common.inactive": "غير نشط",
+    "common.expired": "منتهي",
+    "common.basic": "أساسي",
+    "common.standard": "قياسي",
+    "common.premium": "مميز",
+    "common.currency": "د.ع",
+
+    "receipt.receipt": "إيصال",
+    "receipt.date": "التاريخ",
+    "receipt.orderNo": "رقم الطلب",
+    "receipt.thankYou": "شكراً لتسوقكم معنا!",
+    "receipt.print": "طباعة",
   },
 };
 
@@ -758,28 +613,29 @@ type LanguageContextType = {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: keyof TranslationKeys) => string;
-  isRTL: boolean;
+  dir: "ltr" | "rtl";
 };
 
-const LanguageContext = createContext<LanguageContextType | null>(null);
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem("app-language");
-    return (saved === "ar" ? "ar" : "en") as Language;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("language") as Language;
+      return saved === "ar" ? "ar" : "en";
+    }
+    return "en";
   });
-
-  const isRTL = language === "ar";
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem("app-language", lang);
+    localStorage.setItem("language", lang);
   }, []);
 
   useEffect(() => {
-    document.documentElement.dir = isRTL ? "rtl" : "ltr";
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
     document.documentElement.lang = language;
-  }, [language, isRTL]);
+  }, [language]);
 
   const t = useCallback(
     (key: keyof TranslationKeys): string => {
@@ -788,8 +644,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [language]
   );
 
+  const dir = language === "ar" ? "rtl" : "ltr";
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, isRTL }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
       {children}
     </LanguageContext.Provider>
   );

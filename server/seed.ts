@@ -13,40 +13,40 @@ export async function seedDatabase() {
     username: "admin",
     password: await hashPassword("admin123"),
     role: "admin",
-    restaurantId: null,
+    storeId: null,
   });
 
-  const restaurant1 = await storage.createRestaurant({
-    name: "Bella Italia",
-    ownerName: "Marco Romano",
-    phone: "+1 555-0101",
-    email: "marco@bellaitalia.com",
-    address: "123 Main Street, Downtown",
+  const store1 = await storage.createStore({
+    name: "Al-Noor Jewelers",
+    ownerName: "Ahmed Al-Rashid",
+    phone: "+964 770 123 4567",
+    email: "ahmed@alnoorjewelers.com",
+    address: "Al-Mansour Street, Baghdad",
     isActive: true,
   });
 
-  const restaurant2 = await storage.createRestaurant({
-    name: "Dragon Palace",
-    ownerName: "Wei Chen",
-    phone: "+1 555-0202",
-    email: "wei@dragonpalace.com",
-    address: "456 Oak Avenue, Midtown",
+  const store2 = await storage.createStore({
+    name: "Golden Crown",
+    ownerName: "Hassan Ibrahim",
+    phone: "+964 771 234 5678",
+    email: "hassan@goldencrown.com",
+    address: "Erbil Bazaar, Erbil",
     isActive: true,
   });
 
-  const restaurant3 = await storage.createRestaurant({
-    name: "The Burger Joint",
-    ownerName: "Jake Morrison",
-    phone: "+1 555-0303",
-    email: "jake@burgerjoint.com",
-    address: "789 Elm Boulevard, Uptown",
+  const store3 = await storage.createStore({
+    name: "Diamond House",
+    ownerName: "Omar Saeed",
+    phone: "+964 772 345 6789",
+    email: "omar@diamondhouse.com",
+    address: "Karada Street, Baghdad",
     isActive: false,
   });
 
   const endDate1 = new Date();
   endDate1.setDate(endDate1.getDate() + 25);
   await storage.createSubscription({
-    restaurantId: restaurant1.id,
+    storeId: store1.id,
     plan: "premium",
     pricePerMonth: "125000",
     status: "active",
@@ -58,7 +58,7 @@ export async function seedDatabase() {
   const endDate2 = new Date();
   endDate2.setDate(endDate2.getDate() + 15);
   await storage.createSubscription({
-    restaurantId: restaurant2.id,
+    storeId: store2.id,
     plan: "standard",
     pricePerMonth: "75000",
     status: "active",
@@ -68,7 +68,7 @@ export async function seedDatabase() {
   });
 
   await storage.createSubscription({
-    restaurantId: restaurant3.id,
+    storeId: store3.id,
     plan: "basic",
     pricePerMonth: "35000",
     status: "expired",
@@ -78,45 +78,45 @@ export async function seedDatabase() {
   });
 
   await storage.createUser({
-    username: "bellaitalia",
-    password: await hashPassword("bella123"),
-    role: "restaurant",
-    restaurantId: restaurant1.id,
+    username: "alnoor",
+    password: await hashPassword("alnoor123"),
+    role: "store",
+    storeId: store1.id,
   });
 
   await storage.createUser({
-    username: "dragonpalace",
-    password: await hashPassword("dragon123"),
-    role: "restaurant",
-    restaurantId: restaurant2.id,
+    username: "goldencrown",
+    password: await hashPassword("golden123"),
+    role: "store",
+    storeId: store2.id,
   });
 
-  const cat1 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Appetizers", sortOrder: 0 });
-  const cat2 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Pasta", sortOrder: 1 });
-  const cat3 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Pizza", sortOrder: 2 });
-  const cat4 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Desserts", sortOrder: 3 });
-  const cat5 = await storage.createMenuCategory({ restaurantId: restaurant1.id, name: "Drinks", sortOrder: 4 });
+  const cat1 = await storage.createCategory({ storeId: store1.id, name: "Rings", sortOrder: 0 });
+  const cat2 = await storage.createCategory({ storeId: store1.id, name: "Necklaces", sortOrder: 1 });
+  const cat3 = await storage.createCategory({ storeId: store1.id, name: "Bracelets", sortOrder: 2 });
+  const cat4 = await storage.createCategory({ storeId: store1.id, name: "Earrings", sortOrder: 3 });
+  const cat5 = await storage.createCategory({ storeId: store1.id, name: "Watches", sortOrder: 4 });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Bruschetta", description: "Toasted bread with tomatoes, garlic, and basil", price: "7500", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Caprese Salad", description: "Fresh mozzarella, tomatoes, and basil drizzle", price: "9000", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat1.id, name: "Garlic Bread", description: "Warm bread with garlic butter", price: "4500", isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat1.id, sku: "RNG-001", name: "22K Gold Wedding Band", description: "Classic wedding band in 22 karat gold", metalType: "gold", purity: "22K", weightGrams: "8.5", costPrice: "850000", sellingPrice: "1050000", quantity: 5, isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat1.id, sku: "RNG-002", name: "Diamond Solitaire Ring", description: "0.5 carat diamond on 18K white gold", metalType: "white_gold", purity: "18K", weightGrams: "4.2", gemstone: "Diamond", caratWeight: "0.50", costPrice: "2500000", sellingPrice: "3200000", quantity: 2, isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat1.id, sku: "RNG-003", name: "Ruby Gold Ring", description: "Natural ruby set in 21K gold", metalType: "gold", purity: "21K", weightGrams: "6.8", gemstone: "Ruby", caratWeight: "1.20", costPrice: "1800000", sellingPrice: "2300000", quantity: 3, isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Spaghetti Carbonara", description: "Classic carbonara with pancetta and egg", price: "15000", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Penne Arrabbiata", description: "Spicy tomato sauce with chili flakes", price: "12000", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat2.id, name: "Fettuccine Alfredo", description: "Creamy parmesan sauce", price: "13500", isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat2.id, sku: "NCK-001", name: "22K Gold Chain 20in", description: "Classic rope chain, 20 inches", metalType: "gold", purity: "22K", weightGrams: "15.0", costPrice: "1500000", sellingPrice: "1850000", quantity: 8, isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat2.id, sku: "NCK-002", name: "Pearl Pendant Necklace", description: "Freshwater pearl on 18K gold chain", metalType: "gold", purity: "18K", weightGrams: "5.5", gemstone: "Pearl", costPrice: "650000", sellingPrice: "850000", quantity: 4, isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Margherita Pizza", description: "Tomato sauce, mozzarella, and fresh basil", price: "10000", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Pepperoni Pizza", description: "Classic pepperoni with mozzarella", price: "13500", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat3.id, name: "Quattro Formaggi", description: "Four cheese pizza blend", price: "16000", isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat3.id, sku: "BRC-001", name: "21K Gold Bangle", description: "Traditional bangle bracelet", metalType: "gold", purity: "21K", weightGrams: "25.0", costPrice: "2400000", sellingPrice: "3000000", quantity: 3, isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat3.id, sku: "BRC-002", name: "Silver Tennis Bracelet", description: "Sterling silver with cubic zirconia", metalType: "silver", purity: "925", weightGrams: "12.0", gemstone: "Cubic Zirconia", costPrice: "120000", sellingPrice: "180000", quantity: 6, isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat4.id, name: "Tiramisu", description: "Classic Italian coffee dessert", price: "8000", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat4.id, name: "Panna Cotta", description: "Vanilla cream dessert with berry sauce", price: "6500", isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat4.id, sku: "EAR-001", name: "Diamond Stud Earrings", description: "0.25ct each, 18K white gold", metalType: "white_gold", purity: "18K", weightGrams: "2.0", gemstone: "Diamond", caratWeight: "0.50", costPrice: "1200000", sellingPrice: "1600000", quantity: 4, isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat4.id, sku: "EAR-002", name: "Gold Hoop Earrings", description: "22K gold medium hoops", metalType: "gold", purity: "22K", weightGrams: "6.0", costPrice: "600000", sellingPrice: "780000", quantity: 7, isAvailable: true });
 
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "Espresso", description: "Single shot espresso", price: "2500", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "Sparkling Water", description: "San Pellegrino 500ml", price: "3000", isAvailable: true });
-  await storage.createMenuItem({ restaurantId: restaurant1.id, categoryId: cat5.id, name: "House Wine (Glass)", description: "Red or white house selection", price: "8500", isAvailable: true });
+  await storage.createInventoryItem({ storeId: store1.id, categoryId: cat5.id, sku: "WCH-001", name: "Gold Dress Watch", description: "18K gold case with leather strap", metalType: "gold", purity: "18K", weightGrams: "45.0", costPrice: "3500000", sellingPrice: "4500000", quantity: 2, isAvailable: true });
+
+  const cust1 = await storage.createCustomer({ storeId: store1.id, name: "Fatima Al-Hakim", phone: "+964 770 555 1234", email: "fatima@email.com", address: "Al-Jadiriya, Baghdad" });
+  await storage.createCustomer({ storeId: store1.id, name: "Mariam Hassan", phone: "+964 771 555 2345", email: "mariam@email.com" });
+  await storage.createCustomer({ storeId: store1.id, name: "Ali Mohammed", phone: "+964 772 555 3456" });
 
   console.log("Seed data created successfully");
   console.log("Admin login: admin / admin123");
-  console.log("Restaurant login: bellaitalia / bella123");
+  console.log("Store login: alnoor / alnoor123");
 }

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
-import { insertRestaurantSchema, insertMenuCategorySchema, insertMenuItemSchema, updateBrandingSchema } from "@shared/schema";
+import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema } from "@shared/schema";
 
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -22,35 +22,35 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
-  app.get("/api/restaurants", requireAuth, async (req, res) => {
+  app.get("/api/stores", requireAuth, async (req, res) => {
     if (req.user!.role === "admin") {
-      const restaurants = await storage.getRestaurants();
-      res.json(restaurants);
+      const storesList = await storage.getStores();
+      res.json(storesList);
     } else {
-      if (req.user!.restaurantId) {
-        const restaurant = await storage.getRestaurant(req.user!.restaurantId);
-        res.json(restaurant ? [restaurant] : []);
+      if (req.user!.storeId) {
+        const store = await storage.getStore(req.user!.storeId);
+        res.json(store ? [store] : []);
       } else {
         res.json([]);
       }
     }
   });
 
-  app.post("/api/restaurants", requireAdmin, async (req, res) => {
+  app.post("/api/stores", requireAdmin, async (req, res) => {
     try {
-      const { username, password, plan, ...restaurantData } = req.body;
+      const { username, password, plan, ...storeData } = req.body;
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      const restaurant = await storage.createRestaurant({
-        name: restaurantData.name,
-        ownerName: restaurantData.ownerName,
-        phone: restaurantData.phone,
-        email: restaurantData.email || null,
-        address: restaurantData.address || null,
+      const store = await storage.createStore({
+        name: storeData.name,
+        ownerName: storeData.ownerName,
+        phone: storeData.phone,
+        email: storeData.email || null,
+        address: storeData.address || null,
         isActive: true,
       });
 
@@ -64,7 +64,7 @@ export async function registerRoutes(
       endDate.setDate(endDate.getDate() + 30);
 
       await storage.createSubscription({
-        restaurantId: restaurant.id,
+        storeId: store.id,
         plan: plan || "basic",
         pricePerMonth: planPrices[plan || "basic"],
         status: "active",
@@ -76,20 +76,20 @@ export async function registerRoutes(
       await storage.createUser({
         username,
         password: await hashPassword(password),
-        role: "restaurant",
-        restaurantId: restaurant.id,
+        role: "store",
+        storeId: store.id,
       });
 
-      res.status(201).json(restaurant);
+      res.status(201).json(store);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
   });
 
-  app.patch("/api/restaurants/:id", requireAdmin, async (req, res) => {
+  app.patch("/api/stores/:id", requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
-    const updated = await storage.updateRestaurant(id, req.body);
-    if (!updated) return res.status(404).json({ message: "Restaurant not found" });
+    const updated = await storage.updateStore(id, req.body);
+    if (!updated) return res.status(404).json({ message: "Store not found" });
     res.json(updated);
   });
 
@@ -121,35 +121,35 @@ export async function registerRoutes(
     res.json(updated);
   });
 
-  app.get("/api/restaurant/branding", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
-    const restaurant = await storage.getRestaurant(restaurantId);
-    if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+  app.get("/api/store/branding", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const store = await storage.getStore(storeId);
+    if (!store) return res.status(404).json({ message: "Store not found" });
     res.json({
-      brandColor: restaurant.brandColor,
-      logoUrl: restaurant.logoUrl,
-      receiptHeader: restaurant.receiptHeader,
-      receiptFooter: restaurant.receiptFooter,
-      name: restaurant.name,
+      brandColor: store.brandColor,
+      logoUrl: store.logoUrl,
+      receiptHeader: store.receiptHeader,
+      receiptFooter: store.receiptFooter,
+      name: store.name,
     });
   });
 
-  app.patch("/api/restaurant/branding", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
+  app.patch("/api/store/branding", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
     const parsed = updateBrandingSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid branding data" });
     }
     const { brandColor, logoUrl, receiptHeader, receiptFooter } = parsed.data;
-    const updated = await storage.updateRestaurant(restaurantId, {
+    const updated = await storage.updateStore(storeId, {
       brandColor,
       logoUrl,
       receiptHeader,
       receiptFooter,
     });
-    if (!updated) return res.status(404).json({ message: "Restaurant not found" });
+    if (!updated) return res.status(404).json({ message: "Store not found" });
     res.json({
       brandColor: updated.brandColor,
       logoUrl: updated.logoUrl,
@@ -159,98 +159,118 @@ export async function registerRoutes(
     });
   });
 
-  app.get("/api/menu-categories", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.json([]);
-    const categories = await storage.getMenuCategories(restaurantId);
-    res.json(categories);
+  app.get("/api/categories", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.json([]);
+    const cats = await storage.getCategories(storeId);
+    res.json(cats);
   });
 
-  app.post("/api/menu-categories", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
-
-    const category = await storage.createMenuCategory({
+  app.post("/api/categories", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const category = await storage.createCategory({
       ...req.body,
-      restaurantId,
+      storeId,
       sortOrder: 0,
     });
     res.status(201).json(category);
   });
 
-  app.delete("/api/menu-categories/:id", requireAuth, async (req, res) => {
+  app.delete("/api/categories/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(403).json({ message: "Forbidden" });
-    const cats = await storage.getMenuCategories(restaurantId);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const cats = await storage.getCategories(storeId);
     if (!cats.find((c) => c.id === id)) return res.status(404).json({ message: "Category not found" });
     try {
-      await storage.deleteMenuCategory(id);
+      await storage.deleteCategory(id);
       res.sendStatus(204);
     } catch (error: any) {
       res.status(400).json({ message: "Cannot delete category with items" });
     }
   });
 
-  app.get("/api/menu-items", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.json([]);
-    const items = await storage.getMenuItems(restaurantId);
+  app.get("/api/inventory", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.json([]);
+    const items = await storage.getInventoryItems(storeId);
     res.json(items);
   });
 
-  app.post("/api/menu-items", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
-
-    const item = await storage.createMenuItem({
+  app.post("/api/inventory", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const item = await storage.createInventoryItem({
       ...req.body,
-      restaurantId,
-      isAvailable: true,
+      storeId,
     });
     res.status(201).json(item);
   });
 
-  app.patch("/api/menu-items/:id", requireAuth, async (req, res) => {
+  app.patch("/api/inventory/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(403).json({ message: "Forbidden" });
-    const items = await storage.getMenuItems(restaurantId);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const items = await storage.getInventoryItems(storeId);
     if (!items.find((i) => i.id === id)) return res.status(404).json({ message: "Item not found" });
-    const updated = await storage.updateMenuItem(id, req.body);
+    const updated = await storage.updateInventoryItem(id, req.body);
     res.json(updated);
   });
 
-  app.delete("/api/menu-items/:id", requireAuth, async (req, res) => {
+  app.delete("/api/inventory/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(403).json({ message: "Forbidden" });
-    const items = await storage.getMenuItems(restaurantId);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const items = await storage.getInventoryItems(storeId);
     if (!items.find((i) => i.id === id)) return res.status(404).json({ message: "Item not found" });
-    await storage.deleteMenuItem(id);
+    await storage.deleteInventoryItem(id);
     res.sendStatus(204);
   });
 
+  app.get("/api/customers", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.json([]);
+    const customerList = await storage.getCustomers(storeId);
+    res.json(customerList);
+  });
+
+  app.post("/api/customers", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const customer = await storage.createCustomer({ ...req.body, storeId });
+    res.status(201).json(customer);
+  });
+
+  app.patch("/api/customers/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const custs = await storage.getCustomers(storeId);
+    if (!custs.find((c) => c.id === id)) return res.status(404).json({ message: "Customer not found" });
+    const updated = await storage.updateCustomer(id, req.body);
+    res.json(updated);
+  });
+
   app.get("/api/orders", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.json([]);
-    const ordersList = await storage.getOrders(restaurantId);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.json([]);
+    const ordersList = await storage.getOrders(storeId);
     res.json(ordersList);
   });
 
   app.post("/api/orders", requireAuth, async (req, res) => {
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(400).json({ message: "No restaurant assigned" });
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
 
-    const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
-
+    const orderNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
     const { items, ...orderData } = req.body;
 
     const order = await storage.createOrder({
       ...orderData,
-      restaurantId,
+      storeId,
       orderNumber,
-      status: "pending",
+      status: "completed",
     });
 
     const createdItems = [];
@@ -258,12 +278,20 @@ export async function registerRoutes(
       for (const item of items) {
         const orderItem = await storage.createOrderItem({
           orderId: order.id,
-          menuItemId: item.menuItemId,
+          inventoryItemId: item.inventoryItemId,
           name: item.name,
+          sku: item.sku || null,
           price: item.price,
           quantity: item.quantity,
         });
         createdItems.push(orderItem);
+
+        const invItem = await storage.getInventoryItem(item.inventoryItemId);
+        if (invItem && invItem.quantity > 0) {
+          await storage.updateInventoryItem(item.inventoryItemId, {
+            quantity: invItem.quantity - item.quantity,
+          });
+        }
       }
     }
 
@@ -272,10 +300,10 @@ export async function registerRoutes(
 
   app.get("/api/orders/:id/items", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(403).json({ message: "Forbidden" });
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const order = await storage.getOrder(id);
-    if (!order || order.restaurantId !== restaurantId) {
+    if (!order || order.storeId !== storeId) {
       return res.status(404).json({ message: "Order not found" });
     }
     const items = await storage.getOrderItems(id);
@@ -284,14 +312,115 @@ export async function registerRoutes(
 
   app.patch("/api/orders/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
-    const restaurantId = req.user!.restaurantId;
-    if (!restaurantId) return res.status(403).json({ message: "Forbidden" });
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const order = await storage.getOrder(id);
-    if (!order || order.restaurantId !== restaurantId) {
+    if (!order || order.storeId !== storeId) {
       return res.status(404).json({ message: "Order not found" });
     }
     const updated = await storage.updateOrder(id, { status: req.body.status });
     res.json(updated);
+  });
+
+  app.get("/api/repairs", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.json([]);
+    const repairs = await storage.getRepairOrders(storeId);
+    res.json(repairs);
+  });
+
+  app.post("/api/repairs", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const ticketNumber = `RPR-${Date.now().toString(36).toUpperCase()}`;
+    const repair = await storage.createRepairOrder({
+      ...req.body,
+      storeId,
+      ticketNumber,
+      status: "received",
+    });
+    res.status(201).json(repair);
+  });
+
+  app.patch("/api/repairs/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const repair = await storage.getRepairOrder(id);
+    if (!repair || repair.storeId !== storeId) {
+      return res.status(404).json({ message: "Repair order not found" });
+    }
+    const updated = await storage.updateRepairOrder(id, req.body);
+    res.json(updated);
+  });
+
+  app.get("/api/layaways", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.json([]);
+    const plans = await storage.getLayawayPlans(storeId);
+    res.json(plans);
+  });
+
+  app.post("/api/layaways", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const plan = await storage.createLayawayPlan({
+      ...req.body,
+      storeId,
+      status: "active",
+    });
+    res.status(201).json(plan);
+  });
+
+  app.patch("/api/layaways/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const plan = await storage.getLayawayPlan(id);
+    if (!plan || plan.storeId !== storeId) {
+      return res.status(404).json({ message: "Layaway plan not found" });
+    }
+    const updated = await storage.updateLayawayPlan(id, req.body);
+    res.json(updated);
+  });
+
+  app.get("/api/layaways/:id/payments", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const plan = await storage.getLayawayPlan(id);
+    if (!plan || plan.storeId !== storeId) {
+      return res.status(404).json({ message: "Layaway plan not found" });
+    }
+    const payments = await storage.getLayawayPayments(id);
+    res.json(payments);
+  });
+
+  app.post("/api/layaways/:id/payments", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = req.user!.storeId;
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const plan = await storage.getLayawayPlan(id);
+    if (!plan || plan.storeId !== storeId) {
+      return res.status(404).json({ message: "Layaway plan not found" });
+    }
+
+    const payment = await storage.createLayawayPayment({
+      layawayId: id,
+      amount: req.body.amount,
+      paymentMethod: req.body.paymentMethod,
+    });
+
+    const newPaid = parseFloat(plan.amountPaid) + parseFloat(req.body.amount);
+    const newRemaining = parseFloat(plan.totalPrice) - newPaid;
+
+    await storage.updateLayawayPlan(id, {
+      amountPaid: newPaid.toString(),
+      remainingBalance: newRemaining.toString(),
+      status: newRemaining <= 0 ? "completed" : "active",
+    });
+
+    res.status(201).json(payment);
   });
 
   return httpServer;

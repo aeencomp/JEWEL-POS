@@ -68,7 +68,7 @@ export function setupAuth(app: Express) {
       username: req.body.username,
       password: await hashPassword(req.body.password),
       role: "admin",
-      restaurantId: null,
+      storeId: null,
     });
 
     req.login(user, (err) => {
