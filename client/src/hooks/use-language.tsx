@@ -49,6 +49,7 @@ type TranslationKeys = {
   "admin.address": string;
   "admin.username": string;
   "admin.password": string;
+  "admin.newPasswordPlaceholder": string;
   "admin.selectPlan": string;
   "admin.subscriptions": string;
   "admin.renew": string;
@@ -253,6 +254,7 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.address": "Address",
     "admin.username": "Username",
     "admin.password": "Password",
+    "admin.newPasswordPlaceholder": "Leave empty to keep current password",
     "admin.selectPlan": "Select Plan",
     "admin.subscriptions": "Subscriptions",
     "admin.renew": "Renew",
@@ -455,6 +457,7 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.address": "العنوان",
     "admin.username": "اسم المستخدم",
     "admin.password": "كلمة المرور",
+    "admin.newPasswordPlaceholder": "اتركه فارغاً للإبقاء على كلمة المرور الحالية",
     "admin.selectPlan": "اختر الخطة",
     "admin.subscriptions": "الاشتراكات",
     "admin.renew": "تجديد",

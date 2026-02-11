@@ -85,6 +85,7 @@ const editStoreSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").or(z.literal("")).optional(),
 });
 
 type EditStoreValues = z.infer<typeof editStoreSchema>;
@@ -143,6 +144,7 @@ export default function AdminStores() {
       phone: "",
       email: "",
       address: "",
+      password: "",
     },
   });
 
@@ -172,6 +174,7 @@ export default function AdminStores() {
       phone: store.phone || "",
       email: store.email || "",
       address: store.address || "",
+      password: "",
     });
     setEditStore(store);
   };
@@ -643,6 +646,26 @@ export default function AdminStores() {
                   </FormItem>
                 )}
               />
+              <div className="border-t pt-4 mt-4">
+                <FormField
+                  control={editForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("admin.password")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder={t("admin.newPasswordPlaceholder")}
+                          data-testid="input-edit-password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <div className="flex items-center justify-end gap-2">
                 <Button
                   type="button"

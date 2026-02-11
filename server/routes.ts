@@ -88,7 +88,19 @@ export async function registerRoutes(
 
   app.patch("/api/stores/:id", requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
-    const updated = await storage.updateStore(id, req.body);
+    const { password, ...storeData } = req.body;
+
+    if (password && password.length > 0) {
+      const storeUsers = await storage.getUsersByStoreId(id);
+      if (storeUsers.length > 0) {
+        const hashedPassword = await hashPassword(password);
+        for (const u of storeUsers) {
+          await storage.updateUserPassword(u.id, hashedPassword);
+        }
+      }
+    }
+
+    const updated = await storage.updateStore(id, storeData);
     if (!updated) return res.status(404).json({ message: "Store not found" });
     res.json(updated);
   });
