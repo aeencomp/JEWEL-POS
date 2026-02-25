@@ -97,7 +97,18 @@ All API routes use `/api/` prefix.
 - Frontend: amber banner shows "Viewing as: [Store Name]" with "Back to Admin" button
 - Sidebar and router switch to store view during impersonation
 
+## RTL Support (CSS Logical Properties)
+- All directional CSS classes use logical properties for automatic RTL flipping:
+  - `ms-` / `me-` instead of `ml-` / `mr-` (margin)
+  - `ps-` / `pe-` instead of `pl-` / `pr-` (padding)
+  - `start-` / `end-` instead of `left-` / `right-` (positioning)
+  - `text-start` / `text-end` instead of `text-left` / `text-right`
+  - `border-s` / `border-e` instead of `border-l` / `border-r`
+- Applied across all pages, sidebar, sheet, dialog, dropdown-menu, select, table, and other UI components
+- New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
+
 ## Recent Changes
+- Fixed RTL layout: replaced all hardcoded directional CSS with logical properties across all components
 - Added barcode generation for inventory items (auto-generated on creation, viewable/printable via JsBarcode CODE128)
 - Added "Buy Jewel" page for purchasing jewelry from customers (metal type, purity, weight, price tracking)
 - Added admin store impersonation feature (view any store's POS as admin)

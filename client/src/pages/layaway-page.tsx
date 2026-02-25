@@ -218,7 +218,7 @@ export default function LayawayPage() {
           {t("layaway.title")}
         </h1>
         <Button data-testid="button-new-layaway" onClick={() => setNewDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="me-2 h-4 w-4" />
           {t("layaway.addPlan")}
         </Button>
       </div>
@@ -293,7 +293,7 @@ export default function LayawayPage() {
                               setPaymentDialogOpen(true);
                             }}
                           >
-                            <CreditCard className="mr-1 h-3 w-3" />
+                            <CreditCard className="me-1 h-3 w-3" />
                             {t("layaway.makePayment")}
                           </Button>
                         )}
@@ -462,7 +462,7 @@ export default function LayawayPage() {
                   {t("common.cancel")}
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit-layaway">
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {createMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                   {t("common.save")}
                 </Button>
               </div>
@@ -527,7 +527,7 @@ export default function LayawayPage() {
                   {t("common.cancel")}
                 </Button>
                 <Button type="submit" disabled={makePaymentMutation.isPending} data-testid="button-submit-payment">
-                  {makePaymentMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {makePaymentMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                   {t("common.save")}
                 </Button>
               </div>

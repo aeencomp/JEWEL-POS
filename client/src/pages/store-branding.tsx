@@ -163,7 +163,7 @@ export default function StoreBranding() {
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={saveMutation.isPending} data-testid="button-save-branding">
-                  {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {saveMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                   {t("branding.save")}
                 </Button>
               </div>

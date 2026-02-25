@@ -308,7 +308,7 @@ export default function InventoryManagement() {
           {t("inventory.title")}
         </h1>
         <Button onClick={openAddItem} data-testid="button-add-item">
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 me-2" />
           {t("inventory.addItem")}
         </Button>
       </div>
@@ -325,7 +325,7 @@ export default function InventoryManagement() {
             }}
             data-testid="button-add-category"
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4 me-1" />
             {t("inventory.addCategory")}
           </Button>
         </CardHeader>
@@ -349,7 +349,7 @@ export default function InventoryManagement() {
               >
                 {cat.name}
                 <button
-                  className="ml-1 rounded-full"
+                  className="ms-1 rounded-full"
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteCategoryMutation.mutate(cat.id);
@@ -366,12 +366,12 @@ export default function InventoryManagement() {
 
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("common.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="ps-9"
             data-testid="input-search-inventory"
           />
         </div>
@@ -436,7 +436,7 @@ export default function InventoryManagement() {
                       <div>
                         <span data-testid={`text-name-${item.id}`}>{item.name}</span>
                         {catName && (
-                          <Badge variant="outline" className="ml-2 text-xs no-default-active-elevate">
+                          <Badge variant="outline" className="ms-2 text-xs no-default-active-elevate">
                             {catName}
                           </Badge>
                         )}
@@ -530,7 +530,7 @@ export default function InventoryManagement() {
                   disabled={createCategoryMutation.isPending}
                   data-testid="button-save-category"
                 >
-                  {createCategoryMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {createCategoryMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
                   {t("common.save")}
                 </Button>
               </DialogFooter>
@@ -764,7 +764,7 @@ export default function InventoryManagement() {
                   {t("common.cancel")}
                 </Button>
                 <Button type="submit" disabled={isSubmitting} data-testid="button-save-item">
-                  {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {isSubmitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
                   {t("common.save")}
                 </Button>
               </DialogFooter>

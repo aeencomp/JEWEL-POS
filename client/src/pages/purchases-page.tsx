@@ -164,19 +164,19 @@ export default function PurchasesPage() {
           {t("purchases.title")}
         </h1>
         <Button onClick={openNewPurchase} data-testid="button-add-purchase">
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 me-2" />
           {t("purchases.addPurchase")}
         </Button>
       </div>
 
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("common.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="ps-9"
             data-testid="input-search-purchases"
           />
         </div>
@@ -427,7 +427,7 @@ export default function PurchasesPage() {
                   disabled={createMutation.isPending}
                   data-testid="button-save-purchase"
                 >
-                  {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {createMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
                   {t("common.save")}
                 </Button>
               </DialogFooter>
