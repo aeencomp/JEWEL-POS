@@ -41,6 +41,7 @@ const customerFormSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   address: z.string().optional(),
+  idNumber: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -65,6 +66,7 @@ export default function CustomersPage() {
       phone: "",
       email: "",
       address: "",
+      idNumber: "",
       notes: "",
     },
   });
@@ -108,7 +110,7 @@ export default function CustomersPage() {
 
   function openAdd() {
     setEditingCustomer(null);
-    form.reset({ name: "", phone: "", email: "", address: "", notes: "" });
+    form.reset({ name: "", phone: "", email: "", address: "", idNumber: "", notes: "" });
     setDialogOpen(true);
   }
 
@@ -119,6 +121,7 @@ export default function CustomersPage() {
       phone: customer.phone || "",
       email: customer.email || "",
       address: customer.address || "",
+      idNumber: customer.idNumber || "",
       notes: customer.notes || "",
     });
     setDialogOpen(true);
@@ -184,6 +187,7 @@ export default function CustomersPage() {
                 <TableHead>{t("customers.name")}</TableHead>
                 <TableHead>{t("customers.phone")}</TableHead>
                 <TableHead>{t("customers.email")}</TableHead>
+                <TableHead>{t("customers.idNumber")}</TableHead>
                 <TableHead>{t("customers.address")}</TableHead>
                 <TableHead>{t("orders.date")}</TableHead>
                 <TableHead>{t("admin.actions")}</TableHead>
@@ -201,6 +205,7 @@ export default function CustomersPage() {
                   <TableCell data-testid={`text-customer-email-${customer.id}`}>
                     {customer.email || "-"}
                   </TableCell>
+                  <TableCell>{customer.idNumber || "-"}</TableCell>
                   <TableCell>{customer.address || "-"}</TableCell>
                   <TableCell>
                     {customer.createdAt
@@ -273,6 +278,19 @@ export default function CustomersPage() {
                     <FormLabel>{t("customers.email")}</FormLabel>
                     <FormControl>
                       <Input {...field} type="email" data-testid="input-customer-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="idNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("customers.idNumber")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-customer-id-number" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

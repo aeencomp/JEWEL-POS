@@ -143,6 +143,7 @@ type TranslationKeys = {
   "customers.phone": string;
   "customers.email": string;
   "customers.address": string;
+  "customers.idNumber": string;
   "customers.notes": string;
   "customers.noCustomers": string;
   "customers.purchaseHistory": string;
@@ -373,6 +374,7 @@ const translations: Record<Language, TranslationKeys> = {
     "customers.phone": "Phone",
     "customers.email": "Email",
     "customers.address": "Address",
+    "customers.idNumber": "ID Number",
     "customers.notes": "Notes",
     "customers.noCustomers": "No customers found",
     "customers.purchaseHistory": "Purchase History",
@@ -601,6 +603,7 @@ const translations: Record<Language, TranslationKeys> = {
     "customers.phone": "الهاتف",
     "customers.email": "البريد الإلكتروني",
     "customers.address": "العنوان",
+    "customers.idNumber": "رقم الهوية",
     "customers.notes": "ملاحظات",
     "customers.noCustomers": "لا يوجد عملاء",
     "customers.purchaseHistory": "سجل المشتريات",

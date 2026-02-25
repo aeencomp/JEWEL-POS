@@ -117,6 +117,7 @@ export const customers = pgTable("customers", {
   phone: text("phone"),
   email: text("email"),
   address: text("address"),
+  idNumber: text("id_number"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

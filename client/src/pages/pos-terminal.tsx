@@ -77,6 +77,8 @@ export default function PosTerminal() {
   const [newCustomerDialog, setNewCustomerDialog] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerAddress, setNewCustomerAddress] = useState("");
+  const [newCustomerIdNumber, setNewCustomerIdNumber] = useState("");
 
   const { data: inventory = [], isLoading: loadingInventory } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
@@ -123,7 +125,7 @@ export default function PosTerminal() {
   });
 
   const createCustomerMutation = useMutation({
-    mutationFn: async (data: { name: string; phone: string }) => {
+    mutationFn: async (data: { name: string; phone: string; address: string; idNumber: string }) => {
       const res = await apiRequest("POST", "/api/customers", data);
       return (await res.json()) as Customer;
     },
@@ -133,6 +135,8 @@ export default function PosTerminal() {
       setNewCustomerDialog(false);
       setNewCustomerName("");
       setNewCustomerPhone("");
+      setNewCustomerAddress("");
+      setNewCustomerIdNumber("");
       toast({ title: t("customers.addCustomer"), description: customer.name });
     },
     onError: (err: Error) => {
@@ -597,6 +601,22 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
                 data-testid="input-new-customer-phone"
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("customers.idNumber")}</label>
+              <Input
+                value={newCustomerIdNumber}
+                onChange={(e) => setNewCustomerIdNumber(e.target.value)}
+                data-testid="input-new-customer-id-number"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("customers.address")}</label>
+              <Input
+                value={newCustomerAddress}
+                onChange={(e) => setNewCustomerAddress(e.target.value)}
+                data-testid="input-new-customer-address"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -605,6 +625,8 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
                 createCustomerMutation.mutate({
                   name: newCustomerName.trim(),
                   phone: newCustomerPhone.trim() || "",
+                  address: newCustomerAddress.trim() || "",
+                  idNumber: newCustomerIdNumber.trim() || "",
                 });
               }}
               disabled={!newCustomerName.trim() || createCustomerMutation.isPending}
