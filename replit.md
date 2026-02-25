@@ -7,7 +7,8 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - **Frontend**: React + TypeScript + Vite + TailwindCSS + shadcn/ui
 - **Backend**: Express.js + TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **Auth**: Passport.js with local strategy (username/password)
+- **Auth**: Passport.js with local strategy (username/password) + 2FA via email for store users
+- **Email**: Resend (via Replit integration) for 2FA verification codes
 - **State**: TanStack Query for data fetching
 - **i18n**: Custom context-based translation system (use-language.tsx)
 
@@ -46,8 +47,20 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `server/seed.ts` - Initial seed data
 - `shared/schema.ts` - Drizzle models + Zod schemas
 
+## Two-Factor Authentication (2FA)
+- Store users must verify identity via email code before login completes
+- 6-digit verification code sent via Resend email service
+- Codes expire after 10 minutes
+- Users can resend codes if needed
+- Store email is set when admin creates the store (synced to user's email field)
+- Admin logins are NOT subject to 2FA
+- Backend: `server/resend.ts` handles email sending via Replit Resend integration
+- Endpoints: `POST /api/verify-2fa`, `POST /api/resend-2fa`
+- Frontend: `store-portal.tsx` shows OTP input after successful password check
+
 ## Database Tables
-- `users` - Admin and store staff accounts
+- `users` - Admin and store staff accounts (email field for 2FA)
+- `verification_codes` - Temporary 2FA codes with expiry
 - `stores` - Jewelry store entities
 - `subscriptions` - Store subscription plans
 - `categories` - Inventory categories (Rings, Necklaces, etc.)

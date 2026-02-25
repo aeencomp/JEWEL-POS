@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,7 +17,12 @@ import {
 } from "@/components/ui/form";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Gem, Lock, User, Loader2, ShoppingCart, Package, Wrench, CreditCard } from "lucide-react";
+import { Gem, Lock, User, Loader2, ShoppingCart, Package, Wrench, CreditCard, Mail, ArrowLeft, Shield } from "lucide-react";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 const loginSchema = z.object({
   username: z.string().min(1),
@@ -27,7 +33,8 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function StorePortal() {
   const { t } = useLanguage();
-  const { loginMutation } = useAuth();
+  const { loginMutation, verify2FAMutation, resend2FAMutation, pending2FA, clearPending2FA } = useAuth();
+  const [verificationCode, setVerificationCode] = useState("");
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -39,6 +46,17 @@ export default function StorePortal() {
 
   function onSubmit(data: LoginForm) {
     loginMutation.mutate({ ...data, portal: "store" });
+  }
+
+  function onVerify() {
+    if (verificationCode.length === 6) {
+      verify2FAMutation.mutate(verificationCode);
+    }
+  }
+
+  function onBack() {
+    clearPending2FA();
+    setVerificationCode("");
   }
 
   return (
@@ -56,70 +74,154 @@ export default function StorePortal() {
               </div>
               <span className="font-semibold text-lg">JewelPOS</span>
             </div>
-            <h1 className="text-2xl font-bold mt-4" data-testid="text-store-login-title">
-              {t("auth.storeLoginTitle")}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1" data-testid="text-store-login-subtitle">
-              {t("auth.storeLoginSubtitle")}
-            </p>
+            {!pending2FA ? (
+              <>
+                <h1 className="text-2xl font-bold mt-4" data-testid="text-store-login-title">
+                  {t("auth.storeLoginTitle")}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1" data-testid="text-store-login-subtitle">
+                  {t("auth.storeLoginSubtitle")}
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold mt-4" data-testid="text-2fa-title">
+                  {t("auth.verifyTitle")}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1" data-testid="text-2fa-subtitle">
+                  {t("auth.verifySubtitle")}
+                </p>
+              </>
+            )}
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("auth.username")}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          placeholder={t("auth.username")}
-                          className="ps-9"
-                          data-testid="input-login-username"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("auth.password")}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          type="password"
-                          placeholder={t("auth.password")}
-                          className="ps-9"
-                          data-testid="input-login-password"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {!pending2FA ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("auth.username")}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            {...field}
+                            placeholder={t("auth.username")}
+                            className="ps-9"
+                            data-testid="input-login-username"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("auth.password")}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            {...field}
+                            type="password"
+                            placeholder={t("auth.password")}
+                            className="ps-9"
+                            data-testid="input-login-password"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-amber-600 text-white border-amber-600"
+                  disabled={loginMutation.isPending}
+                  data-testid="button-login"
+                >
+                  {loginMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                  {t("auth.loginButton")}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                <Mail className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="text-foreground" data-testid="text-2fa-email-sent">
+                    {t("auth.codeSentTo")} <span className="font-medium">{pending2FA.maskedEmail}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center gap-4">
+                <InputOTP
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(value) => setVerificationCode(value)}
+                  data-testid="input-verification-code"
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+
+                <p className="text-xs text-muted-foreground">
+                  {t("auth.codeExpiry")}
+                </p>
+              </div>
+
               <Button
-                type="submit"
+                onClick={onVerify}
                 className="w-full bg-amber-600 text-white border-amber-600"
-                disabled={loginMutation.isPending}
-                data-testid="button-login"
+                disabled={verificationCode.length !== 6 || verify2FAMutation.isPending}
+                data-testid="button-verify-code"
               >
-                {loginMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                {t("auth.loginButton")}
+                {verify2FAMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                <Shield className="me-2 h-4 w-4" />
+                {t("auth.verifyButton")}
               </Button>
-            </form>
-          </Form>
+
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  data-testid="button-back-to-login"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  {t("auth.backToLogin")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => resend2FAMutation.mutate()}
+                  disabled={resend2FAMutation.isPending}
+                  className="text-sm text-amber-600 hover:text-amber-700 transition-colors"
+                  data-testid="button-resend-code"
+                >
+                  {resend2FAMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    t("auth.resendCode")
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -68,6 +68,7 @@
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
+    "resend": "^4.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.5",
@@ -106,7 +107,7 @@
     "drizzle-kit": {
       "@esbuild-kit/esm-loader": "npm:tsx@^4.20.4"
     },
-    "minimatch": "^10.2.1",
+    "minimatch": "^10.2.3",
     "glob": "^11.1.0"
   },
   "optionalDependencies": {

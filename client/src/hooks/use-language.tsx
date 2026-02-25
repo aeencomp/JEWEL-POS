@@ -29,6 +29,13 @@ type TranslationKeys = {
   "auth.storeLoginSubtitle": string;
   "auth.adminLoginTitle": string;
   "auth.adminLoginSubtitle": string;
+  "auth.verifyTitle": string;
+  "auth.verifySubtitle": string;
+  "auth.verifyButton": string;
+  "auth.codeSentTo": string;
+  "auth.codeExpiry": string;
+  "auth.backToLogin": string;
+  "auth.resendCode": string;
 
   "admin.dashboard": string;
   "admin.totalStores": string;
@@ -269,6 +276,13 @@ const translations: Record<Language, TranslationKeys> = {
     "auth.storeLoginSubtitle": "Sign in to access your jewelry store POS",
     "auth.adminLoginTitle": "Admin Login",
     "auth.adminLoginSubtitle": "Sign in to manage stores and subscriptions",
+    "auth.verifyTitle": "Verify Your Identity",
+    "auth.verifySubtitle": "Enter the 6-digit code sent to your email",
+    "auth.verifyButton": "Verify & Sign In",
+    "auth.codeSentTo": "Code sent to",
+    "auth.codeExpiry": "Code expires in 10 minutes",
+    "auth.backToLogin": "Back to login",
+    "auth.resendCode": "Resend code",
 
     "admin.dashboard": "Admin Dashboard",
     "admin.totalStores": "Total Stores",
@@ -507,6 +521,13 @@ const translations: Record<Language, TranslationKeys> = {
     "auth.storeLoginSubtitle": "سجّل الدخول للوصول إلى نقطة بيع المجوهرات",
     "auth.adminLoginTitle": "دخول المدير",
     "auth.adminLoginSubtitle": "سجّل الدخول لإدارة المتاجر والاشتراكات",
+    "auth.verifyTitle": "تحقق من هويتك",
+    "auth.verifySubtitle": "أدخل الرمز المكون من 6 أرقام المرسل إلى بريدك الإلكتروني",
+    "auth.verifyButton": "تحقق وسجّل الدخول",
+    "auth.codeSentTo": "تم إرسال الرمز إلى",
+    "auth.codeExpiry": "ينتهي صلاحية الرمز خلال 10 دقائق",
+    "auth.backToLogin": "العودة لتسجيل الدخول",
+    "auth.resendCode": "إعادة إرسال الرمز",
 
     "admin.dashboard": "لوحة تحكم المدير",
     "admin.totalStores": "إجمالي المتاجر",

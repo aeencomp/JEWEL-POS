@@ -108,6 +108,7 @@ export async function registerRoutes(
       await storage.createUser({
         username,
         password: await hashPassword(password),
+        email: storeData.email || null,
         role: "store",
         storeId: store.id,
       });
@@ -122,13 +123,20 @@ export async function registerRoutes(
     const id = parseInt(req.params.id);
     const { password, ...storeData } = req.body;
 
+    const storeUsers = await storage.getUsersByStoreId(id);
+
     if (password && password.length > 0) {
-      const storeUsers = await storage.getUsersByStoreId(id);
       if (storeUsers.length > 0) {
         const hashedPassword = await hashPassword(password);
         for (const u of storeUsers) {
           await storage.updateUserPassword(u.id, hashedPassword);
         }
+      }
+    }
+
+    if (storeData.email) {
+      for (const u of storeUsers) {
+        await storage.updateUserEmail(u.id, storeData.email);
       }
     }
 

@@ -1,6 +1,6 @@
 import {
   users, stores, subscriptions, categories, inventoryItems, customers, orders, orderItems,
-  repairOrders, layawayPlans, layawayPayments, purchases,
+  repairOrders, layawayPlans, layawayPayments, purchases, verificationCodes,
   type User, type InsertUser,
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
@@ -15,7 +15,7 @@ import {
   type Purchase, type InsertPurchase,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, gt } from "drizzle-orm";
 import { pool } from "./db";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -80,6 +80,11 @@ export interface IStorage {
   getPurchase(id: number): Promise<Purchase | undefined>;
   createPurchase(purchase: InsertPurchase): Promise<Purchase>;
   updatePurchase(id: number, data: Partial<InsertPurchase>): Promise<Purchase | undefined>;
+
+  createVerificationCode(userId: number, code: string, expiresAt: Date): Promise<void>;
+  getValidVerificationCode(userId: number, code: string): Promise<boolean>;
+  deleteVerificationCodes(userId: number): Promise<void>;
+  updateUserEmail(userId: number, email: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -321,6 +326,33 @@ export class DatabaseStorage implements IStorage {
   async updatePurchase(id: number, data: Partial<InsertPurchase>): Promise<Purchase | undefined> {
     const [updated] = await db.update(purchases).set(data).where(eq(purchases.id, id)).returning();
     return updated || undefined;
+  }
+
+  async createVerificationCode(userId: number, code: string, expiresAt: Date): Promise<void> {
+    await db.delete(verificationCodes).where(eq(verificationCodes.userId, userId));
+    await db.insert(verificationCodes).values({ userId, code, expiresAt });
+  }
+
+  async getValidVerificationCode(userId: number, code: string): Promise<boolean> {
+    const [result] = await db
+      .select()
+      .from(verificationCodes)
+      .where(
+        and(
+          eq(verificationCodes.userId, userId),
+          eq(verificationCodes.code, code),
+          gt(verificationCodes.expiresAt, new Date())
+        )
+      );
+    return !!result;
+  }
+
+  async deleteVerificationCodes(userId: number): Promise<void> {
+    await db.delete(verificationCodes).where(eq(verificationCodes.userId, userId));
+  }
+
+  async updateUserEmail(userId: number, email: string): Promise<void> {
+    await db.update(users).set({ email }).where(eq(users.id, userId));
   }
 }
 

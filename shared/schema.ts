@@ -7,8 +7,17 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email"),
   role: text("role", { enum: ["admin", "store"] }).notNull().default("store"),
   storeId: integer("store_id"),
+});
+
+export const verificationCodes = pgTable("verification_codes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -286,6 +295,7 @@ export const purchasesRelations = relations(purchases, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
   role: true,
   storeId: true,
 });

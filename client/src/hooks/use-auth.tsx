@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import {
   useQuery,
   useMutation,
@@ -13,17 +13,27 @@ type UserWithImpersonation = SelectUser & {
   impersonatingStoreName?: string;
 };
 
+type TwoFAResponse = {
+  requires2FA: true;
+  maskedEmail: string;
+  message: string;
+};
+
 type AuthContextType = {
   user: UserWithImpersonation | null;
   isLoading: boolean;
   error: Error | null;
   isImpersonating: boolean;
   impersonatingStoreName: string | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  loginMutation: UseMutationResult<SelectUser | TwoFAResponse, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
   impersonateMutation: UseMutationResult<UserWithImpersonation, Error, number>;
   stopImpersonateMutation: UseMutationResult<SelectUser, Error, void>;
+  verify2FAMutation: UseMutationResult<SelectUser, Error, string>;
+  resend2FAMutation: UseMutationResult<void, Error, void>;
+  pending2FA: TwoFAResponse | null;
+  clearPending2FA: () => void;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password"> & { portal?: string };
@@ -32,6 +42,8 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [pending2FA, setPending2FA] = useState<TwoFAResponse | null>(null);
+
   const {
     data: user,
     error,
@@ -46,12 +58,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data: SelectUser | TwoFAResponse) => {
+      if ("requires2FA" in data && data.requires2FA) {
+        setPending2FA(data as TwoFAResponse);
+      } else {
+        queryClient.setQueryData(["/api/user"], data);
+      }
     },
     onError: (error: Error) => {
       toast({
         title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verify2FAMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const res = await apiRequest("POST", "/api/verify-2fa", { code });
+      return await res.json();
+    },
+    onSuccess: (user: SelectUser) => {
+      setPending2FA(null);
+      queryClient.setQueryData(["/api/user"], user);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resend2FAMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/resend-2fa");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Code resent",
+        description: "A new verification code has been sent to your email.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to resend code",
         description: error.message,
         variant: "destructive",
       });
@@ -139,6 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isImpersonating = !!(user as UserWithImpersonation)?.impersonatingStoreId;
   const impersonatingStoreName = (user as UserWithImpersonation)?.impersonatingStoreName || null;
 
+  const clearPending2FA = () => setPending2FA(null);
+
   return (
     <AuthContext.Provider
       value={{
@@ -152,6 +207,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registerMutation,
         impersonateMutation,
         stopImpersonateMutation,
+        verify2FAMutation,
+        resend2FAMutation,
+        pending2FA,
+        clearPending2FA,
       }}
     >
       {children}
