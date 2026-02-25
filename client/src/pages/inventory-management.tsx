@@ -782,7 +782,7 @@ export default function InventoryManagement() {
             <div className="flex flex-col items-center gap-3 py-4">
               <p className="text-sm font-medium">{barcodeItem.name}</p>
               <p className="text-xs text-muted-foreground">{barcodeItem.sku}</p>
-              <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} />
+              <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} displayText={barcodeItem.name} />
               <Button
                 variant="outline"
                 size="sm"
@@ -809,7 +809,7 @@ export default function InventoryManagement() {
   );
 }
 
-function BarcodeDisplay({ value }: { value: string }) {
+function BarcodeDisplay({ value, displayText }: { value: string; displayText?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -820,6 +820,7 @@ function BarcodeDisplay({ value }: { value: string }) {
           width: 2,
           height: 80,
           displayValue: true,
+          text: displayText || value,
           fontSize: 14,
           margin: 10,
         });
@@ -827,7 +828,7 @@ function BarcodeDisplay({ value }: { value: string }) {
         // fallback - display text
       }
     }
-  }, [value]);
+  }, [value, displayText]);
 
   return <svg id="barcode-svg" ref={svgRef} data-testid="img-barcode" />;
 }
