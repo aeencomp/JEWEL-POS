@@ -671,7 +671,7 @@ ${footer ? `<div style="margin-bottom:6px">${footer}</div>` : ""}
       </Dialog>
 
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t("layaway.payments")}</DialogTitle>
           </DialogHeader>
@@ -684,43 +684,40 @@ ${footer ? `<div style="margin-bottom:6px">${footer}</div>` : ""}
               {t("common.noData")}
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>{t("layaway.paymentAmount")}</TableHead>
-                  <TableHead>{t("layaway.paymentMethod")}</TableHead>
-                  <TableHead>{t("orders.date")}</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment, idx) => (
-                  <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
-                    <TableCell className="font-medium">{idx + 1}</TableCell>
-                    <TableCell data-testid={`text-payment-amount-${payment.id}`}>
-                      {Number(payment.amount).toLocaleString()} {t("common.currency")}
-                    </TableCell>
-                    <TableCell data-testid={`text-payment-method-${payment.id}`}>
-                      {payment.paymentMethod}
-                    </TableCell>
-                    <TableCell data-testid={`text-payment-date-${payment.id}`}>
-                      {new Date(payment.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        data-testid={`button-print-receipt-${payment.id}`}
-                        onClick={() => printInstallmentReceipt(payment, idx + 1)}
-                      >
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-3">
+              {payments.map((payment, idx) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  data-testid={`row-payment-${payment.id}`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold" data-testid={`text-payment-amount-${payment.id}`}>
+                        {Number(payment.amount).toLocaleString()} {t("common.currency")}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <span data-testid={`text-payment-method-${payment.id}`}>{payment.paymentMethod}</span>
+                        {" · "}
+                        <span data-testid={`text-payment-date-${payment.id}`}>{new Date(payment.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    data-testid={`button-print-receipt-${payment.id}`}
+                    onClick={() => printInstallmentReceipt(payment, idx + 1)}
+                  >
+                    <Printer className="me-2 h-4 w-4" />
+                    {t("receipt.print")}
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
         </DialogContent>
       </Dialog>
