@@ -435,8 +435,12 @@ export async function registerRoutes(
   app.post("/api/layaways", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const body = { ...req.body };
+    if (body.dueDate && typeof body.dueDate === "string") {
+      body.dueDate = new Date(body.dueDate);
+    }
     const plan = await storage.createLayawayPlan({
-      ...req.body,
+      ...body,
       storeId,
       status: "active",
     });
@@ -451,7 +455,11 @@ export async function registerRoutes(
     if (!plan || plan.storeId !== storeId) {
       return res.status(404).json({ message: "Layaway plan not found" });
     }
-    const updated = await storage.updateLayawayPlan(id, req.body);
+    const updateBody = { ...req.body };
+    if (updateBody.dueDate && typeof updateBody.dueDate === "string") {
+      updateBody.dueDate = new Date(updateBody.dueDate);
+    }
+    const updated = await storage.updateLayawayPlan(id, updateBody);
     res.json(updated);
   });
 
