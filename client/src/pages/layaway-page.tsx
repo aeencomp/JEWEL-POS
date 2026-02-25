@@ -42,10 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Package, Plus, CreditCard, History, CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { Loader2, Package, Plus, CreditCard, History } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "completed";
 
@@ -63,7 +60,7 @@ const layawayFormSchema = z.object({
   totalPrice: z.string().min(1, "Required"),
   initialPayment: z.string().min(1, "Required"),
   paymentMethod: z.enum(["cash", "card", "transfer"]),
-  dueDate: z.string().optional(),
+  numberOfMonths: z.string().min(1, "Required"),
 });
 
 type LayawayFormValues = z.infer<typeof layawayFormSchema>;
@@ -115,7 +112,7 @@ export default function LayawayPage() {
       totalPrice: "",
       initialPayment: "",
       paymentMethod: "cash",
-      dueDate: "",
+      numberOfMonths: "",
     },
   });
 
@@ -127,11 +124,28 @@ export default function LayawayPage() {
     },
   });
 
+  const watchTotalPrice = form.watch("totalPrice");
+  const watchInitialPayment = form.watch("initialPayment");
+  const watchNumberOfMonths = form.watch("numberOfMonths");
+
+  const monthlyInstallment = (() => {
+    const total = parseFloat(watchTotalPrice) || 0;
+    const initial = parseFloat(watchInitialPayment) || 0;
+    const months = parseInt(watchNumberOfMonths) || 0;
+    if (months <= 0) return 0;
+    const remaining = total - initial;
+    if (remaining <= 0) return 0;
+    return Math.ceil(remaining / months);
+  })();
+
   const createMutation = useMutation({
     mutationFn: async (values: LayawayFormValues) => {
       const totalPrice = parseFloat(values.totalPrice);
       const initialPayment = parseFloat(values.initialPayment);
       const remainingBalance = totalPrice - initialPayment;
+      const months = parseInt(values.numberOfMonths) || 1;
+      const dueDate = new Date();
+      dueDate.setMonth(dueDate.getMonth() + months);
 
       const body: Record<string, unknown> = {
         customerName: values.customerName,
@@ -140,7 +154,7 @@ export default function LayawayPage() {
         totalPrice: values.totalPrice,
         amountPaid: values.initialPayment,
         remainingBalance: remainingBalance.toString(),
-        dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
+        dueDate: dueDate.toISOString(),
       };
       const res = await apiRequest("POST", "/api/layaways", body);
       const plan = await res.json();
@@ -443,36 +457,45 @@ export default function LayawayPage() {
               />
               <FormField
                 control={form.control}
-                name="dueDate"
+                name="numberOfMonths"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>{t("layaway.dueDate")}</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={`w-full justify-start text-start font-normal ${!field.value ? "text-muted-foreground" : ""}`}
-                            data-testid="input-layaway-due-date"
-                          >
-                            <CalendarIcon className="me-2 h-4 w-4" />
-                            {field.value ? format(new Date(field.value), "PPP") : t("layaway.dueDate")}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? date.toISOString() : "")}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                  <FormItem>
+                    <FormLabel>{t("layaway.numberOfMonths")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" min="1" data-testid="input-layaway-months" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              {monthlyInstallment > 0 && (
+                <div className="rounded-lg border bg-muted/50 p-4 space-y-3" data-testid="installment-summary">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{t("layaway.monthlyInstallment")}</span>
+                    <span className="text-lg font-bold text-primary" data-testid="text-monthly-installment">
+                      {monthlyInstallment.toLocaleString()} {t("common.currency")}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="space-y-1">
+                    <span className="text-xs font-medium text-muted-foreground">{t("layaway.installmentSchedule")}</span>
+                    <div className="grid gap-1 max-h-32 overflow-y-auto">
+                      {Array.from({ length: parseInt(watchNumberOfMonths) || 0 }, (_, i) => {
+                        const date = new Date();
+                        date.setMonth(date.getMonth() + i + 1);
+                        return (
+                          <div key={i} className="flex items-center justify-between text-sm py-1 px-2 rounded bg-background">
+                            <span className="text-muted-foreground">
+                              {t("layaway.month")} {i + 1} — {date.toLocaleDateString()}
+                            </span>
+                            <span className="font-medium">{monthlyInstallment.toLocaleString()} {t("common.currency")}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-end gap-2">
                 <Button
