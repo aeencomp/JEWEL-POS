@@ -42,7 +42,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Package, Plus, CreditCard, History } from "lucide-react";
+import { Loader2, Package, Plus, CreditCard, History, CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 
 type StatusFilter = "all" | "active" | "completed";
 
@@ -442,11 +445,30 @@ export default function LayawayPage() {
                 control={form.control}
                 name="dueDate"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>{t("layaway.dueDate")}</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" data-testid="input-layaway-due-date" />
-                    </FormControl>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={`w-full justify-start text-start font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                            data-testid="input-layaway-due-date"
+                          >
+                            <CalendarIcon className="me-2 h-4 w-4" />
+                            {field.value ? format(new Date(field.value), "PPP") : t("layaway.dueDate")}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => field.onChange(date ? date.toISOString() : "")}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

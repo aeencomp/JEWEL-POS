@@ -650,7 +650,7 @@ const translations: Record<Language, TranslationKeys> = {
     "layaway.amountPaid": "المبلغ المدفوع",
     "layaway.remaining": "المبلغ المتبقي",
     "layaway.status": "الحالة",
-    "layaway.dueDate": "تاريخ الاستحقاق",
+    "layaway.dueDate": "الدفعات",
     "layaway.noPlans": "لا توجد خطط تقسيط",
     "layaway.makePayment": "تسجيل دفعة",
     "layaway.paymentAmount": "مبلغ الدفعة",
