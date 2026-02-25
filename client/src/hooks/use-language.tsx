@@ -196,6 +196,11 @@ type TranslationKeys = {
   "layaway.installmentSchedule": string;
   "layaway.month": string;
   "layaway.noPlans": string;
+  "layaway.installmentReceipt": string;
+  "layaway.planNumber": string;
+  "layaway.paymentNo": string;
+  "layaway.paidSoFar": string;
+  "layaway.remainingAfter": string;
   "layaway.makePayment": string;
   "layaway.paymentAmount": string;
   "layaway.paymentMethod": string;
@@ -431,6 +436,11 @@ const translations: Record<Language, TranslationKeys> = {
     "layaway.installmentSchedule": "Installment Schedule",
     "layaway.month": "Month",
     "layaway.noPlans": "No layaway plans found",
+    "layaway.installmentReceipt": "Installment Receipt",
+    "layaway.planNumber": "Plan #",
+    "layaway.paymentNo": "Payment #",
+    "layaway.paidSoFar": "Total Paid So Far",
+    "layaway.remainingAfter": "Remaining Balance",
     "layaway.makePayment": "Make Payment",
     "layaway.paymentAmount": "Payment Amount",
     "layaway.paymentMethod": "Payment Method",
@@ -664,6 +674,11 @@ const translations: Record<Language, TranslationKeys> = {
     "layaway.installmentSchedule": "جدول الأقساط",
     "layaway.month": "شهر",
     "layaway.noPlans": "لا توجد خطط تقسيط",
+    "layaway.installmentReceipt": "إيصال قسط",
+    "layaway.planNumber": "خطة رقم #",
+    "layaway.paymentNo": "دفعة رقم #",
+    "layaway.paidSoFar": "إجمالي المدفوع حتى الآن",
+    "layaway.remainingAfter": "المبلغ المتبقي",
     "layaway.makePayment": "تسجيل دفعة",
     "layaway.paymentAmount": "مبلغ الدفعة",
     "layaway.paymentMethod": "طريقة الدفع",

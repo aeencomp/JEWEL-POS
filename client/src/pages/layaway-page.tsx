@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Package, Plus, CreditCard, History } from "lucide-react";
+import { Loader2, Package, Plus, CreditCard, History, Printer } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "completed";
 
@@ -89,6 +89,10 @@ export default function LayawayPage() {
 
   const { data: inventory = [] } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
+  });
+
+  const { data: branding } = useQuery<{ brandColor: string; name: string; receiptHeader: string | null; receiptFooter: string | null }>({
+    queryKey: ["/api/store/branding"],
   });
 
   const { data: payments = [], isLoading: loadingPayments } = useQuery<LayawayPayment[]>({
@@ -219,6 +223,91 @@ export default function LayawayPage() {
 
   const selectedItemId = form.watch("inventoryItemId");
   const selectedItem = inventory.find((i) => i.id === parseInt(selectedItemId || "0"));
+
+  function printInstallmentReceipt(payment: LayawayPayment, paymentIndex: number) {
+    const plan = layaways.find((l) => l.id === payment.layawayId);
+    if (!plan) return;
+    const w = window.open("", "_blank", "width=400,height=600");
+    if (!w) return;
+
+    const brandColor = branding?.brandColor || "#d4a574";
+    const storeName = branding?.name || "Store";
+    const header = branding?.receiptHeader || "";
+    const footer = branding?.receiptFooter || "";
+    const item = inventory.find((i) => i.id === plan.inventoryItemId);
+
+    const allPayments = payments.filter((p) => p.layawayId === plan.id);
+    const paidBefore = allPayments
+      .filter((p) => new Date(p.createdAt) <= new Date(payment.createdAt) && p.id !== payment.id)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const paidSoFar = paidBefore + Number(payment.amount);
+    const remainingAfter = Number(plan.totalPrice) - paidSoFar;
+
+    const methodLabel = payment.paymentMethod === "cash" ? t("pos.payByCash")
+      : payment.paymentMethod === "card" ? t("pos.payByCard") : t("pos.payByTransfer");
+
+    w.document.write(`<!DOCTYPE html>
+<html dir="${document.documentElement.dir || 'ltr'}"><head><title>${t("layaway.installmentReceipt")}</title>
+<style>
+body{font-family:monospace;max-width:350px;margin:0 auto;padding:20px}
+.header{text-align:center;border-bottom:2px solid ${brandColor};padding-bottom:10px;margin-bottom:10px}
+.store-name{font-size:20px;font-weight:bold;color:${brandColor}}
+.section{margin-bottom:12px;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px}
+.section-title{font-weight:bold;color:${brandColor};margin-bottom:6px;font-size:14px}
+.row{display:flex;justify-content:space-between;padding:3px 0}
+.row-label{color:#555}
+.row-value{font-weight:bold}
+.highlight{background:${brandColor}15;border-color:${brandColor};padding:10px;border-radius:6px;border:2px solid ${brandColor};margin:12px 0;text-align:center}
+.highlight .amount{font-size:22px;font-weight:bold;color:${brandColor}}
+.footer{text-align:center;margin-top:16px;border-top:2px solid ${brandColor};padding-top:10px;font-size:12px}
+@media print{button{display:none}}
+</style></head><body>
+<div class="header">
+<div class="store-name">${storeName}</div>
+${header ? `<div style="font-size:12px;margin-top:4px">${header}</div>` : ""}
+<div style="font-size:14px;font-weight:bold;margin-top:6px;color:${brandColor}">${t("layaway.installmentReceipt")}</div>
+</div>
+
+<div class="section">
+<div class="row"><span class="row-label">${t("layaway.planNumber")}</span><span class="row-value">${plan.id}</span></div>
+<div class="row"><span class="row-label">${t("layaway.paymentNo")}</span><span class="row-value">${paymentIndex}</span></div>
+<div class="row"><span class="row-label">${t("receipt.date")}</span><span class="row-value">${new Date(payment.createdAt).toLocaleString()}</span></div>
+</div>
+
+<div class="section">
+<div class="section-title">${t("layaway.customerName")}</div>
+<div>${plan.customerName}</div>
+${plan.customerPhone ? `<div>${t("layaway.customerPhone")}: ${plan.customerPhone}</div>` : ""}
+</div>
+
+<div class="section">
+<div class="section-title">${t("layaway.item")}</div>
+<div>${item?.name || "#" + plan.inventoryItemId}</div>
+${item?.metalType ? `<div style="font-size:11px;color:#666">${t("inventory.metalType")}: ${item.metalType}${item.purity ? ` | ${t("inventory.purity")}: ${item.purity}` : ""}${item.weightGrams ? ` | ${t("inventory.weight")}: ${item.weightGrams}g` : ""}</div>` : ""}
+</div>
+
+<div class="highlight">
+<div style="font-size:12px;color:#555;margin-bottom:4px">${t("layaway.paymentAmount")}</div>
+<div class="amount">${Number(payment.amount).toLocaleString()} ${t("common.currency")}</div>
+<div style="font-size:12px;margin-top:4px">${methodLabel}</div>
+</div>
+
+<div class="section">
+<div class="row"><span class="row-label">${t("layaway.totalPrice")}</span><span class="row-value">${Number(plan.totalPrice).toLocaleString()} ${t("common.currency")}</span></div>
+<div class="row"><span class="row-label">${t("layaway.paidSoFar")}</span><span class="row-value">${paidSoFar.toLocaleString()} ${t("common.currency")}</span></div>
+<div class="row" style="border-top:1px dashed #ccc;padding-top:6px;margin-top:4px"><span class="row-label">${t("layaway.remainingAfter")}</span><span class="row-value" style="color:${remainingAfter <= 0 ? '#22c55e' : '#ef4444'}">${remainingAfter <= 0 ? "0" : remainingAfter.toLocaleString()} ${t("common.currency")}</span></div>
+</div>
+
+<div class="footer">
+${footer ? `<div style="margin-bottom:6px">${footer}</div>` : ""}
+<div>${t("receipt.thankYou")}</div>
+</div>
+<div style="text-align:center;margin-top:16px">
+<button onclick="window.print()" style="padding:8px 24px;background:${brandColor};color:white;border:none;border-radius:4px;cursor:pointer;font-size:14px">${t("receipt.print")}</button>
+</div>
+</body></html>`);
+    w.document.close();
+  }
 
   if (isLoading) {
     return (
@@ -598,14 +687,17 @@ export default function LayawayPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>#</TableHead>
                   <TableHead>{t("layaway.paymentAmount")}</TableHead>
                   <TableHead>{t("layaway.paymentMethod")}</TableHead>
                   <TableHead>{t("orders.date")}</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((payment) => (
+                {payments.map((payment, idx) => (
                   <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
+                    <TableCell className="font-medium">{idx + 1}</TableCell>
                     <TableCell data-testid={`text-payment-amount-${payment.id}`}>
                       {Number(payment.amount).toLocaleString()} {t("common.currency")}
                     </TableCell>
@@ -614,6 +706,16 @@ export default function LayawayPage() {
                     </TableCell>
                     <TableCell data-testid={`text-payment-date-${payment.id}`}>
                       {new Date(payment.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        data-testid={`button-print-receipt-${payment.id}`}
+                        onClick={() => printInstallmentReceipt(payment, idx + 1)}
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
