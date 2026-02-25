@@ -51,11 +51,12 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `stores` - Jewelry store entities
 - `subscriptions` - Store subscription plans
 - `categories` - Inventory categories (Rings, Necklaces, etc.)
-- `inventory_items` - Jewelry items with metal/gemstone details
+- `inventory_items` - Jewelry items with metal/gemstone details, includes barcode field
 - `customers` - Store customer database
 - `orders` / `order_items` - Sales transactions
 - `repair_orders` - Repair service tracking
 - `layaway_plans` / `layaway_payments` - Layaway installment system
+- `purchases` - Jewelry purchases from customers (buy jewel feature)
 
 ## Seed Credentials
 - Admin: `admin` / `admin123`
@@ -72,10 +73,11 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 
 ## Store-side Pages
 - `/` - POS Terminal (sales checkout)
-- `/inventory` - Inventory management with categories
+- `/inventory` - Inventory management with categories and barcodes
 - `/customers` - Customer database
 - `/orders` - Order history
 - `/repairs` - Repair order management
+- `/purchases` - Buy Jewel (purchase jewelry from customers)
 - `/layaway` - Layaway plan management
 - `/branding` - Store branding settings
 
@@ -96,6 +98,8 @@ All API routes use `/api/` prefix.
 - Sidebar and router switch to store view during impersonation
 
 ## Recent Changes
+- Added barcode generation for inventory items (auto-generated on creation, viewable/printable via JsBarcode CODE128)
+- Added "Buy Jewel" page for purchasing jewelry from customers (metal type, purity, weight, price tracking)
 - Added admin store impersonation feature (view any store's POS as admin)
 - Completely rebuilt from RestoPOS to JewelPOS (jewelry store POS)
 - New database schema with jewelry-specific fields (metal type, purity, weight, gemstone, carat weight)

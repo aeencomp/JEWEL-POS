@@ -52,8 +52,11 @@ import {
   Package,
   Eye,
   EyeOff,
+  Barcode,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useRef, useEffect } from "react";
+import JsBarcode from "jsbarcode";
 
 const categoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -94,6 +97,7 @@ export default function InventoryManagement() {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [barcodeItem, setBarcodeItem] = useState<InventoryItem | null>(null);
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -388,6 +392,7 @@ export default function InventoryManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("inventory.sku")}</TableHead>
+                <TableHead>{t("inventory.barcode")}</TableHead>
                 <TableHead>{t("inventory.name")}</TableHead>
                 <TableHead>{t("inventory.metalType")}</TableHead>
                 <TableHead>{t("inventory.purity")}</TableHead>
@@ -412,6 +417,20 @@ export default function InventoryManagement() {
                   <TableRow key={item.id} data-testid={`row-item-${item.id}`}>
                     <TableCell className="font-mono text-sm" data-testid={`text-sku-${item.id}`}>
                       {item.sku}
+                    </TableCell>
+                    <TableCell>
+                      {item.barcode ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-1 text-xs"
+                          onClick={() => setBarcodeItem(item)}
+                          data-testid={`button-view-barcode-${item.id}`}
+                        >
+                          <Barcode className="h-3.5 w-3.5" />
+                          {t("inventory.viewBarcode")}
+                        </Button>
+                      ) : "-"}
                     </TableCell>
                     <TableCell>
                       <div>
@@ -753,6 +772,62 @@ export default function InventoryManagement() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!barcodeItem} onOpenChange={(open) => !open && setBarcodeItem(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("inventory.barcode")}</DialogTitle>
+          </DialogHeader>
+          {barcodeItem && (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <p className="text-sm font-medium">{barcodeItem.name}</p>
+              <p className="text-xs text-muted-foreground">{barcodeItem.sku}</p>
+              <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const svg = document.getElementById("barcode-svg");
+                  if (svg) {
+                    const printWindow = window.open("", "_blank");
+                    if (printWindow) {
+                      printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title></head><body style="display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;">${svg.outerHTML}</body></html>`);
+                      printWindow.document.close();
+                      printWindow.print();
+                    }
+                  }
+                }}
+                data-testid="button-print-barcode"
+              >
+                {t("receipt.print")}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function BarcodeDisplay({ value }: { value: string }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (svgRef.current && value) {
+      try {
+        JsBarcode(svgRef.current, value, {
+          format: "CODE128",
+          width: 2,
+          height: 80,
+          displayValue: true,
+          fontSize: 14,
+          margin: 10,
+        });
+      } catch {
+        // fallback - display text
+      }
+    }
+  }, [value]);
+
+  return <svg id="barcode-svg" ref={svgRef} data-testid="img-barcode" />;
 }

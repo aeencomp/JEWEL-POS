@@ -29,6 +29,7 @@ import {
   Palette,
   LogOut,
   Gem,
+  ShoppingBag,
 } from "lucide-react";
 
 type BrandingData = {
@@ -64,6 +65,7 @@ export function AppSidebar() {
     { title: t("nav.customers"), url: "/customers", icon: Users },
     { title: t("nav.orders"), url: "/orders", icon: ClipboardList },
     { title: t("nav.repairs"), url: "/repairs", icon: Wrench },
+    { title: t("nav.purchases"), url: "/purchases", icon: ShoppingBag },
     { title: t("nav.layaway"), url: "/layaway", icon: Clock },
     { title: t("nav.branding"), url: "/branding", icon: Palette },
   ];

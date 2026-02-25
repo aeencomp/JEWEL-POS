@@ -113,6 +113,28 @@ type TranslationKeys = {
   "inventory.deleteCategory": string;
   "inventory.noItems": string;
   "inventory.profit": string;
+  "inventory.barcode": string;
+  "inventory.viewBarcode": string;
+
+  "purchases.title": string;
+  "purchases.addPurchase": string;
+  "purchases.purchaseNumber": string;
+  "purchases.customerName": string;
+  "purchases.customerPhone": string;
+  "purchases.itemDescription": string;
+  "purchases.metalType": string;
+  "purchases.purity": string;
+  "purchases.weight": string;
+  "purchases.purchasePrice": string;
+  "purchases.paymentMethod": string;
+  "purchases.notes": string;
+  "purchases.status": string;
+  "purchases.date": string;
+  "purchases.noPurchases": string;
+  "purchases.completed": string;
+  "purchases.cancelled": string;
+
+  "nav.purchases": string;
 
   "customers.title": string;
   "customers.addCustomer": string;
@@ -321,6 +343,28 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.deleteCategory": "Delete Category",
     "inventory.noItems": "No items in inventory",
     "inventory.profit": "Profit",
+    "inventory.barcode": "Barcode",
+    "inventory.viewBarcode": "View Barcode",
+
+    "purchases.title": "Buy Jewel",
+    "purchases.addPurchase": "New Purchase",
+    "purchases.purchaseNumber": "Purchase #",
+    "purchases.customerName": "Seller Name",
+    "purchases.customerPhone": "Seller Phone",
+    "purchases.itemDescription": "Item Description",
+    "purchases.metalType": "Metal Type",
+    "purchases.purity": "Purity",
+    "purchases.weight": "Weight (g)",
+    "purchases.purchasePrice": "Purchase Price",
+    "purchases.paymentMethod": "Payment Method",
+    "purchases.notes": "Notes",
+    "purchases.status": "Status",
+    "purchases.date": "Date",
+    "purchases.noPurchases": "No purchases recorded",
+    "purchases.completed": "Completed",
+    "purchases.cancelled": "Cancelled",
+
+    "nav.purchases": "Buy Jewel",
 
     "customers.title": "Customers",
     "customers.addCustomer": "Add Customer",
@@ -527,6 +571,28 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.deleteCategory": "حذف الفئة",
     "inventory.noItems": "لا توجد منتجات في المخزون",
     "inventory.profit": "الربح",
+    "inventory.barcode": "الباركود",
+    "inventory.viewBarcode": "عرض الباركود",
+
+    "purchases.title": "شراء مجوهرات",
+    "purchases.addPurchase": "عملية شراء جديدة",
+    "purchases.purchaseNumber": "رقم الشراء #",
+    "purchases.customerName": "اسم البائع",
+    "purchases.customerPhone": "هاتف البائع",
+    "purchases.itemDescription": "وصف القطعة",
+    "purchases.metalType": "نوع المعدن",
+    "purchases.purity": "العيار",
+    "purchases.weight": "الوزن (جرام)",
+    "purchases.purchasePrice": "سعر الشراء",
+    "purchases.paymentMethod": "طريقة الدفع",
+    "purchases.notes": "ملاحظات",
+    "purchases.status": "الحالة",
+    "purchases.date": "التاريخ",
+    "purchases.noPurchases": "لا توجد عمليات شراء",
+    "purchases.completed": "مكتمل",
+    "purchases.cancelled": "ملغي",
+
+    "nav.purchases": "شراء مجوهرات",
 
     "customers.title": "العملاء",
     "customers.addCustomer": "إضافة عميل",

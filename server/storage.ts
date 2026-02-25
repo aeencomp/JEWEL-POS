@@ -1,6 +1,6 @@
 import {
   users, stores, subscriptions, categories, inventoryItems, customers, orders, orderItems,
-  repairOrders, layawayPlans, layawayPayments,
+  repairOrders, layawayPlans, layawayPayments, purchases,
   type User, type InsertUser,
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
@@ -12,6 +12,7 @@ import {
   type RepairOrder, type InsertRepairOrder,
   type LayawayPlan, type InsertLayawayPlan,
   type LayawayPayment, type InsertLayawayPayment,
+  type Purchase, type InsertPurchase,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -74,6 +75,11 @@ export interface IStorage {
   updateLayawayPlan(id: number, data: Partial<InsertLayawayPlan>): Promise<LayawayPlan | undefined>;
   getLayawayPayments(layawayId: number): Promise<LayawayPayment[]>;
   createLayawayPayment(payment: InsertLayawayPayment): Promise<LayawayPayment>;
+
+  getPurchases(storeId: number): Promise<Purchase[]>;
+  getPurchase(id: number): Promise<Purchase | undefined>;
+  createPurchase(purchase: InsertPurchase): Promise<Purchase>;
+  updatePurchase(id: number, data: Partial<InsertPurchase>): Promise<Purchase | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -135,6 +141,7 @@ export class DatabaseStorage implements IStorage {
     );
     await db.delete(orders).where(eq(orders.storeId, id));
     await db.delete(repairOrders).where(eq(repairOrders.storeId, id));
+    await db.delete(purchases).where(eq(purchases.storeId, id));
     await db.delete(customers).where(eq(customers.storeId, id));
     await db.delete(inventoryItems).where(eq(inventoryItems.storeId, id));
     await db.delete(categories).where(eq(categories.storeId, id));
@@ -295,6 +302,25 @@ export class DatabaseStorage implements IStorage {
   async createLayawayPayment(payment: InsertLayawayPayment): Promise<LayawayPayment> {
     const [created] = await db.insert(layawayPayments).values(payment).returning();
     return created;
+  }
+
+  async getPurchases(storeId: number): Promise<Purchase[]> {
+    return db.select().from(purchases).where(eq(purchases.storeId, storeId)).orderBy(desc(purchases.createdAt));
+  }
+
+  async getPurchase(id: number): Promise<Purchase | undefined> {
+    const [purchase] = await db.select().from(purchases).where(eq(purchases.id, id));
+    return purchase || undefined;
+  }
+
+  async createPurchase(purchase: InsertPurchase): Promise<Purchase> {
+    const [created] = await db.insert(purchases).values(purchase).returning();
+    return created;
+  }
+
+  async updatePurchase(id: number, data: Partial<InsertPurchase>): Promise<Purchase | undefined> {
+    const [updated] = await db.update(purchases).set(data).where(eq(purchases.id, id)).returning();
+    return updated || undefined;
   }
 }
 

@@ -23,6 +23,7 @@ import OrdersHistory from "@/pages/orders-history";
 import RepairOrders from "@/pages/repair-orders";
 import LayawayPage from "@/pages/layaway-page";
 import StoreBranding from "@/pages/store-branding";
+import PurchasesPage from "@/pages/purchases-page";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,6 +46,7 @@ function StoreRouter() {
       <Route path="/customers" component={CustomersPage} />
       <Route path="/orders" component={OrdersHistory} />
       <Route path="/repairs" component={RepairOrders} />
+      <Route path="/purchases" component={PurchasesPage} />
       <Route path="/layaway" component={LayawayPage} />
       <Route path="/branding" component={StoreBranding} />
       <Route component={NotFound} />

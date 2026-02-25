@@ -41,6 +41,7 @@ export const storesRelations = relations(stores, ({ many, one }) => ({
   customers: many(customers),
   repairOrders: many(repairOrders),
   layawayPlans: many(layawayPlans),
+  purchases: many(purchases),
   users: many(users),
 }));
 
@@ -82,6 +83,7 @@ export const inventoryItems = pgTable("inventory_items", {
   storeId: integer("store_id").notNull().references(() => stores.id),
   categoryId: integer("category_id").notNull().references(() => categories.id),
   sku: text("sku").notNull(),
+  barcode: text("barcode"),
   name: text("name").notNull(),
   description: text("description"),
   metalType: text("metal_type", { enum: ["gold", "silver", "platinum", "white_gold", "rose_gold", "other"] }).notNull().default("gold"),
@@ -251,6 +253,35 @@ export const layawayPaymentsRelations = relations(layawayPayments, ({ one }) => 
   }),
 }));
 
+export const purchases = pgTable("purchases", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  customerId: integer("customer_id").references(() => customers.id),
+  purchaseNumber: text("purchase_number").notNull(),
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
+  metalType: text("metal_type", { enum: ["gold", "silver", "platinum", "white_gold", "rose_gold", "other"] }).notNull().default("gold"),
+  purity: text("purity"),
+  weightGrams: decimal("weight_grams", { precision: 10, scale: 3 }),
+  itemDescription: text("item_description").notNull(),
+  purchasePrice: decimal("purchase_price", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method", { enum: ["cash", "card", "transfer"] }).notNull().default("cash"),
+  notes: text("notes"),
+  status: text("status", { enum: ["completed", "cancelled"] }).notNull().default("completed"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  store: one(stores, {
+    fields: [purchases.storeId],
+    references: [stores.id],
+  }),
+  customer: one(customers, {
+    fields: [purchases.customerId],
+    references: [customers.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -306,6 +337,11 @@ export const insertLayawayPaymentSchema = createInsertSchema(layawayPayments).om
   createdAt: true,
 });
 
+export const insertPurchaseSchema = createInsertSchema(purchases).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const updateBrandingSchema = z.object({
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color").nullable().optional(),
   logoUrl: z.string().url("Must be a valid URL").nullable().optional().or(z.literal("").transform(() => null)),
@@ -337,3 +373,5 @@ export type LayawayPlan = typeof layawayPlans.$inferSelect;
 export type InsertLayawayPlan = z.infer<typeof insertLayawayPlanSchema>;
 export type LayawayPayment = typeof layawayPayments.$inferSelect;
 export type InsertLayawayPayment = z.infer<typeof insertLayawayPaymentSchema>;
+export type Purchase = typeof purchases.$inferSelect;
+export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;

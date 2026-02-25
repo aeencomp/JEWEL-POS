@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
-import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema } from "@shared/schema";
+import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema } from "@shared/schema";
 
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -262,6 +262,9 @@ export async function registerRoutes(
     if (body.purity === "") body.purity = null;
     if (body.gemstone === "") body.gemstone = null;
     if (body.imageUrl === "") body.imageUrl = null;
+    if (!body.barcode) {
+      body.barcode = `JWL${storeId}${Date.now().toString(36).toUpperCase()}`;
+    }
     const item = await storage.createInventoryItem({
       ...body,
       storeId,
@@ -489,6 +492,44 @@ export async function registerRoutes(
     });
 
     res.status(201).json(payment);
+  });
+
+  app.get("/api/purchases", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.json([]);
+    const purchaseList = await storage.getPurchases(storeId);
+    res.json(purchaseList);
+  });
+
+  app.post("/api/purchases", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const purchaseNumber = `BUY-${Date.now().toString(36).toUpperCase()}`;
+    const body = { ...req.body };
+    if (body.weightGrams === "" || body.weightGrams === undefined) body.weightGrams = null;
+    if (body.purity === "") body.purity = null;
+    if (body.notes === "") body.notes = null;
+    if (body.customerName === "") body.customerName = null;
+    if (body.customerPhone === "") body.customerPhone = null;
+    const purchase = await storage.createPurchase({
+      ...body,
+      storeId,
+      purchaseNumber,
+      status: "completed",
+    });
+    res.status(201).json(purchase);
+  });
+
+  app.patch("/api/purchases/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const purchase = await storage.getPurchase(id);
+    if (!purchase || purchase.storeId !== storeId) {
+      return res.status(404).json({ message: "Purchase not found" });
+    }
+    const updated = await storage.updatePurchase(id, req.body);
+    res.json(updated);
   });
 
   return httpServer;
