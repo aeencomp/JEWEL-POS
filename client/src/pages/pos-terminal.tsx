@@ -74,6 +74,9 @@ export default function PosTerminal() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("walk-in");
   const [orderDialog, setOrderDialog] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderResponse | null>(null);
+  const [newCustomerDialog, setNewCustomerDialog] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
 
   const { data: inventory = [], isLoading: loadingInventory } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
@@ -113,6 +116,24 @@ export default function PosTerminal() {
       setDiscount(0);
       setSelectedCustomerId("walk-in");
       toast({ title: t("pos.orderPlaced") });
+    },
+    onError: (err: Error) => {
+      toast({ title: err.message, variant: "destructive" });
+    },
+  });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: { name: string; phone: string }) => {
+      const res = await apiRequest("POST", "/api/customers", data);
+      return (await res.json()) as Customer;
+    },
+    onSuccess: (customer) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setSelectedCustomerId(String(customer.id));
+      setNewCustomerDialog(false);
+      setNewCustomerName("");
+      setNewCustomerPhone("");
+      toast({ title: t("customers.addCustomer"), description: customer.name });
     },
     onError: (err: Error) => {
       toast({ title: err.message, variant: "destructive" });
@@ -342,19 +363,29 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
             <h2 className="font-bold text-lg">{t("pos.cart")}</h2>
           </div>
 
-          <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-            <SelectTrigger data-testid="select-customer">
-              <SelectValue placeholder={t("pos.selectCustomer")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="walk-in">{t("pos.walkIn")}</SelectItem>
-              {customers.map((c) => (
-                <SelectItem key={c.id} value={String(c.id)}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+              <SelectTrigger data-testid="select-customer" className="flex-1">
+                <SelectValue placeholder={t("pos.selectCustomer")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="walk-in">{t("pos.walkIn")}</SelectItem>
+                {customers.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setNewCustomerDialog(true)}
+              data-testid="button-new-customer-pos"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
 
           {cart.length === 0 ? (
             <p className="text-center text-muted-foreground py-8 text-sm" data-testid="text-empty-cart">
@@ -540,6 +571,47 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
             </Button>
             <Button onClick={() => setOrderDialog(false)} data-testid="button-close-dialog">
               {t("pos.close")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={newCustomerDialog} onOpenChange={setNewCustomerDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("customers.addCustomer")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("customers.name")}</label>
+              <Input
+                value={newCustomerName}
+                onChange={(e) => setNewCustomerName(e.target.value)}
+                data-testid="input-new-customer-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("customers.phone")}</label>
+              <Input
+                value={newCustomerPhone}
+                onChange={(e) => setNewCustomerPhone(e.target.value)}
+                data-testid="input-new-customer-phone"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (!newCustomerName.trim()) return;
+                createCustomerMutation.mutate({
+                  name: newCustomerName.trim(),
+                  phone: newCustomerPhone.trim() || "",
+                });
+              }}
+              disabled={!newCustomerName.trim() || createCustomerMutation.isPending}
+              data-testid="button-save-new-customer"
+            >
+              {createCustomerMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("customers.addCustomer")}
             </Button>
           </DialogFooter>
         </DialogContent>
