@@ -230,15 +230,46 @@ export default function PosTerminal() {
     const header = branding?.receiptHeader || "";
     const footer = branding?.receiptFooter || "";
 
+    const customer = completedOrder.customerId
+      ? customers.find((c) => c.id === completedOrder.customerId)
+      : null;
+
+    const customerHtml = customer
+      ? `<div style="margin-bottom:10px;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:12px">
+<div style="font-weight:bold;margin-bottom:4px;color:${brandColor}">${t("pos.customer")}</div>
+<div>${customer.name}</div>
+${customer.phone ? `<div>${t("customers.phone")}: ${customer.phone}</div>` : ""}
+${customer.idNumber ? `<div>${t("customers.idNumber")}: ${customer.idNumber}</div>` : ""}
+${customer.address ? `<div>${t("customers.address")}: ${customer.address}</div>` : ""}
+</div>`
+      : completedOrder.customerName && completedOrder.customerName !== t("pos.walkIn")
+        ? `<div style="margin-bottom:10px;font-size:12px"><strong>${t("pos.customer")}:</strong> ${completedOrder.customerName}</div>`
+        : "";
+
     const itemsHtml = (completedOrder.items || [])
-      .map(
-        (item) => `
+      .map((item) => {
+        const invItem = inventory.find((inv) => inv.id === item.inventoryItemId);
+        const details: string[] = [];
+        if (item.sku) details.push(`${t("inventory.sku")}: ${item.sku}`);
+        if (invItem?.metalType) details.push(`${t("inventory.metalType")}: ${invItem.metalType}`);
+        if (invItem?.purity) details.push(`${t("inventory.purity")}: ${invItem.purity}`);
+        if (invItem?.weightGrams) details.push(`${t("inventory.weight")}: ${invItem.weightGrams}g`);
+        if (invItem?.gemstone) details.push(`${t("inventory.gemstone")}: ${invItem.gemstone}`);
+        const detailsStr = details.length > 0 ? `<div style="font-size:10px;color:#666;margin-top:2px">${details.join(" | ")}</div>` : "";
+        const lineTotal = Number(item.price) * item.quantity;
+        return `
       <tr>
-        <td style="padding:4px 0;border-bottom:1px solid #eee">${item.name}</td>
-        <td style="padding:4px 0;border-bottom:1px solid #eee;text-align:center">${item.quantity}</td>
-        <td style="padding:4px 0;border-bottom:1px solid #eee;text-align:right">${Number(item.price).toLocaleString()} ${t("common.currency")}</td>
-      </tr>`
-      )
+        <td style="padding:6px 0;border-bottom:1px solid #eee;vertical-align:top">
+          <div style="font-weight:500">${item.name}</div>
+          ${detailsStr}
+        </td>
+        <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:center;vertical-align:top">${item.quantity}</td>
+        <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right;vertical-align:top;white-space:nowrap">
+          ${Number(item.price).toLocaleString()} ${t("common.currency")}
+          ${item.quantity > 1 ? `<div style="font-size:10px;color:#666">${t("pos.total")}: ${lineTotal.toLocaleString()} ${t("common.currency")}</div>` : ""}
+        </td>
+      </tr>`;
+      })
       .join("");
 
     w.document.write(`<!DOCTYPE html>
@@ -258,17 +289,17 @@ ${header ? `<div style="font-size:12px;margin-top:4px">${header}</div>` : ""}
 <div style="margin-bottom:8px">
 <div><strong>${t("pos.orderNumber")}</strong>${completedOrder.orderNumber}</div>
 <div><strong>${t("receipt.date")}:</strong> ${new Date(completedOrder.createdAt).toLocaleString()}</div>
-${completedOrder.customerName ? `<div><strong>${t("pos.customer")}:</strong> ${completedOrder.customerName}</div>` : ""}
 </div>
+${customerHtml}
 <table>
 <thead><tr><th>${t("pos.item")}</th><th style="text-align:center">${t("pos.qty")}</th><th style="text-align:right">${t("pos.price")}</th></tr></thead>
 <tbody>${itemsHtml}</tbody>
 </table>
-<div style="margin-top:8px">
+<div style="margin-top:10px;padding-top:8px;border-top:1px solid #333">
 <div style="display:flex;justify-content:space-between"><span>${t("pos.total")}:</span><span>${Number(completedOrder.subtotal).toLocaleString()} ${t("common.currency")}</span></div>
 ${Number(completedOrder.discount) > 0 ? `<div style="display:flex;justify-content:space-between"><span>${t("pos.discount")}:</span><span>-${Number(completedOrder.discount).toLocaleString()} ${t("common.currency")}</span></div>` : ""}
-<div class="total-row" style="display:flex;justify-content:space-between;margin-top:4px"><span>${t("pos.grandTotal")}:</span><span>${Number(completedOrder.total).toLocaleString()} ${t("common.currency")}</span></div>
-<div style="margin-top:4px;font-size:12px">${t("pos.payment")}: ${completedOrder.paymentMethod}</div>
+<div class="total-row" style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:2px solid #333"><span>${t("pos.grandTotal")}:</span><span>${Number(completedOrder.total).toLocaleString()} ${t("common.currency")}</span></div>
+<div style="margin-top:6px;font-size:12px">${t("pos.payment")}: ${completedOrder.paymentMethod}</div>
 </div>
 <div class="footer">
 ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
@@ -527,6 +558,15 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
               <div className="text-sm" data-testid="text-order-number">
                 <strong>{t("pos.orderNumber")}</strong>{completedOrder.orderNumber}
               </div>
+              {completedOrder.customerId && customers.find((c) => c.id === completedOrder.customerId) && (
+                <div className="rounded-md border p-3 text-sm space-y-1" data-testid="text-order-customer-info">
+                  <div className="font-semibold text-primary">{t("pos.customer")}</div>
+                  <div>{customers.find((c) => c.id === completedOrder.customerId)!.name}</div>
+                  {customers.find((c) => c.id === completedOrder.customerId)!.phone && <div className="text-muted-foreground">{t("customers.phone")}: {customers.find((c) => c.id === completedOrder.customerId)!.phone}</div>}
+                  {customers.find((c) => c.id === completedOrder.customerId)!.idNumber && <div className="text-muted-foreground">{t("customers.idNumber")}: {customers.find((c) => c.id === completedOrder.customerId)!.idNumber}</div>}
+                  {customers.find((c) => c.id === completedOrder.customerId)!.address && <div className="text-muted-foreground">{t("customers.address")}: {customers.find((c) => c.id === completedOrder.customerId)!.address}</div>}
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -537,16 +577,27 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(completedOrder.items || []).map((item, idx) => (
+                  {(completedOrder.items || []).map((item, idx) => {
+                    const invItem = inventory.find((inv) => inv.id === item.inventoryItemId);
+                    return (
                     <TableRow key={idx}>
-                      <TableCell>{item.name}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-xs text-muted-foreground space-x-1">
+                          {item.sku && <span>{t("inventory.sku")}: {item.sku}</span>}
+                          {invItem?.metalType && <span>| {invItem.metalType}</span>}
+                          {invItem?.purity && <span>| {invItem.purity}</span>}
+                          {invItem?.weightGrams && <span>| {invItem.weightGrams}g</span>}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center">{item.quantity}</TableCell>
                       <TableCell className="text-end">{Number(item.price).toLocaleString()}</TableCell>
                       <TableCell className="text-end" data-testid={`text-order-item-total-${idx}`}>
                         {(Number(item.price) * item.quantity).toLocaleString()} {t("common.currency")}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
               <Separator />
