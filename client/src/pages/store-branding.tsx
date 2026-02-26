@@ -18,9 +18,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2, Palette } from "lucide-react";
+import { Loader2, Palette, Mail, Shield } from "lucide-react";
+import { z } from "zod";
 
 type BrandingData = UpdateBranding & { name?: string };
+
+const emailSchema = z.object({
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+});
+
+type EmailForm = z.infer<typeof emailSchema>;
 
 export default function StoreBranding() {
   const { t } = useLanguage();
@@ -30,6 +37,10 @@ export default function StoreBranding() {
     queryKey: ["/api/store/branding"],
   });
 
+  const { data: emailData, isLoading: emailLoading } = useQuery<{ email: string }>({
+    queryKey: ["/api/store/email"],
+  });
+
   const form = useForm<UpdateBranding>({
     resolver: zodResolver(updateBrandingSchema),
     defaultValues: {
@@ -37,6 +48,13 @@ export default function StoreBranding() {
       logoUrl: "",
       receiptHeader: "",
       receiptFooter: "",
+    },
+  });
+
+  const emailForm = useForm<EmailForm>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -51,6 +69,12 @@ export default function StoreBranding() {
     }
   }, [branding, form]);
 
+  useEffect(() => {
+    if (emailData) {
+      emailForm.reset({ email: emailData.email || "" });
+    }
+  }, [emailData, emailForm]);
+
   const saveMutation = useMutation({
     mutationFn: async (values: UpdateBranding) => {
       const res = await apiRequest("PATCH", "/api/store/branding", values);
@@ -59,6 +83,24 @@ export default function StoreBranding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/store/branding"] });
       toast({ title: t("branding.saved") });
+    },
+  });
+
+  const emailMutation = useMutation({
+    mutationFn: async (values: EmailForm) => {
+      const res = await apiRequest("PATCH", "/api/store/email", values);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/store/email"] });
+      toast({ title: t("branding.emailSaved") });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("branding.saveEmail"),
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -80,6 +122,60 @@ export default function StoreBranding() {
       <h1 className="text-2xl font-bold" data-testid="text-branding-title">
         {t("branding.title")}
       </h1>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="h-5 w-5 text-amber-600" />
+            <h2 className="text-lg font-semibold" data-testid="text-email-settings-title">
+              {t("branding.emailTitle")}
+            </h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4" data-testid="text-email-description">
+            {t("branding.emailDescription")}
+          </p>
+          <Form {...emailForm}>
+            <form
+              onSubmit={emailForm.handleSubmit((v) => emailMutation.mutate(v))}
+              className="space-y-4"
+              data-testid="form-email"
+            >
+              <FormField
+                control={emailForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("branding.email")}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          type="email"
+                          placeholder={t("branding.emailPlaceholder")}
+                          className="ps-9"
+                          data-testid="input-store-email"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={emailMutation.isPending}
+                  data-testid="button-save-email"
+                >
+                  {emailMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                  {t("branding.saveEmail")}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-6">

@@ -219,6 +219,31 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/store/email", requireAuth, async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Admin users cannot modify store email" });
+    }
+    res.json({ email: req.user.email || "" });
+  });
+
+  app.patch("/api/store/email", requireAuth, async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Admin users cannot modify store email" });
+    }
+    const { email } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email address" });
+    }
+    await storage.updateUserEmail(req.user.id, email);
+    res.json({ email });
+  });
+
   app.get("/api/categories", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);

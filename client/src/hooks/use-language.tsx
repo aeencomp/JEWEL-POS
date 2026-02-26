@@ -224,6 +224,12 @@ type TranslationKeys = {
   "branding.receiptFooter": string;
   "branding.save": string;
   "branding.saved": string;
+  "branding.emailTitle": string;
+  "branding.emailDescription": string;
+  "branding.email": string;
+  "branding.emailPlaceholder": string;
+  "branding.saveEmail": string;
+  "branding.emailSaved": string;
 
   "common.save": string;
   "common.cancel": string;
@@ -471,6 +477,12 @@ const translations: Record<Language, TranslationKeys> = {
     "branding.receiptFooter": "Receipt Footer",
     "branding.save": "Save Changes",
     "branding.saved": "Branding saved successfully",
+    "branding.emailTitle": "Email Settings",
+    "branding.emailDescription": "This email is used for two-factor authentication when logging in.",
+    "branding.email": "Email Address",
+    "branding.emailPlaceholder": "your@email.com",
+    "branding.saveEmail": "Update Email",
+    "branding.emailSaved": "Email updated successfully",
 
     "common.save": "Save",
     "common.cancel": "Cancel",
@@ -716,6 +728,12 @@ const translations: Record<Language, TranslationKeys> = {
     "branding.receiptFooter": "تذييل الإيصال",
     "branding.save": "حفظ التغييرات",
     "branding.saved": "تم حفظ الهوية التجارية بنجاح",
+    "branding.emailTitle": "إعدادات البريد الإلكتروني",
+    "branding.emailDescription": "يُستخدم هذا البريد الإلكتروني للتحقق بخطوتين عند تسجيل الدخول.",
+    "branding.email": "البريد الإلكتروني",
+    "branding.emailPlaceholder": "بريدك@مثال.com",
+    "branding.saveEmail": "تحديث البريد الإلكتروني",
+    "branding.emailSaved": "تم تحديث البريد الإلكتروني بنجاح",
 
     "common.save": "حفظ",
     "common.cancel": "إلغاء",
