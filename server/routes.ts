@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, hashPassword } from "./auth";
+import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema } from "@shared/schema";
 
 function requireAuth(req: any, res: any, next: any) {
@@ -242,6 +242,44 @@ export async function registerRoutes(
     }
     await storage.updateUserEmail(req.user.id, email);
     res.json({ email });
+  });
+
+  app.patch("/api/store/username", requireAuth, async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Admin users cannot modify store username" });
+    }
+    const { username } = req.body;
+    if (!username || typeof username !== "string" || username.trim().length < 3) {
+      return res.status(400).json({ message: "Username must be at least 3 characters" });
+    }
+    const existing = await storage.getUserByUsername(username.trim());
+    if (existing && existing.id !== req.user.id) {
+      return res.status(409).json({ message: "Username already taken" });
+    }
+    await storage.updateUsername(req.user.id, username.trim());
+    res.json({ username: username.trim() });
+  });
+
+  app.patch("/api/store/password", requireAuth, async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Admin users cannot modify store password" });
+    }
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new passwords are required" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters" });
+    }
+    const isValid = await comparePasswords(currentPassword, req.user.password);
+    if (!isValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+    const hashed = await hashPassword(newPassword);
+    await storage.updateUserPassword(req.user.id, hashed);
+    res.json({ message: "Password updated successfully" });
   });
 
   app.get("/api/categories", requireAuth, async (req, res) => {

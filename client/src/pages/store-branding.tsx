@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { updateBrandingSchema, type UpdateBranding } from "@shared/schema";
@@ -18,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2, Palette, Mail, Shield } from "lucide-react";
+import { Loader2, Palette, Mail, Shield, User, Lock } from "lucide-react";
 import { z } from "zod";
 
 type BrandingData = UpdateBranding & { name?: string };
@@ -26,18 +27,33 @@ type BrandingData = UpdateBranding & { name?: string };
 const emailSchema = z.object({
   email: z.string().email("Invalid email address").min(1, "Email is required"),
 });
-
 type EmailForm = z.infer<typeof emailSchema>;
+
+const usernameSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+});
+type UsernameForm = z.infer<typeof usernameSchema>;
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function StoreBranding() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: branding, isLoading } = useQuery<BrandingData>({
     queryKey: ["/api/store/branding"],
   });
 
-  const { data: emailData, isLoading: emailLoading } = useQuery<{ email: string }>({
+  const { data: emailData } = useQuery<{ email: string }>({
     queryKey: ["/api/store/email"],
   });
 
@@ -53,9 +69,17 @@ export default function StoreBranding() {
 
   const emailForm = useForm<EmailForm>({
     resolver: zodResolver(emailSchema),
-    defaultValues: {
-      email: "",
-    },
+    defaultValues: { email: "" },
+  });
+
+  const usernameForm = useForm<UsernameForm>({
+    resolver: zodResolver(usernameSchema),
+    defaultValues: { username: "" },
+  });
+
+  const passwordForm = useForm<PasswordForm>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
 
   useEffect(() => {
@@ -74,6 +98,12 @@ export default function StoreBranding() {
       emailForm.reset({ email: emailData.email || "" });
     }
   }, [emailData, emailForm]);
+
+  useEffect(() => {
+    if (user) {
+      usernameForm.reset({ username: user.username || "" });
+    }
+  }, [user, usernameForm]);
 
   const saveMutation = useMutation({
     mutationFn: async (values: UpdateBranding) => {
@@ -96,11 +126,38 @@ export default function StoreBranding() {
       toast({ title: t("branding.emailSaved") });
     },
     onError: (error: Error) => {
-      toast({
-        title: t("branding.saveEmail"),
-        description: error.message,
-        variant: "destructive",
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
+
+  const usernameMutation = useMutation({
+    mutationFn: async (values: UsernameForm) => {
+      const res = await apiRequest("PATCH", "/api/store/username", values);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({ title: t("branding.usernameSaved") });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: async (values: PasswordForm) => {
+      const res = await apiRequest("PATCH", "/api/store/password", {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
       });
+      return res.json();
+    },
+    onSuccess: () => {
+      passwordForm.reset({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast({ title: t("branding.passwordSaved") });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
     },
   });
 
@@ -122,6 +179,135 @@ export default function StoreBranding() {
       <h1 className="text-2xl font-bold" data-testid="text-branding-title">
         {t("branding.title")}
       </h1>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <User className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-semibold" data-testid="text-username-title">
+              {t("branding.usernameTitle")}
+            </h2>
+          </div>
+          <Form {...usernameForm}>
+            <form
+              onSubmit={usernameForm.handleSubmit((v) => usernameMutation.mutate(v))}
+              className="space-y-4"
+              data-testid="form-username"
+            >
+              <FormField
+                control={usernameForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("branding.username")}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <User className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          className="ps-9"
+                          data-testid="input-store-username"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={usernameMutation.isPending}
+                  data-testid="button-save-username"
+                >
+                  {usernameMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                  {t("branding.saveUsername")}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Lock className="h-5 w-5 text-red-600" />
+            <h2 className="text-lg font-semibold" data-testid="text-password-title">
+              {t("branding.passwordTitle")}
+            </h2>
+          </div>
+          <Form {...passwordForm}>
+            <form
+              onSubmit={passwordForm.handleSubmit((v) => passwordMutation.mutate(v))}
+              className="space-y-4"
+              data-testid="form-password"
+            >
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("branding.currentPassword")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        data-testid="input-current-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("branding.newPassword")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        data-testid="input-new-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("branding.confirmPassword")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        data-testid="input-confirm-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={passwordMutation.isPending}
+                  data-testid="button-save-password"
+                >
+                  {passwordMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                  {t("branding.savePassword")}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-6">

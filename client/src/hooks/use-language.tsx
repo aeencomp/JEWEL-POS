@@ -230,6 +230,17 @@ type TranslationKeys = {
   "branding.emailPlaceholder": string;
   "branding.saveEmail": string;
   "branding.emailSaved": string;
+  "branding.usernameTitle": string;
+  "branding.username": string;
+  "branding.saveUsername": string;
+  "branding.usernameSaved": string;
+  "branding.passwordTitle": string;
+  "branding.currentPassword": string;
+  "branding.newPassword": string;
+  "branding.confirmPassword": string;
+  "branding.savePassword": string;
+  "branding.passwordSaved": string;
+  "branding.passwordMismatch": string;
 
   "common.save": string;
   "common.cancel": string;
@@ -483,6 +494,17 @@ const translations: Record<Language, TranslationKeys> = {
     "branding.emailPlaceholder": "your@email.com",
     "branding.saveEmail": "Update Email",
     "branding.emailSaved": "Email updated successfully",
+    "branding.usernameTitle": "Username",
+    "branding.username": "Username",
+    "branding.saveUsername": "Update Username",
+    "branding.usernameSaved": "Username updated successfully",
+    "branding.passwordTitle": "Change Password",
+    "branding.currentPassword": "Current Password",
+    "branding.newPassword": "New Password",
+    "branding.confirmPassword": "Confirm New Password",
+    "branding.savePassword": "Update Password",
+    "branding.passwordSaved": "Password updated successfully",
+    "branding.passwordMismatch": "Passwords do not match",
 
     "common.save": "Save",
     "common.cancel": "Cancel",
@@ -734,6 +756,17 @@ const translations: Record<Language, TranslationKeys> = {
     "branding.emailPlaceholder": "بريدك@مثال.com",
     "branding.saveEmail": "تحديث البريد الإلكتروني",
     "branding.emailSaved": "تم تحديث البريد الإلكتروني بنجاح",
+    "branding.usernameTitle": "اسم المستخدم",
+    "branding.username": "اسم المستخدم",
+    "branding.saveUsername": "تحديث اسم المستخدم",
+    "branding.usernameSaved": "تم تحديث اسم المستخدم بنجاح",
+    "branding.passwordTitle": "تغيير كلمة المرور",
+    "branding.currentPassword": "كلمة المرور الحالية",
+    "branding.newPassword": "كلمة المرور الجديدة",
+    "branding.confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "branding.savePassword": "تحديث كلمة المرور",
+    "branding.passwordSaved": "تم تحديث كلمة المرور بنجاح",
+    "branding.passwordMismatch": "كلمات المرور غير متطابقة",
 
     "common.save": "حفظ",
     "common.cancel": "إلغاء",
