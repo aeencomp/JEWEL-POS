@@ -13,6 +13,7 @@ type TranslationKeys = {
   "nav.repairs": string;
   "nav.layaway": string;
   "nav.branding": string;
+  "nav.backup": string;
   "nav.logout": string;
 
   "auth.login": string;
@@ -242,6 +243,31 @@ type TranslationKeys = {
   "branding.passwordSaved": string;
   "branding.passwordMismatch": string;
 
+  "backup.title": string;
+  "backup.downloadTitle": string;
+  "backup.downloadDescription": string;
+  "backup.downloadButton": string;
+  "backup.downloadSuccess": string;
+  "backup.downloadError": string;
+  "backup.restoreTitle": string;
+  "backup.restoreDescription": string;
+  "backup.selectFile": string;
+  "backup.restoreButton": string;
+  "backup.restoreSuccess": string;
+  "backup.invalidFile": string;
+  "backup.confirmTitle": string;
+  "backup.confirmDescription": string;
+  "backup.fileInfo": string;
+  "backup.storeName": string;
+  "backup.exportDate": string;
+  "backup.categories": string;
+  "backup.inventoryItems": string;
+  "backup.customers": string;
+  "backup.orders": string;
+  "backup.repairOrders": string;
+  "backup.layawayPlans": string;
+  "backup.purchases": string;
+
   "common.save": string;
   "common.cancel": string;
   "common.delete": string;
@@ -277,6 +303,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.repairs": "Repairs",
     "nav.layaway": "Layaway",
     "nav.branding": "Branding",
+    "nav.backup": "Backup",
     "nav.logout": "Logout",
 
     "auth.login": "Login",
@@ -506,6 +533,31 @@ const translations: Record<Language, TranslationKeys> = {
     "branding.passwordSaved": "Password updated successfully",
     "branding.passwordMismatch": "Passwords do not match",
 
+    "backup.title": "Backup & Restore",
+    "backup.downloadTitle": "Download Backup",
+    "backup.downloadDescription": "Download a complete backup of all your store data including inventory, customers, orders, repairs, layaway plans, and purchases.",
+    "backup.downloadButton": "Download Backup File",
+    "backup.downloadSuccess": "Backup downloaded successfully",
+    "backup.downloadError": "Failed to download backup",
+    "backup.restoreTitle": "Restore from Backup",
+    "backup.restoreDescription": "Restore data from a previously downloaded backup file. This will add the backup data to your store.",
+    "backup.selectFile": "Select Backup File",
+    "backup.restoreButton": "Restore Data",
+    "backup.restoreSuccess": "Data restored successfully",
+    "backup.invalidFile": "Invalid backup file",
+    "backup.confirmTitle": "Confirm Restore",
+    "backup.confirmDescription": "Are you sure you want to restore this backup? This will add all data from the backup file to your store. This action cannot be undone.",
+    "backup.fileInfo": "Backup File Details",
+    "backup.storeName": "Store Name",
+    "backup.exportDate": "Export Date",
+    "backup.categories": "Categories",
+    "backup.inventoryItems": "Inventory Items",
+    "backup.customers": "Customers",
+    "backup.orders": "Orders",
+    "backup.repairOrders": "Repair Orders",
+    "backup.layawayPlans": "Layaway Plans",
+    "backup.purchases": "Purchases",
+
     "common.save": "Save",
     "common.cancel": "Cancel",
     "common.delete": "Delete",
@@ -539,6 +591,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.repairs": "الإصلاحات",
     "nav.layaway": "التقسيط",
     "nav.branding": "الهوية التجارية",
+    "nav.backup": "النسخ الاحتياطي",
     "nav.logout": "تسجيل الخروج",
 
     "auth.login": "تسجيل الدخول",
@@ -767,6 +820,31 @@ const translations: Record<Language, TranslationKeys> = {
     "branding.savePassword": "تحديث كلمة المرور",
     "branding.passwordSaved": "تم تحديث كلمة المرور بنجاح",
     "branding.passwordMismatch": "كلمات المرور غير متطابقة",
+
+    "backup.title": "النسخ الاحتياطي والاستعادة",
+    "backup.downloadTitle": "تحميل النسخة الاحتياطية",
+    "backup.downloadDescription": "قم بتحميل نسخة احتياطية كاملة من جميع بيانات متجرك بما في ذلك المخزون والعملاء والطلبات والإصلاحات وخطط التقسيط والمشتريات.",
+    "backup.downloadButton": "تحميل ملف النسخة الاحتياطية",
+    "backup.downloadSuccess": "تم تحميل النسخة الاحتياطية بنجاح",
+    "backup.downloadError": "فشل في تحميل النسخة الاحتياطية",
+    "backup.restoreTitle": "الاستعادة من نسخة احتياطية",
+    "backup.restoreDescription": "استعادة البيانات من ملف نسخة احتياطية تم تحميله مسبقاً. سيتم إضافة بيانات النسخة الاحتياطية إلى متجرك.",
+    "backup.selectFile": "اختيار ملف النسخة الاحتياطية",
+    "backup.restoreButton": "استعادة البيانات",
+    "backup.restoreSuccess": "تم استعادة البيانات بنجاح",
+    "backup.invalidFile": "ملف نسخة احتياطية غير صالح",
+    "backup.confirmTitle": "تأكيد الاستعادة",
+    "backup.confirmDescription": "هل أنت متأكد من استعادة هذه النسخة الاحتياطية؟ سيتم إضافة جميع البيانات من ملف النسخة الاحتياطية إلى متجرك. لا يمكن التراجع عن هذا الإجراء.",
+    "backup.fileInfo": "تفاصيل ملف النسخة الاحتياطية",
+    "backup.storeName": "اسم المتجر",
+    "backup.exportDate": "تاريخ التصدير",
+    "backup.categories": "الفئات",
+    "backup.inventoryItems": "عناصر المخزون",
+    "backup.customers": "العملاء",
+    "backup.orders": "الطلبات",
+    "backup.repairOrders": "أوامر الإصلاح",
+    "backup.layawayPlans": "خطط التقسيط",
+    "backup.purchases": "المشتريات",
 
     "common.save": "حفظ",
     "common.cancel": "إلغاء",

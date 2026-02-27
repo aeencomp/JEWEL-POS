@@ -92,7 +92,8 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `/repairs` - Repair order management
 - `/purchases` - Buy Jewel (purchase jewelry from customers)
 - `/layaway` - Layaway plan management
-- `/branding` - Store branding settings
+- `/branding` - Store branding settings (username, password, email, branding)
+- `/backup` - Backup & Restore (download/upload store data)
 
 ## Admin-side Pages
 - `/` - Dashboard with stats
@@ -121,6 +122,8 @@ All API routes use `/api/` prefix.
 - New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
 
 ## Recent Changes
+- Added Backup & Restore feature: stores can download complete JSON backup of all data and restore from backup files with transactional safety and proper ID remapping
+- Added store account settings: username change, password change, email change on branding page
 - Fixed RTL layout: replaced all hardcoded directional CSS with logical properties across all components
 - Added barcode generation for inventory items (auto-generated on creation, viewable/printable via JsBarcode CODE128)
 - Added "Buy Jewel" page for purchasing jewelry from customers (metal type, purity, weight, price tracking)

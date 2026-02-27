@@ -30,6 +30,7 @@ import {
   LogOut,
   Gem,
   ShoppingBag,
+  HardDrive,
 } from "lucide-react";
 
 type BrandingData = {
@@ -68,6 +69,7 @@ export function AppSidebar() {
     { title: t("nav.purchases"), url: "/purchases", icon: ShoppingBag },
     { title: t("nav.layaway"), url: "/layaway", icon: Clock },
     { title: t("nav.branding"), url: "/branding", icon: Palette },
+    { title: t("nav.backup"), url: "/backup", icon: HardDrive },
   ];
 
   const items = showStoreNav ? storeItems : adminItems;
