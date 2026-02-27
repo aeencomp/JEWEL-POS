@@ -285,6 +285,102 @@ export async function registerRoutes(
     res.json({ message: "Password updated successfully" });
   });
 
+  app.get("/api/store/stock-audit", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+
+    const fromDate = req.query.from ? new Date(req.query.from as string) : null;
+    const toDate = req.query.to ? new Date(req.query.to as string) : null;
+    if (toDate) toDate.setHours(23, 59, 59, 999);
+
+    const [cats, items, allOrders, allPurchases] = await Promise.all([
+      storage.getCategories(storeId),
+      storage.getInventoryItems(storeId),
+      storage.getOrders(storeId),
+      storage.getPurchases(storeId),
+    ]);
+
+    const filteredOrders = allOrders.filter((o) => {
+      if (o.status === "cancelled" || o.status === "refunded") return false;
+      const d = new Date(o.createdAt);
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    });
+
+    const filteredPurchases = allPurchases.filter((p) => {
+      if (p.status === "cancelled") return false;
+      const d = new Date(p.createdAt);
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    });
+
+    const orderItemArrays = await Promise.all(filteredOrders.map((ord) => storage.getOrderItems(ord.id)));
+    const allOrderItems = orderItemArrays.flat();
+
+    const itemSalesMap: Record<number, number> = {};
+    const itemRevenueMap: Record<number, number> = {};
+    for (const oi of allOrderItems) {
+      itemSalesMap[oi.inventoryItemId] = (itemSalesMap[oi.inventoryItemId] || 0) + oi.quantity;
+      itemRevenueMap[oi.inventoryItemId] = (itemRevenueMap[oi.inventoryItemId] || 0) + (parseFloat(oi.price) * oi.quantity);
+    }
+
+    const totalSoldQty = Object.values(itemSalesMap).reduce((s, v) => s + v, 0);
+    const totalRevenue = Object.values(itemRevenueMap).reduce((s, v) => s + v, 0);
+
+    const totalPurchasesCount = filteredPurchases.length;
+    const totalPurchasesSpent = filteredPurchases.reduce((s, p) => s + parseFloat(p.purchasePrice), 0);
+
+    const totalStockQty = items.reduce((s, i) => s + i.quantity, 0);
+    const totalCostValue = items.reduce((s, i) => s + (parseFloat(i.costPrice) * i.quantity), 0);
+    const totalRetailValue = items.reduce((s, i) => s + (parseFloat(i.sellingPrice) * i.quantity), 0);
+
+    const soldCostTotal = allOrderItems.reduce((s, oi) => {
+      const inv = items.find((i) => i.id === oi.inventoryItemId);
+      if (!inv) return s;
+      return s + (parseFloat(inv.costPrice) * oi.quantity);
+    }, 0);
+
+    const categoryMap = new Map(cats.map((c) => [c.id, c.name]));
+
+    const categorySummary = cats.map((cat) => {
+      const catItems = items.filter((i) => i.categoryId === cat.id);
+      return {
+        id: cat.id,
+        name: cat.name,
+        itemCount: catItems.length,
+        totalQty: catItems.reduce((s, i) => s + i.quantity, 0),
+        costValue: catItems.reduce((s, i) => s + (parseFloat(i.costPrice) * i.quantity), 0),
+        retailValue: catItems.reduce((s, i) => s + (parseFloat(i.sellingPrice) * i.quantity), 0),
+      };
+    });
+
+    const itemDetails = items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      categoryName: categoryMap.get(item.categoryId) || "",
+      quantity: item.quantity,
+      costPrice: parseFloat(item.costPrice),
+      sellingPrice: parseFloat(item.sellingPrice),
+      soldQty: itemSalesMap[item.id] || 0,
+      soldRevenue: itemRevenueMap[item.id] || 0,
+      profitMargin: parseFloat(item.sellingPrice) > 0
+        ? (((parseFloat(item.sellingPrice) - parseFloat(item.costPrice)) / parseFloat(item.sellingPrice)) * 100).toFixed(1)
+        : "0.0",
+    }));
+
+    res.json({
+      stock: { totalQty: totalStockQty, costValue: totalCostValue, retailValue: totalRetailValue },
+      sales: { orderCount: filteredOrders.length, totalQty: totalSoldQty, revenue: totalRevenue, costOfSold: soldCostTotal },
+      purchases: { count: totalPurchasesCount, totalSpent: totalPurchasesSpent },
+      netProfit: totalRevenue - soldCostTotal,
+      categorySummary,
+      itemDetails,
+    });
+  });
+
   app.get("/api/store/backup", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });

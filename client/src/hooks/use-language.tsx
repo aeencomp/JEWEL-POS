@@ -268,6 +268,37 @@ type TranslationKeys = {
   "backup.layawayPlans": string;
   "backup.purchases": string;
 
+  "stockAudit.title": string;
+  "stockAudit.totalStock": string;
+  "stockAudit.items": string;
+  "stockAudit.costValue": string;
+  "stockAudit.retailValue": string;
+  "stockAudit.totalSold": string;
+  "stockAudit.orders": string;
+  "stockAudit.revenue": string;
+  "stockAudit.totalPurchased": string;
+  "stockAudit.totalSpent": string;
+  "stockAudit.netProfit": string;
+  "stockAudit.categoryBreakdown": string;
+  "stockAudit.category": string;
+  "stockAudit.itemCount": string;
+  "stockAudit.qty": string;
+  "stockAudit.dateFrom": string;
+  "stockAudit.dateTo": string;
+  "stockAudit.filter": string;
+  "stockAudit.clearFilter": string;
+  "stockAudit.itemName": string;
+  "stockAudit.sku": string;
+  "stockAudit.inStock": string;
+  "stockAudit.sold": string;
+  "stockAudit.costPrice": string;
+  "stockAudit.sellingPrice": string;
+  "stockAudit.profitMargin": string;
+  "stockAudit.detailedItems": string;
+  "stockAudit.soldRevenue": string;
+  "stockAudit.noData": string;
+  "nav.stockAudit": string;
+
   "common.save": string;
   "common.cancel": string;
   "common.delete": string;
@@ -304,6 +335,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.layaway": "Layaway",
     "nav.branding": "Branding",
     "nav.backup": "Backup",
+    "nav.stockAudit": "Stock Audit",
     "nav.logout": "Logout",
 
     "auth.login": "Login",
@@ -558,6 +590,36 @@ const translations: Record<Language, TranslationKeys> = {
     "backup.layawayPlans": "Layaway Plans",
     "backup.purchases": "Purchases",
 
+    "stockAudit.title": "Stock Audit",
+    "stockAudit.totalStock": "Total Stock",
+    "stockAudit.items": "items",
+    "stockAudit.costValue": "Cost Value",
+    "stockAudit.retailValue": "Retail Value",
+    "stockAudit.totalSold": "Total Sold",
+    "stockAudit.orders": "orders",
+    "stockAudit.revenue": "Revenue",
+    "stockAudit.totalPurchased": "Purchased from Customers",
+    "stockAudit.totalSpent": "Total Spent",
+    "stockAudit.netProfit": "Net Profit",
+    "stockAudit.categoryBreakdown": "Category Breakdown",
+    "stockAudit.category": "Category",
+    "stockAudit.itemCount": "Items",
+    "stockAudit.qty": "Qty",
+    "stockAudit.dateFrom": "From",
+    "stockAudit.dateTo": "To",
+    "stockAudit.filter": "Filter",
+    "stockAudit.clearFilter": "Clear",
+    "stockAudit.itemName": "Item Name",
+    "stockAudit.sku": "SKU",
+    "stockAudit.inStock": "In Stock",
+    "stockAudit.sold": "Sold",
+    "stockAudit.costPrice": "Cost Price",
+    "stockAudit.sellingPrice": "Selling Price",
+    "stockAudit.profitMargin": "Profit %",
+    "stockAudit.detailedItems": "Detailed Items",
+    "stockAudit.soldRevenue": "Sold Revenue",
+    "stockAudit.noData": "No inventory items found",
+
     "common.save": "Save",
     "common.cancel": "Cancel",
     "common.delete": "Delete",
@@ -592,6 +654,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.layaway": "التقسيط",
     "nav.branding": "الهوية التجارية",
     "nav.backup": "النسخ الاحتياطي",
+    "nav.stockAudit": "جرد المخزون",
     "nav.logout": "تسجيل الخروج",
 
     "auth.login": "تسجيل الدخول",
@@ -845,6 +908,36 @@ const translations: Record<Language, TranslationKeys> = {
     "backup.repairOrders": "أوامر الإصلاح",
     "backup.layawayPlans": "خطط التقسيط",
     "backup.purchases": "المشتريات",
+
+    "stockAudit.title": "جرد المخزون",
+    "stockAudit.totalStock": "إجمالي المخزون",
+    "stockAudit.items": "قطعة",
+    "stockAudit.costValue": "قيمة التكلفة",
+    "stockAudit.retailValue": "قيمة البيع",
+    "stockAudit.totalSold": "إجمالي المبيعات",
+    "stockAudit.orders": "طلب",
+    "stockAudit.revenue": "الإيرادات",
+    "stockAudit.totalPurchased": "مشتريات من العملاء",
+    "stockAudit.totalSpent": "إجمالي المصروفات",
+    "stockAudit.netProfit": "صافي الربح",
+    "stockAudit.categoryBreakdown": "تفصيل حسب الفئة",
+    "stockAudit.category": "الفئة",
+    "stockAudit.itemCount": "العناصر",
+    "stockAudit.qty": "الكمية",
+    "stockAudit.dateFrom": "من",
+    "stockAudit.dateTo": "إلى",
+    "stockAudit.filter": "تصفية",
+    "stockAudit.clearFilter": "مسح",
+    "stockAudit.itemName": "اسم العنصر",
+    "stockAudit.sku": "رمز المنتج",
+    "stockAudit.inStock": "في المخزون",
+    "stockAudit.sold": "مباع",
+    "stockAudit.costPrice": "سعر التكلفة",
+    "stockAudit.sellingPrice": "سعر البيع",
+    "stockAudit.profitMargin": "نسبة الربح",
+    "stockAudit.detailedItems": "تفاصيل العناصر",
+    "stockAudit.soldRevenue": "إيرادات المبيعات",
+    "stockAudit.noData": "لا توجد عناصر في المخزون",
 
     "common.save": "حفظ",
     "common.cancel": "إلغاء",

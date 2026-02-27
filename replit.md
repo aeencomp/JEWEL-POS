@@ -94,6 +94,7 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `/layaway` - Layaway plan management
 - `/branding` - Store branding settings (username, password, email, branding)
 - `/backup` - Backup & Restore (download/upload store data)
+- `/stock-audit` - Stock Audit (جرد) — inventory overview with sales/purchases summaries, date filtering, category breakdown, and per-item profit analysis
 
 ## Admin-side Pages
 - `/` - Dashboard with stats
@@ -122,6 +123,7 @@ All API routes use `/api/` prefix.
 - New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
 
 ## Recent Changes
+- Added Stock Audit (جرد) page: full inventory audit with summary cards (stock/sold/purchased/profit), date range filter, category breakdown table, and detailed per-item table with profit margin. Endpoint: `GET /api/store/stock-audit?from=&to=`
 - Added Backup & Restore feature: stores can download complete JSON backup of all data and restore from backup files with transactional safety and proper ID remapping
 - Added store account settings: username change, password change, email change on branding page
 - Fixed RTL layout: replaced all hardcoded directional CSS with logical properties across all components

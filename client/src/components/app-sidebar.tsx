@@ -31,6 +31,7 @@ import {
   Gem,
   ShoppingBag,
   HardDrive,
+  ClipboardCheck,
 } from "lucide-react";
 
 type BrandingData = {
@@ -68,6 +69,7 @@ export function AppSidebar() {
     { title: t("nav.repairs"), url: "/repairs", icon: Wrench },
     { title: t("nav.purchases"), url: "/purchases", icon: ShoppingBag },
     { title: t("nav.layaway"), url: "/layaway", icon: Clock },
+    { title: t("nav.stockAudit"), url: "/stock-audit", icon: ClipboardCheck },
     { title: t("nav.branding"), url: "/branding", icon: Palette },
     { title: t("nav.backup"), url: "/backup", icon: HardDrive },
   ];
