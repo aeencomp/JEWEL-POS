@@ -26,6 +26,7 @@ import StoreBranding from "@/pages/store-branding";
 import StoreBackup from "@/pages/store-backup";
 import StockAudit from "@/pages/stock-audit";
 import PurchasesPage from "@/pages/purchases-page";
+import DebtsPage from "@/pages/debts-page";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -53,6 +54,7 @@ function StoreRouter() {
       <Route path="/branding" component={StoreBranding} />
       <Route path="/backup" component={StoreBackup} />
       <Route path="/stock-audit" component={StockAudit} />
+      <Route path="/debts" component={DebtsPage} />
       <Route component={NotFound} />
     </Switch>
   );

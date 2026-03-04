@@ -293,6 +293,43 @@ export const purchasesRelations = relations(purchases, ({ one }) => ({
   }),
 }));
 
+export const debts = pgTable("debts", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  personName: text("person_name").notNull(),
+  personPhone: text("person_phone"),
+  type: text("type", { enum: ["money", "gold"] }).notNull().default("money"),
+  description: text("description"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
+  remainingBalance: decimal("remaining_balance", { precision: 12, scale: 2 }).notNull(),
+  status: text("status", { enum: ["active", "paid", "cancelled"] }).notNull().default("active"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const debtsRelations = relations(debts, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [debts.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const debtPayments = pgTable("debt_payments", {
+  id: serial("id").primaryKey(),
+  debtId: integer("debt_id").notNull().references(() => debts.id),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method", { enum: ["cash", "card", "transfer"] }).notNull().default("cash"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const debtPaymentsRelations = relations(debtPayments, ({ one }) => ({
+  debt: one(debts, {
+    fields: [debtPayments.debtId],
+    references: [debts.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -386,5 +423,19 @@ export type LayawayPlan = typeof layawayPlans.$inferSelect;
 export type InsertLayawayPlan = z.infer<typeof insertLayawayPlanSchema>;
 export type LayawayPayment = typeof layawayPayments.$inferSelect;
 export type InsertLayawayPayment = z.infer<typeof insertLayawayPaymentSchema>;
+export const insertDebtSchema = createInsertSchema(debts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDebtPaymentSchema = createInsertSchema(debtPayments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Purchase = typeof purchases.$inferSelect;
 export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
+export type Debt = typeof debts.$inferSelect;
+export type InsertDebt = z.infer<typeof insertDebtSchema>;
+export type DebtPayment = typeof debtPayments.$inferSelect;
+export type InsertDebtPayment = z.infer<typeof insertDebtPaymentSchema>;

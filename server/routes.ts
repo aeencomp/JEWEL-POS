@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
-import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema } from "@shared/schema";
+import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema } from "@shared/schema";
 import { db } from "./db";
 import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -1122,6 +1122,123 @@ export async function registerRoutes(
     }
     const updated = await storage.updatePurchase(id, req.body);
     res.json(updated);
+  });
+
+  app.get("/api/debts", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.json([]);
+    const debtList = await storage.getDebts(storeId);
+    res.json(debtList);
+  });
+
+  app.post("/api/debts", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const bodySchema = insertDebtSchema.pick({
+      personName: true,
+      personPhone: true,
+      type: true,
+      totalAmount: true,
+      description: true,
+    });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+    }
+    const total = parseFloat(parsed.data.totalAmount);
+    if (!total || total <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+    const debt = await storage.createDebt({
+      personName: parsed.data.personName,
+      personPhone: parsed.data.personPhone || null,
+      type: parsed.data.type,
+      description: parsed.data.description || null,
+      storeId,
+      totalAmount: total.toFixed(2),
+      amountPaid: "0",
+      remainingBalance: total.toFixed(2),
+      status: "active",
+    });
+    res.status(201).json(debt);
+  });
+
+  app.patch("/api/debts/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const debt = await storage.getDebt(id);
+    if (!debt || debt.storeId !== storeId) {
+      return res.status(404).json({ message: "Debt not found" });
+    }
+    const allowedStatuses = ["active", "paid", "cancelled"];
+    const { status } = req.body;
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+    const updated = await storage.updateDebt(id, { status });
+    res.json(updated);
+  });
+
+  app.get("/api/debts/:id/payments", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const debt = await storage.getDebt(id);
+    if (!debt || debt.storeId !== storeId) {
+      return res.status(404).json({ message: "Debt not found" });
+    }
+    const payments = await storage.getDebtPayments(id);
+    res.json(payments);
+  });
+
+  app.post("/api/debts/:id/payments", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const debt = await storage.getDebt(id);
+    if (!debt || debt.storeId !== storeId) {
+      return res.status(404).json({ message: "Debt not found" });
+    }
+    if (debt.status !== "active") {
+      return res.status(400).json({ message: "Debt is not active" });
+    }
+    const paymentSchema = insertDebtPaymentSchema.pick({
+      amount: true,
+      paymentMethod: true,
+      notes: true,
+    });
+    const parsed = paymentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+    }
+    const amount = parseFloat(parsed.data.amount);
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+    const remaining = parseFloat(debt.remainingBalance);
+    if (amount > remaining) {
+      return res.status(400).json({ message: "Amount exceeds remaining balance" });
+    }
+
+    const payment = await storage.createDebtPayment({
+      debtId: id,
+      amount: amount.toFixed(2),
+      paymentMethod: parsed.data.paymentMethod || "cash",
+      notes: parsed.data.notes || null,
+    });
+
+    const newPaid = (parseFloat(debt.amountPaid) + amount).toFixed(2);
+    const newRemaining = (remaining - amount).toFixed(2);
+    const newStatus = parseFloat(newRemaining) <= 0 ? "paid" : "active";
+
+    await storage.updateDebt(id, {
+      amountPaid: newPaid,
+      remainingBalance: newRemaining,
+      status: newStatus,
+    });
+
+    res.status(201).json(payment);
   });
 
   return httpServer;

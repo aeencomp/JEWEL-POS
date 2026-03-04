@@ -162,6 +162,26 @@ type TranslationKeys = {
   "customers.noCustomers": string;
   "customers.purchaseHistory": string;
   "customers.balance": string;
+
+  "debts.title": string;
+  "debts.addDebt": string;
+  "debts.personName": string;
+  "debts.personPhone": string;
+  "debts.type": string;
+  "debts.money": string;
+  "debts.gold": string;
+  "debts.totalAmount": string;
+  "debts.amountPaid": string;
+  "debts.remaining": string;
+  "debts.recordPayment": string;
+  "debts.markPaid": string;
+  "debts.description": string;
+  "debts.active": string;
+  "debts.paid": string;
+  "debts.totalDebts": string;
+  "debts.totalOwed": string;
+  "debts.paymentSuccess": string;
+  "debts.debtCreated": string;
   "customers.collectPayment": string;
   "customers.paymentAmount": string;
   "customers.paymentSuccess": string;
@@ -330,6 +350,7 @@ type TranslationKeys = {
   "stockAudit.soldRevenue": string;
   "stockAudit.noData": string;
   "nav.stockAudit": string;
+  "nav.debts": string;
 
   "common.save": string;
   "common.cancel": string;
@@ -368,6 +389,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.branding": "Branding",
     "nav.backup": "Backup",
     "nav.stockAudit": "Stock Audit",
+    "nav.debts": "Debts",
     "nav.logout": "Logout",
 
     "auth.login": "Login",
@@ -529,6 +551,26 @@ const translations: Record<Language, TranslationKeys> = {
     "customers.noCustomers": "No customers found",
     "customers.purchaseHistory": "Purchase History",
     "customers.balance": "Balance",
+
+    "debts.title": "Debts",
+    "debts.addDebt": "Add Debt",
+    "debts.personName": "Person / Store Name",
+    "debts.personPhone": "Phone",
+    "debts.type": "Type",
+    "debts.money": "Money",
+    "debts.gold": "Gold",
+    "debts.totalAmount": "Total Amount",
+    "debts.amountPaid": "Amount Paid",
+    "debts.remaining": "Remaining",
+    "debts.recordPayment": "Record Payment",
+    "debts.markPaid": "Mark as Paid",
+    "debts.description": "Description",
+    "debts.active": "Active",
+    "debts.paid": "Paid",
+    "debts.totalDebts": "Total Debts",
+    "debts.totalOwed": "Total Owed",
+    "debts.paymentSuccess": "Payment recorded",
+    "debts.debtCreated": "Debt added",
     "customers.collectPayment": "Collect Payment",
     "customers.paymentAmount": "Payment Amount",
     "customers.paymentSuccess": "Payment collected successfully",
@@ -718,6 +760,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.branding": "الهوية التجارية",
     "nav.backup": "النسخ الاحتياطي",
     "nav.stockAudit": "جرد المخزون",
+    "nav.debts": "الديون",
     "nav.logout": "تسجيل الخروج",
 
     "auth.login": "تسجيل الدخول",
@@ -879,6 +922,26 @@ const translations: Record<Language, TranslationKeys> = {
     "customers.noCustomers": "لا يوجد عملاء",
     "customers.purchaseHistory": "سجل المشتريات",
     "customers.balance": "الرصيد",
+
+    "debts.title": "الديون",
+    "debts.addDebt": "إضافة دين",
+    "debts.personName": "اسم الشخص / المحل",
+    "debts.personPhone": "الهاتف",
+    "debts.type": "النوع",
+    "debts.money": "نقد",
+    "debts.gold": "ذهب",
+    "debts.totalAmount": "المبلغ الكلي",
+    "debts.amountPaid": "المبلغ المدفوع",
+    "debts.remaining": "المتبقي",
+    "debts.recordPayment": "تسجيل دفعة",
+    "debts.markPaid": "تم السداد",
+    "debts.description": "الوصف",
+    "debts.active": "نشط",
+    "debts.paid": "مدفوع",
+    "debts.totalDebts": "إجمالي الديون",
+    "debts.totalOwed": "إجمالي المستحق",
+    "debts.paymentSuccess": "تم تسجيل الدفعة",
+    "debts.debtCreated": "تم إضافة الدين",
     "customers.collectPayment": "تحصيل دفعة",
     "customers.paymentAmount": "مبلغ الدفعة",
     "customers.paymentSuccess": "تم تحصيل الدفعة بنجاح",

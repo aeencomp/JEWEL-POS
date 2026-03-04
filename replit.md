@@ -70,6 +70,8 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `repair_orders` - Repair service tracking
 - `layaway_plans` / `layaway_payments` - Layaway installment system
 - `purchases` - Jewelry purchases from customers (buy jewel feature)
+- `debts` - Debts ledger (person name, type money/gold, total amount, amount paid, remaining balance, status)
+- `debt_payments` - Individual payment records against debts
 
 ## Seed Credentials
 - Admin: `admin` / `admin123`
@@ -95,6 +97,7 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `/branding` - Store branding settings (username, password, email, branding)
 - `/backup` - Backup & Restore (download/upload store data)
 - `/stock-audit` - Stock Audit (جرد) — inventory overview with sales/purchases summaries, date filtering, category breakdown, and per-item profit analysis
+- `/debts` - Debts (ديون) — standalone ledger for tracking money/gold lent to people/stores with partial payment recording
 
 ## Admin-side Pages
 - `/` - Dashboard with stats
@@ -123,6 +126,7 @@ All API routes use `/api/` prefix.
 - New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
 
 ## Recent Changes
+- Added Debts page (ديون): standalone ledger for tracking money/gold lent to people/stores. Supports adding debts, recording partial payments, marking paid/cancelled, and viewing payment history. Tables: `debts`, `debt_payments`. Endpoints: `GET/POST /api/debts`, `PATCH /api/debts/:id`, `GET/POST /api/debts/:id/payments`
 - Added Debit (Pay Later) payment option: 4th payment button "آجل" on POS terminal, requires customer selection. Tracks customer balance (owes). Customers page shows balance with "Collect Payment" button. Voiding debit orders restores customer balance. Endpoint: `POST /api/customers/:id/payment`
 - Added Void and Edit for orders: completed orders can be voided (cancelled with inventory restoration) or edited (change items, quantities, prices, discount). Endpoints: `PATCH /api/orders/:id` (void/status change restores inventory), `PATCH /api/orders/:id/items` (edit items with inventory recalculation)
 - Added Image Upload for inventory items: "Browse" button uploads image files (JPG/PNG/GIF/WebP, max 5MB) via `POST /api/upload`, stored in `/uploads/` directory. URL input still available as fallback. Preview thumbnail shown after upload with remove button.

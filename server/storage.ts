@@ -1,6 +1,6 @@
 import {
   users, stores, subscriptions, categories, inventoryItems, customers, orders, orderItems,
-  repairOrders, layawayPlans, layawayPayments, purchases, verificationCodes,
+  repairOrders, layawayPlans, layawayPayments, purchases, verificationCodes, debts, debtPayments,
   type User, type InsertUser,
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
@@ -13,6 +13,8 @@ import {
   type LayawayPlan, type InsertLayawayPlan,
   type LayawayPayment, type InsertLayawayPayment,
   type Purchase, type InsertPurchase,
+  type Debt, type InsertDebt,
+  type DebtPayment, type InsertDebtPayment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, gt } from "drizzle-orm";
@@ -81,6 +83,13 @@ export interface IStorage {
   getPurchase(id: number): Promise<Purchase | undefined>;
   createPurchase(purchase: InsertPurchase): Promise<Purchase>;
   updatePurchase(id: number, data: Partial<InsertPurchase>): Promise<Purchase | undefined>;
+
+  getDebts(storeId: number): Promise<Debt[]>;
+  getDebt(id: number): Promise<Debt | undefined>;
+  createDebt(debt: InsertDebt): Promise<Debt>;
+  updateDebt(id: number, data: Partial<InsertDebt>): Promise<Debt | undefined>;
+  getDebtPayments(debtId: number): Promise<DebtPayment[]>;
+  createDebtPayment(payment: InsertDebtPayment): Promise<DebtPayment>;
 
   createVerificationCode(userId: number, code: string, expiresAt: Date): Promise<void>;
   getValidVerificationCode(userId: number, code: string): Promise<boolean>;
@@ -358,6 +367,34 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserEmail(userId: number, email: string): Promise<void> {
     await db.update(users).set({ email }).where(eq(users.id, userId));
+  }
+
+  async getDebts(storeId: number): Promise<Debt[]> {
+    return db.select().from(debts).where(eq(debts.storeId, storeId)).orderBy(desc(debts.createdAt));
+  }
+
+  async getDebt(id: number): Promise<Debt | undefined> {
+    const [debt] = await db.select().from(debts).where(eq(debts.id, id));
+    return debt || undefined;
+  }
+
+  async createDebt(debt: InsertDebt): Promise<Debt> {
+    const [created] = await db.insert(debts).values(debt).returning();
+    return created;
+  }
+
+  async updateDebt(id: number, data: Partial<InsertDebt>): Promise<Debt | undefined> {
+    const [updated] = await db.update(debts).set(data).where(eq(debts.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getDebtPayments(debtId: number): Promise<DebtPayment[]> {
+    return db.select().from(debtPayments).where(eq(debtPayments.debtId, debtId)).orderBy(desc(debtPayments.createdAt));
+  }
+
+  async createDebtPayment(payment: InsertDebtPayment): Promise<DebtPayment> {
+    const [created] = await db.insert(debtPayments).values(payment).returning();
+    return created;
   }
 }
 
