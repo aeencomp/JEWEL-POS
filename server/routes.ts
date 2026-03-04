@@ -280,6 +280,9 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid email address" });
     }
     await storage.updateUserEmail(req.user.id, email);
+    if (req.user.storeId) {
+      await storage.updateStore(req.user.storeId, { email });
+    }
     res.json({ email });
   });
 
