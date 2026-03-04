@@ -128,6 +128,7 @@ export const customers = pgTable("customers", {
   address: text("address"),
   idNumber: text("id_number"),
   notes: text("notes"),
+  balance: decimal("balance").notNull().default("0"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -320,6 +321,7 @@ export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
+  balance: true,
   createdAt: true,
 });
 

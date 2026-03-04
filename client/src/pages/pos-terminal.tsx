@@ -43,6 +43,7 @@ import {
   Printer,
   X,
   Loader2,
+  Clock,
 } from "lucide-react";
 
 type CartItem = {
@@ -198,8 +199,13 @@ export default function PosTerminal() {
     setCart((prev) => prev.filter((c) => c.inventoryItemId !== inventoryItemId));
   }
 
-  function handlePayment(method: "cash" | "card" | "transfer") {
+  function handlePayment(method: "cash" | "card" | "transfer" | "debit") {
     if (cart.length === 0) return;
+
+    if (method === "debit" && (!selectedCustomerId || selectedCustomerId === "walk-in")) {
+      toast({ title: t("pos.debitRequiresCustomer"), variant: "destructive" });
+      return;
+    }
 
     const customer = customers.find((c) => c.id === Number(selectedCustomerId));
 
@@ -531,6 +537,15 @@ ${footer ? `<div style="font-size:12px;margin-bottom:4px">${footer}</div>` : ""}
             >
               <ArrowRightLeft className="w-4 h-4 me-2" />
               {t("pos.payByTransfer")}
+            </Button>
+            <Button
+              className="bg-orange-600 text-white border-orange-600"
+              disabled={cart.length === 0 || orderMutation.isPending}
+              onClick={() => handlePayment("debit")}
+              data-testid="button-pay-debit"
+            >
+              <Clock className="w-4 h-4 me-2" />
+              {t("pos.payByDebit")}
             </Button>
           </div>
 

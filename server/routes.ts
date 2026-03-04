@@ -765,6 +765,28 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.post("/api/customers/:id/payment", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const cust = await storage.getCustomer(id);
+    if (!cust || cust.storeId !== storeId) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+    const amount = parseFloat(req.body.amount);
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+    const currentBalance = parseFloat(cust.balance || "0");
+    if (amount > currentBalance) {
+      return res.status(400).json({ message: "Amount exceeds balance" });
+    }
+    const newBalance = (currentBalance - amount).toFixed(2);
+    await db.update(customers).set({ balance: newBalance }).where(eq(customers.id, id));
+    const updated = await storage.getCustomer(id);
+    res.json(updated);
+  });
+
   app.get("/api/orders", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);
@@ -778,6 +800,10 @@ export async function registerRoutes(
 
     const orderNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
     const { items, ...orderData } = req.body;
+
+    if (orderData.paymentMethod === "debit" && !orderData.customerId) {
+      return res.status(400).json({ message: "Debit payment requires a customer" });
+    }
 
     const order = await storage.createOrder({
       ...orderData,
@@ -805,6 +831,15 @@ export async function registerRoutes(
             quantity: invItem.quantity - item.quantity,
           });
         }
+      }
+    }
+
+    if (orderData.paymentMethod === "debit" && orderData.customerId) {
+      const cust = await storage.getCustomer(orderData.customerId);
+      if (cust) {
+        await db.update(customers).set({
+          balance: (parseFloat(cust.balance || "0") + parseFloat(orderData.total)).toFixed(2),
+        }).where(eq(customers.id, cust.id));
       }
     }
 
@@ -842,6 +877,14 @@ export async function registerRoutes(
             await storage.updateInventoryItem(item.inventoryItemId, {
               quantity: invItem.quantity + item.quantity,
             });
+          }
+        }
+
+        if (order.paymentMethod === "debit" && order.customerId) {
+          const cust = await storage.getCustomer(order.customerId);
+          if (cust) {
+            const newBalance = Math.max(0, parseFloat(cust.balance || "0") - parseFloat(order.total));
+            await db.update(customers).set({ balance: newBalance.toFixed(2) }).where(eq(customers.id, cust.id));
           }
         }
       }

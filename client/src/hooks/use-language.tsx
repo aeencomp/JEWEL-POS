@@ -78,6 +78,8 @@ type TranslationKeys = {
   "pos.payByCash": string;
   "pos.payByCard": string;
   "pos.payByTransfer": string;
+  "pos.payByDebit": string;
+  "pos.debitRequiresCustomer": string;
   "pos.clearCart": string;
   "pos.orderPlaced": string;
   "pos.orderNumber": string;
@@ -159,6 +161,11 @@ type TranslationKeys = {
   "customers.notes": string;
   "customers.noCustomers": string;
   "customers.purchaseHistory": string;
+  "customers.balance": string;
+  "customers.collectPayment": string;
+  "customers.paymentAmount": string;
+  "customers.paymentSuccess": string;
+  "customers.noBalance": string;
 
   "orders.title": string;
   "orders.orderNumber": string;
@@ -425,6 +432,8 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.payByCash": "Pay by Cash",
     "pos.payByCard": "Pay by Card",
     "pos.payByTransfer": "Pay by Transfer",
+    "pos.payByDebit": "Debit (Pay Later)",
+    "pos.debitRequiresCustomer": "Select a customer for debit payment",
     "pos.clearCart": "Clear Cart",
     "pos.orderPlaced": "Order Placed Successfully",
     "pos.orderNumber": "Order #",
@@ -519,6 +528,11 @@ const translations: Record<Language, TranslationKeys> = {
     "customers.notes": "Notes",
     "customers.noCustomers": "No customers found",
     "customers.purchaseHistory": "Purchase History",
+    "customers.balance": "Balance",
+    "customers.collectPayment": "Collect Payment",
+    "customers.paymentAmount": "Payment Amount",
+    "customers.paymentSuccess": "Payment collected successfully",
+    "customers.noBalance": "No outstanding balance",
 
     "orders.title": "Orders",
     "orders.orderNumber": "Order #",
@@ -768,6 +782,8 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.payByCash": "دفع نقدي",
     "pos.payByCard": "دفع بالبطاقة",
     "pos.payByTransfer": "دفع بالتحويل",
+    "pos.payByDebit": "آجل (الدفع لاحقاً)",
+    "pos.debitRequiresCustomer": "اختر عميلاً للدفع الآجل",
     "pos.clearCart": "إفراغ السلة",
     "pos.orderPlaced": "تم إنشاء الطلب بنجاح",
     "pos.orderNumber": "طلب رقم #",
@@ -862,6 +878,11 @@ const translations: Record<Language, TranslationKeys> = {
     "customers.notes": "ملاحظات",
     "customers.noCustomers": "لا يوجد عملاء",
     "customers.purchaseHistory": "سجل المشتريات",
+    "customers.balance": "الرصيد",
+    "customers.collectPayment": "تحصيل دفعة",
+    "customers.paymentAmount": "مبلغ الدفعة",
+    "customers.paymentSuccess": "تم تحصيل الدفعة بنجاح",
+    "customers.noBalance": "لا يوجد رصيد مستحق",
 
     "orders.title": "الطلبات",
     "orders.orderNumber": "طلب رقم #",

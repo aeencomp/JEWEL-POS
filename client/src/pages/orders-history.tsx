@@ -35,10 +35,11 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
   refunded: "outline",
 };
 
-const paymentVariants: Record<string, "default" | "secondary" | "outline"> = {
+const paymentVariants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   cash: "secondary",
   card: "default",
   transfer: "outline",
+  debit: "destructive",
 };
 
 type EditItem = {
@@ -260,7 +261,9 @@ export default function OrdersHistory() {
                           ? t("pos.payByCash")
                           : order.paymentMethod === "card"
                             ? t("pos.payByCard")
-                            : t("pos.payByTransfer")}
+                            : order.paymentMethod === "debit"
+                              ? t("pos.payByDebit")
+                              : t("pos.payByTransfer")}
                       </Badge>
                     )}
                   </TableCell>

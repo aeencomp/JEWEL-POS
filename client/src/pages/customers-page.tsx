@@ -9,6 +9,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Customer } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -34,7 +35,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Pencil, Loader2, Users } from "lucide-react";
+import { Search, Plus, Pencil, Loader2, Users, Banknote } from "lucide-react";
 
 const customerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -54,6 +55,8 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [paymentCustomer, setPaymentCustomer] = useState<Customer | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
 
   const { data: customers = [], isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -95,6 +98,19 @@ export default function CustomersPage() {
       setEditingCustomer(null);
       form.reset();
       toast({ title: t("customers.editCustomer") });
+    },
+  });
+
+  const paymentMutation = useMutation({
+    mutationFn: async ({ id, amount }: { id: number; amount: string }) => {
+      const res = await apiRequest("POST", `/api/customers/${id}/payment`, { amount });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setPaymentCustomer(null);
+      setPaymentAmount("");
+      toast({ title: t("customers.paymentSuccess") });
     },
   });
 
@@ -188,42 +204,66 @@ export default function CustomersPage() {
                 <TableHead>{t("customers.phone")}</TableHead>
                 <TableHead>{t("customers.email")}</TableHead>
                 <TableHead>{t("customers.idNumber")}</TableHead>
-                <TableHead>{t("customers.address")}</TableHead>
+                <TableHead>{t("customers.balance")}</TableHead>
                 <TableHead>{t("orders.date")}</TableHead>
                 <TableHead>{t("admin.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
-                  <TableCell data-testid={`text-customer-name-${customer.id}`}>
-                    {customer.name}
-                  </TableCell>
-                  <TableCell data-testid={`text-customer-phone-${customer.id}`}>
-                    {customer.phone || "-"}
-                  </TableCell>
-                  <TableCell data-testid={`text-customer-email-${customer.id}`}>
-                    {customer.email || "-"}
-                  </TableCell>
-                  <TableCell>{customer.idNumber || "-"}</TableCell>
-                  <TableCell>{customer.address || "-"}</TableCell>
-                  <TableCell>
-                    {customer.createdAt
-                      ? new Date(customer.createdAt).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => openEdit(customer)}
-                      data-testid={`button-edit-customer-${customer.id}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredCustomers.map((customer) => {
+                const balance = parseFloat(customer.balance || "0");
+                return (
+                  <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
+                    <TableCell data-testid={`text-customer-name-${customer.id}`}>
+                      {customer.name}
+                    </TableCell>
+                    <TableCell data-testid={`text-customer-phone-${customer.id}`}>
+                      {customer.phone || "-"}
+                    </TableCell>
+                    <TableCell data-testid={`text-customer-email-${customer.id}`}>
+                      {customer.email || "-"}
+                    </TableCell>
+                    <TableCell>{customer.idNumber || "-"}</TableCell>
+                    <TableCell data-testid={`text-customer-balance-${customer.id}`}>
+                      {balance > 0 ? (
+                        <Badge variant="destructive" className="no-default-active-elevate">
+                          {balance.toLocaleString()} {t("common.currency")}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">0</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {customer.createdAt
+                        ? new Date(customer.createdAt).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => openEdit(customer)}
+                          data-testid={`button-edit-customer-${customer.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {balance > 0 && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-green-600 hover:text-green-600"
+                            onClick={() => { setPaymentCustomer(customer); setPaymentAmount(""); }}
+                            data-testid={`button-collect-payment-${customer.id}`}
+                          >
+                            <Banknote className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -341,6 +381,58 @@ export default function CustomersPage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={paymentCustomer !== null}
+        onOpenChange={(open) => {
+          if (!open) { setPaymentCustomer(null); setPaymentAmount(""); }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle data-testid="text-collect-payment-title">{t("customers.collectPayment")}</DialogTitle>
+          </DialogHeader>
+          {paymentCustomer && (
+            <div className="space-y-4">
+              <div className="text-sm">
+                <span className="font-medium">{paymentCustomer.name}</span>
+                <span className="text-muted-foreground ms-2">
+                  {t("customers.balance")}: {parseFloat(paymentCustomer.balance || "0").toLocaleString()} {t("common.currency")}
+                </span>
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("customers.paymentAmount")}</label>
+                <Input
+                  type="number"
+                  min="0"
+                  max={paymentCustomer.balance || "0"}
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  className="mt-1"
+                  data-testid="input-payment-amount"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setPaymentCustomer(null); setPaymentAmount(""); }}
+              data-testid="button-cancel-payment"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => paymentCustomer && paymentMutation.mutate({ id: paymentCustomer.id, amount: paymentAmount })}
+              disabled={paymentMutation.isPending || !paymentAmount || parseFloat(paymentAmount) <= 0}
+              data-testid="button-confirm-payment"
+            >
+              {paymentMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("customers.collectPayment")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
