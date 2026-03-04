@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,9 +54,11 @@ import {
   EyeOff,
   Barcode,
   Percent,
+  Upload,
+  ImageIcon,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
 import JsBarcode from "jsbarcode";
 
 const categoryFormSchema = z.object({
@@ -105,6 +107,8 @@ export default function InventoryManagement() {
   const [bulkApplyTo, setBulkApplyTo] = useState<"cost" | "selling" | "both">("selling");
   const [bulkCategoryId, setBulkCategoryId] = useState<number | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -255,6 +259,34 @@ export default function InventoryManagement() {
       applyTo: bulkApplyTo,
       ...(bulkCategoryId ? { categoryId: bulkCategoryId } : {}),
     });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Invalid file type. Use JPG, PNG, GIF, or WebP.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large. Maximum 5MB.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      itemForm.setValue("imageUrl", data.url);
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const filteredItems = useMemo(() => {
@@ -772,10 +804,63 @@ export default function InventoryManagement() {
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("inventory.imageUrl")}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-item-image" />
-                      </FormControl>
+                      <FormLabel>{t("inventory.uploadImage")}</FormLabel>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            data-testid="input-file-upload"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            data-testid="button-browse-image"
+                          >
+                            {uploading ? (
+                              <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4 me-2" />
+                            )}
+                            {uploading ? t("inventory.uploading") : t("inventory.browseFile")}
+                          </Button>
+                          {field.value && (
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={field.value}
+                                alt=""
+                                className="h-8 w-8 rounded object-cover border"
+                                data-testid="img-preview"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => itemForm.setValue("imageUrl", "")}
+                                data-testid="button-remove-image"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{t("inventory.orEnterUrl")}</span>
+                        </div>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="https://..."
+                            data-testid="input-item-image"
+                          />
+                        </FormControl>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}

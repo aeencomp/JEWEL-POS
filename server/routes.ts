@@ -6,6 +6,33 @@ import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, upd
 import { db } from "./db";
 import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadsDir = path.resolve(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedExts.includes(ext) && allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type"));
+    }
+  },
+});
 
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -31,6 +58,15 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   setupAuth(app);
+
+  const express = await import("express");
+  app.use("/uploads", express.default.static(uploadsDir));
+
+  app.post("/api/upload", requireAuth, upload.single("image"), (req: any, res) => {
+    if (!req.file) return res.status(400).json({ message: "No valid image file provided" });
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
+  });
 
   app.post("/api/admin/impersonate/:storeId", requireAdmin, async (req, res) => {
     const storeId = parseInt(req.params.storeId);

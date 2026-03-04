@@ -123,6 +123,7 @@ All API routes use `/api/` prefix.
 - New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
 
 ## Recent Changes
+- Added Image Upload for inventory items: "Browse" button uploads image files (JPG/PNG/GIF/WebP, max 5MB) via `POST /api/upload`, stored in `/uploads/` directory. URL input still available as fallback. Preview thumbnail shown after upload with remove button.
 - Added Bulk Price Adjustment: "Adjust Prices" button on inventory page opens a dialog to increase/decrease cost/selling/both prices by percentage, with optional category filter and confirmation step. Endpoint: `PATCH /api/inventory/bulk-price`
 - Added Stock Audit (جرد) page: full inventory audit with summary cards (stock/sold/purchased/profit), date range filter, category breakdown table, and detailed per-item table with profit margin. Endpoint: `GET /api/store/stock-audit?from=&to=`
 - Added Backup & Restore feature: stores can download complete JSON backup of all data and restore from backup files with transactional safety and proper ID remapping

@@ -110,6 +110,10 @@ type TranslationKeys = {
   "inventory.available": string;
   "inventory.description": string;
   "inventory.imageUrl": string;
+  "inventory.uploadImage": string;
+  "inventory.browseFile": string;
+  "inventory.orEnterUrl": string;
+  "inventory.uploading": string;
   "inventory.gold": string;
   "inventory.silver": string;
   "inventory.platinum": string;
@@ -446,6 +450,10 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.available": "Available",
     "inventory.description": "Description",
     "inventory.imageUrl": "Image URL",
+    "inventory.uploadImage": "Upload Image",
+    "inventory.browseFile": "Browse",
+    "inventory.orEnterUrl": "or enter URL",
+    "inventory.uploading": "Uploading...",
     "inventory.gold": "Gold",
     "inventory.silver": "Silver",
     "inventory.platinum": "Platinum",
@@ -778,6 +786,10 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.available": "متوفر",
     "inventory.description": "الوصف",
     "inventory.imageUrl": "رابط الصورة",
+    "inventory.uploadImage": "رفع صورة",
+    "inventory.browseFile": "تصفح",
+    "inventory.orEnterUrl": "أو أدخل رابط",
+    "inventory.uploading": "جاري الرفع...",
     "inventory.gold": "ذهب",
     "inventory.silver": "فضة",
     "inventory.platinum": "بلاتين",
