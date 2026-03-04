@@ -965,6 +965,16 @@ export async function registerRoutes(
       storeId,
       status: "active",
     });
+
+    if (body.inventoryItemId) {
+      const invItem = await storage.getInventoryItem(body.inventoryItemId);
+      if (invItem && invItem.quantity > 0) {
+        await storage.updateInventoryItem(body.inventoryItemId, {
+          quantity: invItem.quantity - 1,
+        });
+      }
+    }
+
     res.status(201).json(plan);
   });
 
@@ -980,6 +990,16 @@ export async function registerRoutes(
     if (updateBody.dueDate && typeof updateBody.dueDate === "string") {
       updateBody.dueDate = new Date(updateBody.dueDate);
     }
+
+    if (updateBody.status === "cancelled" && plan.status === "active" && plan.inventoryItemId) {
+      const invItem = await storage.getInventoryItem(plan.inventoryItemId);
+      if (invItem) {
+        await storage.updateInventoryItem(plan.inventoryItemId, {
+          quantity: invItem.quantity + 1,
+        });
+      }
+    }
+
     const updated = await storage.updateLayawayPlan(id, updateBody);
     res.json(updated);
   });
