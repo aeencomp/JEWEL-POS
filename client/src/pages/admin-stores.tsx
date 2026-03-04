@@ -65,8 +65,11 @@ import {
   Trash2,
   Pencil,
   Eye,
+  User,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
+
+type StoreWithUsername = Store & { storeUsername?: string | null };
 
 const createStoreSchema = z.object({
   name: z.string().min(1, "Store name is required"),
@@ -100,7 +103,7 @@ export default function AdminStores() {
   const [editStore, setEditStore] = useState<Store | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
 
-  const { data: stores, isLoading } = useQuery<Store[]>({
+  const { data: stores, isLoading } = useQuery<StoreWithUsername[]>({
     queryKey: ["/api/stores"],
   });
 
@@ -493,6 +496,14 @@ export default function AdminStores() {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" />
                       <span>{store.address}</span>
+                    </div>
+                  )}
+                  {(store as StoreWithUsername).storeUsername && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <User className="h-3 w-3" />
+                      <span data-testid={`text-store-username-${store.id}`}>
+                        {t("auth.username")}: <span className="font-medium text-foreground">{(store as StoreWithUsername).storeUsername}</span>
+                      </span>
                     </div>
                   )}
                 </div>

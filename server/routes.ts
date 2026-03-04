@@ -95,7 +95,16 @@ export async function registerRoutes(
   app.get("/api/stores", requireAuth, async (req, res) => {
     if (req.user!.role === "admin") {
       const storesList = await storage.getStores();
-      res.json(storesList);
+      const storesWithUsernames = await Promise.all(
+        storesList.map(async (store) => {
+          const storeUsers = await storage.getUsersByStoreId(store.id);
+          return {
+            ...store,
+            storeUsername: storeUsers.length > 0 ? storeUsers[0].username : null,
+          };
+        })
+      );
+      res.json(storesWithUsernames);
     } else {
       const effectiveStoreId = getEffectiveStoreId(req);
       if (effectiveStoreId) {
