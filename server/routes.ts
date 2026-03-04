@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema } from "@shared/schema";
 import { db } from "./db";
-import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores } from "@shared/schema";
+import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -90,6 +90,266 @@ export async function registerRoutes(
       if (err) return res.status(500).json({ message: "Failed to save session" });
       res.json(req.user);
     });
+  });
+
+  app.get("/api/admin/backup", requireAdmin, async (req, res) => {
+    try {
+      const storesList = await storage.getStores();
+      const allStoresData = [];
+
+      for (const store of storesList) {
+        const storeUsers = await storage.getUsersByStoreId(store.id);
+        const [cats, items, custs, ords, repairs, layaways, purchasesList, debtsList] = await Promise.all([
+          storage.getCategories(store.id),
+          storage.getInventoryItems(store.id),
+          storage.getCustomers(store.id),
+          storage.getOrders(store.id),
+          storage.getRepairOrders(store.id),
+          storage.getLayawayPlans(store.id),
+          storage.getPurchases(store.id),
+          storage.getDebts(store.id),
+        ]);
+
+        const orderItemsMap: Record<number, any[]> = {};
+        for (const ord of ords) {
+          orderItemsMap[ord.id] = await storage.getOrderItems(ord.id);
+        }
+
+        const layawayPaymentsMap: Record<number, any[]> = {};
+        for (const lay of layaways) {
+          layawayPaymentsMap[lay.id] = await storage.getLayawayPayments(lay.id);
+        }
+
+        const debtPaymentsMap: Record<number, any[]> = {};
+        for (const debt of debtsList) {
+          debtPaymentsMap[debt.id] = await storage.getDebtPayments(debt.id);
+        }
+
+        allStoresData.push({
+          store: {
+            name: store.name,
+            ownerName: store.ownerName,
+            phone: store.phone,
+            email: store.email,
+            address: store.address,
+            isActive: store.isActive,
+            brandColor: store.brandColor,
+            logoUrl: store.logoUrl,
+            receiptHeader: store.receiptHeader,
+            receiptFooter: store.receiptFooter,
+          },
+          users: storeUsers.map((u) => ({
+            username: u.username,
+            password: u.password,
+            email: u.email,
+          })),
+          categories: cats,
+          inventoryItems: items,
+          customers: custs,
+          orders: ords.map((o) => ({ ...o, items: orderItemsMap[o.id] || [] })),
+          repairOrders: repairs,
+          layawayPlans: layaways.map((l) => ({ ...l, payments: layawayPaymentsMap[l.id] || [] })),
+          purchases: purchasesList,
+          debts: debtsList.map((d) => ({ ...d, payments: debtPaymentsMap[d.id] || [] })),
+        });
+      }
+
+      const backup = {
+        version: 2,
+        type: "admin_full_backup",
+        exportedAt: new Date().toISOString(),
+        stores: allStoresData,
+      };
+
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Content-Disposition", `attachment; filename="jewelpos_full_backup_${new Date().toISOString().split("T")[0]}.json"`);
+      res.json(backup);
+    } catch (error: any) {
+      console.error("Admin backup error:", error);
+      res.status(500).json({ message: `Backup failed: ${error.message}` });
+    }
+  });
+
+  app.post("/api/admin/restore", requireAdmin, async (req, res) => {
+    const backup = req.body;
+    if (!backup || backup.version !== 2 || backup.type !== "admin_full_backup") {
+      return res.status(400).json({ message: "Invalid backup file. Must be a full admin backup (version 2)." });
+    }
+
+    if (!backup.stores || !Array.isArray(backup.stores)) {
+      return res.status(400).json({ message: "Invalid backup: no stores data found" });
+    }
+
+    try {
+      let restoredCount = 0;
+
+      await db.transaction(async (tx) => {
+        for (const storeBackup of backup.stores) {
+          const [createdStore] = await tx.insert(stores).values({
+            name: storeBackup.store.name,
+            ownerName: storeBackup.store.ownerName,
+            phone: storeBackup.store.phone,
+            email: storeBackup.store.email || null,
+            address: storeBackup.store.address || null,
+            isActive: storeBackup.store.isActive ?? true,
+            brandColor: storeBackup.store.brandColor || "#d4a574",
+            logoUrl: storeBackup.store.logoUrl || null,
+            receiptHeader: storeBackup.store.receiptHeader || null,
+            receiptFooter: storeBackup.store.receiptFooter || null,
+          }).returning();
+
+          const storeId = createdStore.id;
+
+          if (storeBackup.users?.length) {
+            for (const u of storeBackup.users) {
+              await tx.insert(users).values({
+                username: u.username + "_restored_" + storeId,
+                password: u.password,
+                email: u.email || null,
+                role: "store",
+                storeId,
+              });
+            }
+          }
+
+          const oldCategoryIdMap: Record<number, number> = {};
+          const oldCustomerIdMap: Record<number, number> = {};
+          const oldInventoryIdMap: Record<number, number> = {};
+
+          if (storeBackup.categories?.length) {
+            for (const cat of storeBackup.categories) {
+              const [created] = await tx.insert(categories).values({
+                storeId, name: cat.name, sortOrder: cat.sortOrder || 0,
+              }).returning();
+              oldCategoryIdMap[cat.id] = created.id;
+            }
+          }
+
+          if (storeBackup.customers?.length) {
+            for (const cust of storeBackup.customers) {
+              const [created] = await tx.insert(customers).values({
+                storeId, name: cust.name, phone: cust.phone || null, email: cust.email || null,
+                address: cust.address || null, idNumber: cust.idNumber || null, notes: cust.notes || null,
+                balance: cust.balance || "0",
+              }).returning();
+              oldCustomerIdMap[cust.id] = created.id;
+            }
+          }
+
+          if (storeBackup.inventoryItems?.length) {
+            for (const item of storeBackup.inventoryItems) {
+              const newCatId = oldCategoryIdMap[item.categoryId];
+              if (!newCatId) continue;
+              const [created] = await tx.insert(inventoryItems).values({
+                storeId, categoryId: newCatId, sku: item.sku, barcode: item.barcode || null,
+                name: item.name, description: item.description || null, metalType: item.metalType || "gold",
+                purity: item.purity || null, weightGrams: item.weightGrams || null, gemstone: item.gemstone || null,
+                caratWeight: item.caratWeight || null, costPrice: item.costPrice, sellingPrice: item.sellingPrice,
+                quantity: item.quantity ?? 1, isAvailable: item.isAvailable ?? true, imageUrl: item.imageUrl || null,
+              }).returning();
+              oldInventoryIdMap[item.id] = created.id;
+            }
+          }
+
+          if (storeBackup.orders?.length) {
+            for (const ord of storeBackup.orders) {
+              const newCustId = ord.customerId ? (oldCustomerIdMap[ord.customerId] || null) : null;
+              const [createdOrder] = await tx.insert(orders).values({
+                storeId, customerId: newCustId, orderNumber: ord.orderNumber,
+                customerName: ord.customerName || null, status: ord.status || "completed",
+                subtotal: ord.subtotal, discount: ord.discount || "0",
+                total: ord.total, paymentMethod: ord.paymentMethod || null, notes: ord.notes || null,
+              }).returning();
+              if (ord.items?.length) {
+                for (const oi of ord.items) {
+                  const newItemId = oldInventoryIdMap[oi.inventoryItemId];
+                  if (!newItemId) continue;
+                  await tx.insert(orderItems).values({
+                    orderId: createdOrder.id, inventoryItemId: newItemId,
+                    name: oi.name, sku: oi.sku || null, price: oi.price, quantity: oi.quantity ?? 1,
+                  });
+                }
+              }
+            }
+          }
+
+          if (storeBackup.repairOrders?.length) {
+            for (const rep of storeBackup.repairOrders) {
+              const newCustId = rep.customerId ? (oldCustomerIdMap[rep.customerId] || null) : null;
+              await tx.insert(repairOrders).values({
+                storeId, customerId: newCustId, ticketNumber: rep.ticketNumber,
+                customerName: rep.customerName, customerPhone: rep.customerPhone || null,
+                itemDescription: rep.itemDescription, issueDescription: rep.issueDescription,
+                estimatedCost: rep.estimatedCost || null, finalCost: rep.finalCost || null,
+                status: rep.status || "received", estimatedDate: rep.estimatedDate || null,
+              });
+            }
+          }
+
+          if (storeBackup.layawayPlans?.length) {
+            for (const lay of storeBackup.layawayPlans) {
+              const newCustId = lay.customerId ? (oldCustomerIdMap[lay.customerId] || null) : null;
+              const newItemId = lay.inventoryItemId ? oldInventoryIdMap[lay.inventoryItemId] : null;
+              if (!newItemId) continue;
+              const [createdLayaway] = await tx.insert(layawayPlans).values({
+                storeId, customerId: newCustId, inventoryItemId: newItemId,
+                customerName: lay.customerName, customerPhone: lay.customerPhone || null,
+                totalPrice: lay.totalPrice, amountPaid: lay.amountPaid || "0",
+                remainingBalance: lay.remainingBalance, status: lay.status || "active",
+                dueDate: lay.dueDate || null,
+              }).returning();
+              if (lay.payments?.length) {
+                for (const pmt of lay.payments) {
+                  await tx.insert(layawayPayments).values({
+                    layawayId: createdLayaway.id, amount: pmt.amount, paymentMethod: pmt.paymentMethod || "cash",
+                  });
+                }
+              }
+            }
+          }
+
+          if (storeBackup.purchases?.length) {
+            for (const pur of storeBackup.purchases) {
+              const newCustId = pur.customerId ? (oldCustomerIdMap[pur.customerId] || null) : null;
+              await tx.insert(purchases).values({
+                storeId, customerId: newCustId, purchaseNumber: pur.purchaseNumber,
+                customerName: pur.customerName || null, customerPhone: pur.customerPhone || null,
+                metalType: pur.metalType || "gold", purity: pur.purity || null,
+                weightGrams: pur.weightGrams || null, itemDescription: pur.itemDescription,
+                purchasePrice: pur.purchasePrice, paymentMethod: pur.paymentMethod || "cash",
+                notes: pur.notes || null, status: pur.status || "completed",
+              });
+            }
+          }
+
+          if (storeBackup.debts?.length) {
+            for (const debt of storeBackup.debts) {
+              const [createdDebt] = await tx.insert(debts).values({
+                storeId, personName: debt.personName, personPhone: debt.personPhone || null,
+                type: debt.type || "money", description: debt.description || null,
+                totalAmount: debt.totalAmount, amountPaid: debt.amountPaid || "0",
+                remainingBalance: debt.remainingBalance, status: debt.status || "active",
+              }).returning();
+              if (debt.payments?.length) {
+                for (const pmt of debt.payments) {
+                  await tx.insert(debtPayments).values({
+                    debtId: createdDebt.id, amount: pmt.amount,
+                    paymentMethod: pmt.paymentMethod || "cash", notes: pmt.notes || null,
+                  });
+                }
+              }
+            }
+          }
+
+          restoredCount++;
+        }
+      });
+
+      res.json({ message: `Restore completed successfully. ${restoredCount} store(s) restored.` });
+    } catch (error: any) {
+      console.error("Admin restore error:", error);
+      res.status(500).json({ message: `Restore failed: ${error.message}` });
+    }
   });
 
   app.get("/api/stores", requireAuth, async (req, res) => {

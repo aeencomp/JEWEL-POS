@@ -182,6 +182,34 @@ type TranslationKeys = {
   "debts.totalOwed": string;
   "debts.paymentSuccess": string;
   "debts.debtCreated": string;
+  "adminBackup.title": string;
+  "adminBackup.subtitle": string;
+  "adminBackup.downloadBackup": string;
+  "adminBackup.restoreBackup": string;
+  "adminBackup.downloading": string;
+  "adminBackup.restoring": string;
+  "adminBackup.backupSuccess": string;
+  "adminBackup.restoreSuccess": string;
+  "adminBackup.restoreFailed": string;
+  "adminBackup.selectFile": string;
+  "adminBackup.previewTitle": string;
+  "adminBackup.storesCount": string;
+  "adminBackup.totalCategories": string;
+  "adminBackup.totalItems": string;
+  "adminBackup.totalCustomers": string;
+  "adminBackup.totalOrders": string;
+  "adminBackup.totalRepairs": string;
+  "adminBackup.totalLayaways": string;
+  "adminBackup.totalPurchases": string;
+  "adminBackup.totalDebts": string;
+  "adminBackup.confirmRestore": string;
+  "adminBackup.confirmRestoreMsg": string;
+  "adminBackup.lastBackup": string;
+  "adminBackup.noBackupYet": string;
+  "adminBackup.downloadDesc": string;
+  "adminBackup.restoreDesc": string;
+  "adminBackup.invalidFile": string;
+  "adminBackup.parseFailed": string;
   "customers.collectPayment": string;
   "customers.paymentAmount": string;
   "customers.paymentSuccess": string;
@@ -380,6 +408,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.dashboard": "Dashboard",
     "nav.stores": "Stores",
     "nav.subscriptions": "Subscriptions",
+    "nav.backup": "Backup & Restore",
     "nav.pos": "POS Terminal",
     "nav.inventory": "Inventory",
     "nav.customers": "Customers",
@@ -387,7 +416,6 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.repairs": "Repairs",
     "nav.layaway": "Layaway",
     "nav.branding": "Branding",
-    "nav.backup": "Backup",
     "nav.stockAudit": "Stock Audit",
     "nav.debts": "Debts",
     "nav.logout": "Logout",
@@ -571,6 +599,34 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.totalOwed": "Total Owed",
     "debts.paymentSuccess": "Payment recorded",
     "debts.debtCreated": "Debt added",
+    "adminBackup.title": "Backup & Restore",
+    "adminBackup.subtitle": "Download a full backup of all stores data or restore from a previous backup",
+    "adminBackup.downloadBackup": "Download Full Backup",
+    "adminBackup.restoreBackup": "Restore from Backup",
+    "adminBackup.downloading": "Downloading...",
+    "adminBackup.restoring": "Restoring...",
+    "adminBackup.backupSuccess": "Backup downloaded successfully",
+    "adminBackup.restoreSuccess": "Restore completed successfully",
+    "adminBackup.restoreFailed": "Restore failed",
+    "adminBackup.selectFile": "Select backup file",
+    "adminBackup.previewTitle": "Backup Preview",
+    "adminBackup.storesCount": "Stores",
+    "adminBackup.totalCategories": "Categories",
+    "adminBackup.totalItems": "Inventory Items",
+    "adminBackup.totalCustomers": "Customers",
+    "adminBackup.totalOrders": "Orders",
+    "adminBackup.totalRepairs": "Repairs",
+    "adminBackup.totalLayaways": "Layaways",
+    "adminBackup.totalPurchases": "Purchases",
+    "adminBackup.totalDebts": "Debts",
+    "adminBackup.confirmRestore": "Confirm Restore",
+    "adminBackup.confirmRestoreMsg": "This will create new stores with the data from this backup. Existing stores will not be affected. Are you sure you want to proceed?",
+    "adminBackup.lastBackup": "Last Backup",
+    "adminBackup.noBackupYet": "No backup downloaded yet",
+    "adminBackup.downloadDesc": "Download a JSON file containing all stores data including inventory, customers, orders, repairs, layaways, purchases, and debts.",
+    "adminBackup.restoreDesc": "Restore stores data from a previous backup file. New stores will be created and existing stores will not be affected.",
+    "adminBackup.invalidFile": "Invalid backup file. Must be a full admin backup.",
+    "adminBackup.parseFailed": "Failed to parse backup file",
     "customers.collectPayment": "Collect Payment",
     "customers.paymentAmount": "Payment Amount",
     "customers.paymentSuccess": "Payment collected successfully",
@@ -751,6 +807,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.dashboard": "لوحة التحكم",
     "nav.stores": "المتاجر",
     "nav.subscriptions": "الاشتراكات",
+    "nav.backup": "النسخ الاحتياطي",
     "nav.pos": "نقطة البيع",
     "nav.inventory": "المخزون",
     "nav.customers": "العملاء",
@@ -758,7 +815,6 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.repairs": "الإصلاحات",
     "nav.layaway": "التقسيط",
     "nav.branding": "الهوية التجارية",
-    "nav.backup": "النسخ الاحتياطي",
     "nav.stockAudit": "جرد المخزون",
     "nav.debts": "الديون",
     "nav.logout": "تسجيل الخروج",
@@ -942,6 +998,34 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.totalOwed": "إجمالي المستحق",
     "debts.paymentSuccess": "تم تسجيل الدفعة",
     "debts.debtCreated": "تم إضافة الدين",
+    "adminBackup.title": "النسخ الاحتياطي والاستعادة",
+    "adminBackup.subtitle": "تحميل نسخة احتياطية كاملة لجميع بيانات المتاجر أو الاستعادة من نسخة سابقة",
+    "adminBackup.downloadBackup": "تحميل نسخة احتياطية كاملة",
+    "adminBackup.restoreBackup": "استعادة من نسخة احتياطية",
+    "adminBackup.downloading": "جاري التحميل...",
+    "adminBackup.restoring": "جاري الاستعادة...",
+    "adminBackup.backupSuccess": "تم تحميل النسخة الاحتياطية بنجاح",
+    "adminBackup.restoreSuccess": "تمت الاستعادة بنجاح",
+    "adminBackup.restoreFailed": "فشلت الاستعادة",
+    "adminBackup.selectFile": "اختر ملف النسخة الاحتياطية",
+    "adminBackup.previewTitle": "معاينة النسخة الاحتياطية",
+    "adminBackup.storesCount": "المتاجر",
+    "adminBackup.totalCategories": "الفئات",
+    "adminBackup.totalItems": "عناصر المخزون",
+    "adminBackup.totalCustomers": "العملاء",
+    "adminBackup.totalOrders": "الطلبات",
+    "adminBackup.totalRepairs": "الإصلاحات",
+    "adminBackup.totalLayaways": "التقسيط",
+    "adminBackup.totalPurchases": "المشتريات",
+    "adminBackup.totalDebts": "الديون",
+    "adminBackup.confirmRestore": "تأكيد الاستعادة",
+    "adminBackup.confirmRestoreMsg": "سيتم إنشاء متاجر جديدة ببيانات هذه النسخة الاحتياطية. لن تتأثر المتاجر الحالية. هل أنت متأكد من المتابعة؟",
+    "adminBackup.lastBackup": "آخر نسخة احتياطية",
+    "adminBackup.noBackupYet": "لم يتم تحميل نسخة احتياطية بعد",
+    "adminBackup.downloadDesc": "تحميل ملف JSON يحتوي على جميع بيانات المتاجر بما في ذلك المخزون والعملاء والطلبات والإصلاحات والتقسيط والمشتريات والديون.",
+    "adminBackup.restoreDesc": "استعادة بيانات المتاجر من ملف نسخة احتياطية سابقة. سيتم إنشاء متاجر جديدة ولن تتأثر المتاجر الحالية.",
+    "adminBackup.invalidFile": "ملف نسخة احتياطية غير صالح. يجب أن يكون نسخة احتياطية كاملة للمشرف.",
+    "adminBackup.parseFailed": "فشل في قراءة ملف النسخة الاحتياطية",
     "customers.collectPayment": "تحصيل دفعة",
     "customers.paymentAmount": "مبلغ الدفعة",
     "customers.paymentSuccess": "تم تحصيل الدفعة بنجاح",

@@ -103,6 +103,7 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `/` - Dashboard with stats
 - `/restaurants` - Store management (route path kept for compatibility)
 - `/subscriptions` - Subscription management
+- `/backup` - Admin Backup & Restore (full system backup/restore for all stores)
 
 ## API Prefix
 All API routes use `/api/` prefix.
@@ -126,6 +127,7 @@ All API routes use `/api/` prefix.
 - New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
 
 ## Recent Changes
+- Added Admin Backup & Restore: full-system backup/restore from admin panel. Downloads all stores' data (categories, inventory, customers, orders, repairs, layaways, purchases, debts, users) as JSON. Restore creates new stores from backup. Endpoints: `GET /api/admin/backup`, `POST /api/admin/restore` (version 2 format)
 - Added Debts page (ديون): standalone ledger for tracking money/gold lent to people/stores. Supports adding debts, recording partial payments, marking paid/cancelled, and viewing payment history. Tables: `debts`, `debt_payments`. Endpoints: `GET/POST /api/debts`, `PATCH /api/debts/:id`, `GET/POST /api/debts/:id/payments`
 - Added Debit (Pay Later) payment option: 4th payment button "آجل" on POS terminal, requires customer selection. Tracks customer balance (owes). Customers page shows balance with "Collect Payment" button. Voiding debit orders restores customer balance. Endpoint: `POST /api/customers/:id/payment`
 - Added Void and Edit for orders: completed orders can be voided (cancelled with inventory restoration) or edited (change items, quantities, prices, discount). Endpoints: `PATCH /api/orders/:id` (void/status change restores inventory), `PATCH /api/orders/:id/items` (edit items with inventory recalculation)

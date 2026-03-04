@@ -33,6 +33,7 @@ import {
   HardDrive,
   ClipboardCheck,
   HandCoins,
+  DatabaseBackup,
 } from "lucide-react";
 
 type BrandingData = {
@@ -60,6 +61,7 @@ export function AppSidebar() {
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
     { title: t("nav.stores"), url: "/restaurants", icon: Store },
     { title: t("nav.subscriptions"), url: "/subscriptions", icon: CreditCard },
+    { title: t("nav.backup"), url: "/backup", icon: DatabaseBackup },
   ];
 
   const storeItems = [

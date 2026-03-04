@@ -27,6 +27,7 @@ import StoreBackup from "@/pages/store-backup";
 import StockAudit from "@/pages/stock-audit";
 import PurchasesPage from "@/pages/purchases-page";
 import DebtsPage from "@/pages/debts-page";
+import AdminBackup from "@/pages/admin-backup";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +37,7 @@ function AdminRouter() {
       <Route path="/" component={AdminDashboard} />
       <Route path="/restaurants" component={AdminStores} />
       <Route path="/subscriptions" component={AdminSubscriptions} />
+      <Route path="/backup" component={AdminBackup} />
       <Route component={NotFound} />
     </Switch>
   );
