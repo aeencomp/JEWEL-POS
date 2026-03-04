@@ -174,6 +174,7 @@ export default function LayawayPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/layaways"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       setNewDialogOpen(false);
       form.reset();
       toast({ title: t("layaway.addPlan"), description: "OK" });
