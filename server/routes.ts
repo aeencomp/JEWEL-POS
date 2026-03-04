@@ -609,6 +609,53 @@ export async function registerRoutes(
     res.json(items);
   });
 
+  app.patch("/api/inventory/bulk-price", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+
+    const { adjustmentType, percentage, applyTo, categoryId } = req.body;
+    if (!adjustmentType || !percentage || !applyTo) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    if (typeof percentage !== "number" || !isFinite(percentage) || percentage <= 0) {
+      return res.status(400).json({ message: "Percentage must be greater than 0" });
+    }
+    if (percentage > 1000) {
+      return res.status(400).json({ message: "Percentage cannot exceed 1000%" });
+    }
+    if (adjustmentType === "decrease" && percentage > 100) {
+      return res.status(400).json({ message: "Decrease percentage cannot exceed 100%" });
+    }
+    if (!["increase", "decrease"].includes(adjustmentType)) {
+      return res.status(400).json({ message: "Invalid adjustment type" });
+    }
+    if (!["cost", "selling", "both"].includes(applyTo)) {
+      return res.status(400).json({ message: "Invalid applyTo value" });
+    }
+
+    let items = await storage.getInventoryItems(storeId);
+    if (categoryId) {
+      items = items.filter((i) => i.categoryId === categoryId);
+    }
+
+    const multiplier = adjustmentType === "increase" ? 1 + percentage / 100 : 1 - percentage / 100;
+    let updatedCount = 0;
+
+    for (const item of items) {
+      const updates: any = {};
+      if (applyTo === "cost" || applyTo === "both") {
+        updates.costPrice = (parseFloat(item.costPrice) * multiplier).toFixed(2);
+      }
+      if (applyTo === "selling" || applyTo === "both") {
+        updates.sellingPrice = (parseFloat(item.sellingPrice) * multiplier).toFixed(2);
+      }
+      await storage.updateInventoryItem(item.id, updates);
+      updatedCount++;
+    }
+
+    res.json({ updatedCount });
+  });
+
   app.post("/api/inventory", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });

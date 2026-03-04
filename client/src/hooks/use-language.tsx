@@ -268,6 +268,20 @@ type TranslationKeys = {
   "backup.layawayPlans": string;
   "backup.purchases": string;
 
+  "inventory.bulkPriceAdjust": string;
+  "inventory.adjustType": string;
+  "inventory.increase": string;
+  "inventory.decrease": string;
+  "inventory.percentage": string;
+  "inventory.applyTo": string;
+  "inventory.costPriceOnly": string;
+  "inventory.sellingPriceOnly": string;
+  "inventory.bothPrices": string;
+  "inventory.allCategories": string;
+  "inventory.adjustPreview": string;
+  "inventory.adjustConfirm": string;
+  "inventory.adjustSuccess": string;
+
   "stockAudit.title": string;
   "stockAudit.totalStock": string;
   "stockAudit.items": string;
@@ -438,6 +452,19 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.whiteGold": "White Gold",
     "inventory.roseGold": "Rose Gold",
     "inventory.other": "Other",
+    "inventory.bulkPriceAdjust": "Adjust Prices",
+    "inventory.adjustType": "Adjustment Type",
+    "inventory.increase": "Increase",
+    "inventory.decrease": "Decrease",
+    "inventory.percentage": "Percentage",
+    "inventory.applyTo": "Apply To",
+    "inventory.costPriceOnly": "Cost Price Only",
+    "inventory.sellingPriceOnly": "Selling Price Only",
+    "inventory.bothPrices": "Both Prices",
+    "inventory.allCategories": "All Categories",
+    "inventory.adjustPreview": "Preview",
+    "inventory.adjustConfirm": "Are you sure? This will update prices for all matching items.",
+    "inventory.adjustSuccess": "Prices updated successfully",
     "inventory.categories": "Categories",
     "inventory.addCategory": "Add Category",
     "inventory.deleteCategory": "Delete Category",
@@ -757,6 +784,19 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.whiteGold": "ذهب أبيض",
     "inventory.roseGold": "ذهب وردي",
     "inventory.other": "أخرى",
+    "inventory.bulkPriceAdjust": "تعديل الأسعار",
+    "inventory.adjustType": "نوع التعديل",
+    "inventory.increase": "زيادة",
+    "inventory.decrease": "تخفيض",
+    "inventory.percentage": "النسبة المئوية",
+    "inventory.applyTo": "تطبيق على",
+    "inventory.costPriceOnly": "سعر التكلفة فقط",
+    "inventory.sellingPriceOnly": "سعر البيع فقط",
+    "inventory.bothPrices": "كلا السعرين",
+    "inventory.allCategories": "جميع الفئات",
+    "inventory.adjustPreview": "معاينة",
+    "inventory.adjustConfirm": "هل أنت متأكد؟ سيتم تحديث أسعار جميع العناصر المطابقة.",
+    "inventory.adjustSuccess": "تم تحديث الأسعار بنجاح",
     "inventory.categories": "الفئات",
     "inventory.addCategory": "إضافة فئة",
     "inventory.deleteCategory": "حذف الفئة",

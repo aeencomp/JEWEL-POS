@@ -53,6 +53,7 @@ import {
   Eye,
   EyeOff,
   Barcode,
+  Percent,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useRef, useEffect } from "react";
@@ -98,6 +99,12 @@ export default function InventoryManagement() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [barcodeItem, setBarcodeItem] = useState<InventoryItem | null>(null);
+  const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
+  const [bulkAdjustType, setBulkAdjustType] = useState<"increase" | "decrease">("increase");
+  const [bulkPercentage, setBulkPercentage] = useState("");
+  const [bulkApplyTo, setBulkApplyTo] = useState<"cost" | "selling" | "both">("selling");
+  const [bulkCategoryId, setBulkCategoryId] = useState<number | null>(null);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -220,6 +227,36 @@ export default function InventoryManagement() {
     },
   });
 
+  const bulkPriceMutation = useMutation({
+    mutationFn: async (data: { adjustmentType: string; percentage: number; applyTo: string; categoryId?: number }) => {
+      const res = await apiRequest("PATCH", "/api/inventory/bulk-price", data);
+      return res.json();
+    },
+    onSuccess: (data: { updatedCount: number }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setBulkPriceOpen(false);
+      setBulkConfirmOpen(false);
+      setBulkPercentage("");
+      toast({ title: `${t("inventory.adjustSuccess")} (${data.updatedCount})` });
+    },
+  });
+
+  const handleBulkPriceSubmit = () => {
+    const pct = parseFloat(bulkPercentage);
+    if (!pct || pct <= 0) return;
+    setBulkConfirmOpen(true);
+  };
+
+  const confirmBulkPrice = () => {
+    const pct = parseFloat(bulkPercentage);
+    bulkPriceMutation.mutate({
+      adjustmentType: bulkAdjustType,
+      percentage: pct,
+      applyTo: bulkApplyTo,
+      ...(bulkCategoryId ? { categoryId: bulkCategoryId } : {}),
+    });
+  };
+
   const filteredItems = useMemo(() => {
     return inventory.filter((item) => {
       const matchesCategory = selectedCategory ? item.categoryId === selectedCategory : true;
@@ -307,10 +344,16 @@ export default function InventoryManagement() {
         <h1 className="text-2xl font-bold" data-testid="text-inventory-title">
           {t("inventory.title")}
         </h1>
-        <Button onClick={openAddItem} data-testid="button-add-item">
-          <Plus className="h-4 w-4 me-2" />
-          {t("inventory.addItem")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setBulkPriceOpen(true)} data-testid="button-bulk-price">
+            <Percent className="h-4 w-4 me-2" />
+            {t("inventory.bulkPriceAdjust")}
+          </Button>
+          <Button onClick={openAddItem} data-testid="button-add-item">
+            <Plus className="h-4 w-4 me-2" />
+            {t("inventory.addItem")}
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -803,6 +846,118 @@ export default function InventoryManagement() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkPriceOpen} onOpenChange={setBulkPriceOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle data-testid="text-bulk-price-title">{t("inventory.bulkPriceAdjust")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">{t("inventory.adjustType")}</label>
+              <Select value={bulkAdjustType} onValueChange={(v: "increase" | "decrease") => setBulkAdjustType(v)}>
+                <SelectTrigger data-testid="select-adjust-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="increase" data-testid="option-increase">{t("inventory.increase")}</SelectItem>
+                  <SelectItem value="decrease" data-testid="option-decrease">{t("inventory.decrease")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.percentage")}</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min="0.01"
+                  max="1000"
+                  step="0.01"
+                  value={bulkPercentage}
+                  onChange={(e) => setBulkPercentage(e.target.value)}
+                  placeholder="10"
+                  data-testid="input-bulk-percentage"
+                />
+                <Percent className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.applyTo")}</label>
+              <Select value={bulkApplyTo} onValueChange={(v: "cost" | "selling" | "both") => setBulkApplyTo(v)}>
+                <SelectTrigger data-testid="select-apply-to">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="selling" data-testid="option-selling">{t("inventory.sellingPriceOnly")}</SelectItem>
+                  <SelectItem value="cost" data-testid="option-cost">{t("inventory.costPriceOnly")}</SelectItem>
+                  <SelectItem value="both" data-testid="option-both">{t("inventory.bothPrices")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.categories")}</label>
+              <Select value={bulkCategoryId?.toString() || "all"} onValueChange={(v) => setBulkCategoryId(v === "all" ? null : parseInt(v))}>
+                <SelectTrigger data-testid="select-bulk-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" data-testid="option-all-categories">{t("inventory.allCategories")}</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id.toString()} data-testid={`option-category-${cat.id}`}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {bulkPercentage && parseFloat(bulkPercentage) > 0 && (
+              <div className="rounded-md bg-muted p-3 text-sm" data-testid="text-bulk-preview">
+                <span className="font-medium">{t("inventory.adjustPreview")}: </span>
+                {bulkAdjustType === "increase" ? t("inventory.increase") : t("inventory.decrease")}{" "}
+                {bulkApplyTo === "cost" ? t("inventory.costPriceOnly") : bulkApplyTo === "selling" ? t("inventory.sellingPriceOnly") : t("inventory.bothPrices")}{" "}
+                {bulkPercentage}%
+                {bulkCategoryId ? ` — ${categories.find((c) => c.id === bulkCategoryId)?.name}` : ""}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkPriceOpen(false)} data-testid="button-bulk-cancel">
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleBulkPriceSubmit}
+              disabled={!bulkPercentage || parseFloat(bulkPercentage) <= 0}
+              data-testid="button-bulk-submit"
+            >
+              {t("inventory.bulkPriceAdjust")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkConfirmOpen} onOpenChange={setBulkConfirmOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("inventory.bulkPriceAdjust")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground" data-testid="text-bulk-confirm">
+            {t("inventory.adjustConfirm")}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkConfirmOpen(false)} data-testid="button-confirm-cancel">
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={confirmBulkPrice}
+              disabled={bulkPriceMutation.isPending}
+              data-testid="button-confirm-submit"
+            >
+              {bulkPriceMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("common.save")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
