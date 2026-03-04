@@ -173,6 +173,13 @@ type TranslationKeys = {
   "orders.cancelled": string;
   "orders.refunded": string;
   "orders.pending": string;
+  "orders.void": string;
+  "orders.edit": string;
+  "orders.voidConfirm": string;
+  "orders.voidSuccess": string;
+  "orders.editOrder": string;
+  "orders.editSuccess": string;
+  "orders.actions": string;
 
   "repairs.title": string;
   "repairs.addRepair": string;
@@ -526,6 +533,13 @@ const translations: Record<Language, TranslationKeys> = {
     "orders.cancelled": "Cancelled",
     "orders.refunded": "Refunded",
     "orders.pending": "Pending",
+    "orders.void": "Void",
+    "orders.edit": "Edit",
+    "orders.voidConfirm": "Are you sure you want to void this order? Inventory will be restored.",
+    "orders.voidSuccess": "Order voided successfully",
+    "orders.editOrder": "Edit Order",
+    "orders.editSuccess": "Order updated successfully",
+    "orders.actions": "Actions",
 
     "repairs.title": "Repairs",
     "repairs.addRepair": "Add Repair",
@@ -862,6 +876,13 @@ const translations: Record<Language, TranslationKeys> = {
     "orders.cancelled": "ملغي",
     "orders.refunded": "مسترجع",
     "orders.pending": "قيد الانتظار",
+    "orders.void": "إلغاء",
+    "orders.edit": "تعديل",
+    "orders.voidConfirm": "هل أنت متأكد من إلغاء هذا الطلب؟ سيتم إرجاع المخزون.",
+    "orders.voidSuccess": "تم إلغاء الطلب بنجاح",
+    "orders.editOrder": "تعديل الطلب",
+    "orders.editSuccess": "تم تحديث الطلب بنجاح",
+    "orders.actions": "إجراءات",
 
     "repairs.title": "الإصلاحات",
     "repairs.addRepair": "إضافة إصلاح",

@@ -831,8 +831,87 @@ export async function registerRoutes(
     if (!order || order.storeId !== storeId) {
       return res.status(404).json({ message: "Order not found" });
     }
-    const updated = await storage.updateOrder(id, { status: req.body.status });
+
+    const newStatus = req.body.status;
+    if (newStatus === "cancelled" || newStatus === "refunded") {
+      if (order.status === "completed") {
+        const oi = await storage.getOrderItems(id);
+        for (const item of oi) {
+          const invItem = await storage.getInventoryItem(item.inventoryItemId);
+          if (invItem) {
+            await storage.updateInventoryItem(item.inventoryItemId, {
+              quantity: invItem.quantity + item.quantity,
+            });
+          }
+        }
+      }
+    }
+
+    const updated = await storage.updateOrder(id, { status: newStatus });
     res.json(updated);
+  });
+
+  app.patch("/api/orders/:id/items", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const order = await storage.getOrder(id);
+    if (!order || order.storeId !== storeId) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.status !== "completed") {
+      return res.status(400).json({ message: "Can only edit completed orders" });
+    }
+
+    const { items, discount, notes } = req.body;
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({ message: "Items array required" });
+    }
+
+    const oldItems = await storage.getOrderItems(id);
+    for (const oi of oldItems) {
+      const invItem = await storage.getInventoryItem(oi.inventoryItemId);
+      if (invItem) {
+        await storage.updateInventoryItem(oi.inventoryItemId, {
+          quantity: invItem.quantity + oi.quantity,
+        });
+      }
+    }
+
+    await db.delete(orderItems).where(eq(orderItems.orderId, id));
+
+    let subtotal = 0;
+    const createdItems = [];
+    for (const item of items) {
+      const orderItem = await storage.createOrderItem({
+        orderId: id,
+        inventoryItemId: item.inventoryItemId,
+        name: item.name,
+        sku: item.sku || null,
+        price: item.price,
+        quantity: item.quantity,
+      });
+      createdItems.push(orderItem);
+      subtotal += parseFloat(item.price) * item.quantity;
+
+      const invItem = await storage.getInventoryItem(item.inventoryItemId);
+      if (invItem) {
+        await storage.updateInventoryItem(item.inventoryItemId, {
+          quantity: invItem.quantity - item.quantity,
+        });
+      }
+    }
+
+    const discountVal = parseFloat(discount || "0");
+    const total = subtotal - discountVal;
+    const updated = await storage.updateOrder(id, {
+      subtotal: subtotal.toFixed(2),
+      discount: discountVal.toFixed(2),
+      total: total.toFixed(2),
+      notes: notes || order.notes,
+    });
+
+    res.json({ ...updated, items: createdItems });
   });
 
   app.get("/api/repairs", requireAuth, async (req, res) => {

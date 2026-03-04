@@ -123,6 +123,7 @@ All API routes use `/api/` prefix.
 - New code must use logical properties (never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-` for layout)
 
 ## Recent Changes
+- Added Void and Edit for orders: completed orders can be voided (cancelled with inventory restoration) or edited (change items, quantities, prices, discount). Endpoints: `PATCH /api/orders/:id` (void/status change restores inventory), `PATCH /api/orders/:id/items` (edit items with inventory recalculation)
 - Added Image Upload for inventory items: "Browse" button uploads image files (JPG/PNG/GIF/WebP, max 5MB) via `POST /api/upload`, stored in `/uploads/` directory. URL input still available as fallback. Preview thumbnail shown after upload with remove button.
 - Added Bulk Price Adjustment: "Adjust Prices" button on inventory page opens a dialog to increase/decrease cost/selling/both prices by percentage, with optional category filter and confirmation step. Endpoint: `PATCH /api/inventory/bulk-price`
 - Added Stock Audit (جرد) page: full inventory audit with summary cards (stock/sold/purchased/profit), date range filter, category breakdown table, and detailed per-item table with profit margin. Endpoint: `GET /api/store/stock-audit?from=&to=`

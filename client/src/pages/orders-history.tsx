@@ -1,16 +1,20 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
-import type { Order, OrderItem } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Order, OrderItem, InventoryItem } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -20,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, ShoppingBag, Eye } from "lucide-react";
+import { Loader2, ShoppingBag, Eye, Ban, Pencil, Plus, Trash2, X } from "lucide-react";
 
 type StatusFilter = "all" | "completed" | "cancelled" | "refunded";
 
@@ -37,14 +41,31 @@ const paymentVariants: Record<string, "default" | "secondary" | "outline"> = {
   transfer: "outline",
 };
 
+type EditItem = {
+  inventoryItemId: number;
+  name: string;
+  sku: string;
+  price: string;
+  quantity: number;
+};
+
 export default function OrdersHistory() {
   const { t } = useLanguage();
+  const { toast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [voidOrderId, setVoidOrderId] = useState<number | null>(null);
+  const [editOrderId, setEditOrderId] = useState<number | null>(null);
+  const [editItems, setEditItems] = useState<EditItem[]>([]);
+  const [editDiscount, setEditDiscount] = useState("0");
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+  });
+
+  const { data: inventory = [] } = useQuery<InventoryItem[]>({
+    queryKey: ["/api/inventory"],
   });
 
   const { data: orderItems = [], isLoading: loadingItems } = useQuery<OrderItem[]>({
@@ -59,12 +80,105 @@ export default function OrdersHistory() {
     },
   });
 
+  const { data: editOrderItems = [] } = useQuery<OrderItem[]>({
+    queryKey: ["/api/orders", editOrderId, "items"],
+    enabled: editOrderId !== null,
+    queryFn: async () => {
+      const res = await fetch(`/api/orders/${editOrderId}/items`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch items");
+      return res.json();
+    },
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}`, { status: "cancelled" });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setVoidOrderId(null);
+      toast({ title: t("orders.voidSuccess") });
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ orderId, items, discount }: { orderId: number; items: EditItem[]; discount: string }) => {
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/items`, { items, discount });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setEditOrderId(null);
+      toast({ title: t("orders.editSuccess") });
+    },
+  });
+
   const filteredOrders = useMemo(() => {
     if (statusFilter === "all") return orders;
     return orders.filter((o) => o.status === statusFilter);
   }, [orders, statusFilter]);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+  const editOrder = orders.find((o) => o.id === editOrderId);
+
+  const openEditDialog = (order: Order) => {
+    setEditOrderId(order.id);
+    setEditDiscount(order.discount || "0");
+  };
+
+  const initEditItems = () => {
+    if (editOrderItems.length > 0 && editItems.length === 0) {
+      setEditItems(editOrderItems.map((oi) => ({
+        inventoryItemId: oi.inventoryItemId,
+        name: oi.name,
+        sku: oi.sku || "",
+        price: oi.price,
+        quantity: oi.quantity,
+      })));
+    }
+  };
+
+  const editSubtotal = editItems.reduce((s, i) => s + parseFloat(i.price) * i.quantity, 0);
+  const editTotal = editSubtotal - parseFloat(editDiscount || "0");
+
+  const addItemToEdit = (item: InventoryItem) => {
+    const existing = editItems.find((ei) => ei.inventoryItemId === item.id);
+    if (existing) {
+      setEditItems(editItems.map((ei) =>
+        ei.inventoryItemId === item.id ? { ...ei, quantity: ei.quantity + 1 } : ei
+      ));
+    } else {
+      setEditItems([...editItems, {
+        inventoryItemId: item.id,
+        name: item.name,
+        sku: item.sku,
+        price: item.sellingPrice,
+        quantity: 1,
+      }]);
+    }
+  };
+
+  const removeEditItem = (inventoryItemId: number) => {
+    setEditItems(editItems.filter((ei) => ei.inventoryItemId !== inventoryItemId));
+  };
+
+  const updateEditItemQty = (inventoryItemId: number, qty: number) => {
+    if (qty < 1) return;
+    setEditItems(editItems.map((ei) =>
+      ei.inventoryItemId === inventoryItemId ? { ...ei, quantity: qty } : ei
+    ));
+  };
+
+  const updateEditItemPrice = (inventoryItemId: number, price: string) => {
+    setEditItems(editItems.map((ei) =>
+      ei.inventoryItemId === inventoryItemId ? { ...ei, price } : ei
+    ));
+  };
 
   if (isLoading) {
     return (
@@ -120,7 +234,7 @@ export default function OrdersHistory() {
                 <TableHead>{t("orders.payment")}</TableHead>
                 <TableHead>{t("orders.status")}</TableHead>
                 <TableHead>{t("orders.date")}</TableHead>
-                <TableHead>{t("orders.items")}</TableHead>
+                <TableHead>{t("orders.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -165,14 +279,37 @@ export default function OrdersHistory() {
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setSelectedOrderId(order.id)}
-                      data-testid={`button-view-items-${order.id}`}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setSelectedOrderId(order.id)}
+                        data-testid={`button-view-items-${order.id}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {order.status === "completed" && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => openEditDialog(order)}
+                            data-testid={`button-edit-order-${order.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setVoidOrderId(order.id)}
+                            data-testid={`button-void-order-${order.id}`}
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -239,6 +376,168 @@ export default function OrdersHistory() {
               </span>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={voidOrderId !== null}
+        onOpenChange={(open) => {
+          if (!open) setVoidOrderId(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("orders.void")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground" data-testid="text-void-confirm">
+            {t("orders.voidConfirm")}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidOrderId(null)} data-testid="button-void-cancel">
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => voidOrderId && voidMutation.mutate(voidOrderId)}
+              disabled={voidMutation.isPending}
+              data-testid="button-void-confirm"
+            >
+              {voidMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("orders.void")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editOrderId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditOrderId(null);
+            setEditItems([]);
+          } else {
+            initEditItems();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={() => initEditItems()}>
+          <DialogHeader>
+            <DialogTitle data-testid="text-edit-order-title">
+              {t("orders.editOrder")} - {editOrder?.orderNumber}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {inventory.map((item) => (
+                <Button
+                  key={item.id}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addItemToEdit(item)}
+                  data-testid={`button-add-edit-item-${item.id}`}
+                >
+                  <Plus className="h-3 w-3 me-1" />
+                  {item.name}
+                </Button>
+              ))}
+            </div>
+
+            {editItems.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">{t("orders.noOrders")}</p>
+            ) : (
+              <div className="rounded-md border overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("inventory.name")}</TableHead>
+                      <TableHead>{t("pos.qty")}</TableHead>
+                      <TableHead>{t("pos.price")}</TableHead>
+                      <TableHead>{t("pos.amount")}</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {editItems.map((item) => (
+                      <TableRow key={item.inventoryItemId} data-testid={`row-edit-item-${item.inventoryItemId}`}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateEditItemQty(item.inventoryItemId, parseInt(e.target.value) || 1)}
+                            className="w-16"
+                            data-testid={`input-edit-qty-${item.inventoryItemId}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.price}
+                            onChange={(e) => updateEditItemPrice(item.inventoryItemId, e.target.value)}
+                            className="w-28"
+                            data-testid={`input-edit-price-${item.inventoryItemId}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {(parseFloat(item.price) * item.quantity).toLocaleString()} {t("common.currency")}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={() => removeEditItem(item.inventoryItemId)}
+                            data-testid={`button-remove-edit-item-${item.inventoryItemId}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium">{t("pos.discount")}</label>
+              <Input
+                type="number"
+                min="0"
+                value={editDiscount}
+                onChange={(e) => setEditDiscount(e.target.value)}
+                className="w-32"
+                data-testid="input-edit-discount"
+              />
+            </div>
+
+            <div className="flex justify-between items-center text-sm font-medium border-t pt-2">
+              <span>{t("pos.grandTotal")}</span>
+              <span data-testid="text-edit-total">
+                {editTotal.toLocaleString()} {t("common.currency")}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setEditOrderId(null); setEditItems([]); }}
+              data-testid="button-edit-cancel"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => editOrderId && editMutation.mutate({ orderId: editOrderId, items: editItems, discount: editDiscount })}
+              disabled={editMutation.isPending || editItems.length === 0}
+              data-testid="button-edit-save"
+            >
+              {editMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("common.save")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
