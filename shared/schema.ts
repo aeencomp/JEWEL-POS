@@ -299,6 +299,7 @@ export const debts = pgTable("debts", {
   personName: text("person_name").notNull(),
   personPhone: text("person_phone"),
   type: text("type", { enum: ["money", "gold"] }).notNull().default("money"),
+  direction: text("direction", { enum: ["lent", "borrowed"] }).notNull().default("lent"),
   description: text("description"),
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
   amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),

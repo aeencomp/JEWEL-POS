@@ -32,9 +32,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, HandCoins, Banknote, CheckCircle, Ban, Eye } from "lucide-react";
+import { Loader2, Plus, HandCoins, Banknote, CheckCircle, Ban, Eye, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "paid" | "cancelled";
+type DirectionFilter = "all" | "lent" | "borrowed";
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   active: "default",
@@ -52,6 +53,7 @@ export default function DebtsPage() {
   const { toast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [paymentDebt, setPaymentDebt] = useState<Debt | null>(null);
   const [viewDebt, setViewDebt] = useState<Debt | null>(null);
@@ -62,6 +64,7 @@ export default function DebtsPage() {
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formType, setFormType] = useState("money");
+  const [formDirection, setFormDirection] = useState("lent");
   const [formAmount, setFormAmount] = useState("");
   const [formDesc, setFormDesc] = useState("");
 
@@ -119,21 +122,26 @@ export default function DebtsPage() {
     setFormName("");
     setFormPhone("");
     setFormType("money");
+    setFormDirection("lent");
     setFormAmount("");
     setFormDesc("");
   }
 
   const filteredDebts = useMemo(() => {
-    if (statusFilter === "all") return debts;
-    return debts.filter((d) => d.status === statusFilter);
-  }, [debts, statusFilter]);
+    let result = debts;
+    if (statusFilter !== "all") result = result.filter((d) => d.status === statusFilter);
+    if (directionFilter !== "all") result = result.filter((d) => (d.direction || "lent") === directionFilter);
+    return result;
+  }, [debts, statusFilter, directionFilter]);
 
   const activeDebts = debts.filter((d) => d.status === "active");
-  const totalMoneyOwed = activeDebts
+  const activeLent = activeDebts.filter((d) => (d.direction || "lent") === "lent");
+  const activeBorrowed = activeDebts.filter((d) => (d.direction || "lent") === "borrowed");
+  const totalLentMoney = activeLent
     .filter((d) => d.type === "money")
     .reduce((s, d) => s + parseFloat(d.remainingBalance), 0);
-  const totalGoldOwed = activeDebts
-    .filter((d) => d.type === "gold")
+  const totalBorrowedMoney = activeBorrowed
+    .filter((d) => d.type === "money")
     .reduce((s, d) => s + parseFloat(d.remainingBalance), 0);
 
   if (isLoading) {
@@ -156,7 +164,7 @@ export default function DebtsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">{t("debts.totalDebts")}</div>
@@ -165,30 +173,64 @@ export default function DebtsPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">{t("debts.totalOwed")} ({t("debts.money")})</div>
-            <div className="text-2xl font-bold" data-testid="text-total-money-owed">
-              {totalMoneyOwed.toLocaleString()} {t("common.currency")}
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <ArrowUpRight className="h-3.5 w-3.5 text-red-500" />
+              {t("debts.totalLent")}
             </div>
+            <div className="text-2xl font-bold text-red-600" data-testid="text-total-lent">
+              {totalLentMoney.toLocaleString()} {t("common.currency")}
+            </div>
+            <div className="text-xs text-muted-foreground">{activeLent.length} {t("debts.active")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">{t("debts.totalOwed")} ({t("debts.gold")})</div>
-            <div className="text-2xl font-bold" data-testid="text-total-gold-owed">
-              {totalGoldOwed.toLocaleString()}
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <ArrowDownLeft className="h-3.5 w-3.5 text-blue-500" />
+              {t("debts.totalBorrowed")}
+            </div>
+            <div className="text-2xl font-bold text-blue-600" data-testid="text-total-borrowed">
+              {totalBorrowedMoney.toLocaleString()} {t("common.currency")}
+            </div>
+            <div className="text-xs text-muted-foreground">{activeBorrowed.length} {t("debts.active")}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-sm text-muted-foreground">{t("debts.totalOwed")} ({t("debts.money")})</div>
+            <div className="text-2xl font-bold" data-testid="text-net-balance">
+              {(totalLentMoney - totalBorrowedMoney).toLocaleString()} {t("common.currency")}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {totalLentMoney - totalBorrowedMoney >= 0 ? t("debts.lentDesc") : t("debts.borrowedDesc")}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-        <TabsList data-testid="tabs-debt-filter">
-          <TabsTrigger value="all" data-testid="tab-debt-all">{t("pos.allCategories")}</TabsTrigger>
-          <TabsTrigger value="active" data-testid="tab-debt-active">{t("debts.active")}</TabsTrigger>
-          <TabsTrigger value="paid" data-testid="tab-debt-paid">{t("debts.paid")}</TabsTrigger>
-          <TabsTrigger value="cancelled" data-testid="tab-debt-cancelled">{t("orders.cancelled")}</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap gap-2">
+        <Tabs value={directionFilter} onValueChange={(v) => setDirectionFilter(v as DirectionFilter)}>
+          <TabsList data-testid="tabs-direction-filter">
+            <TabsTrigger value="all" data-testid="tab-direction-all">{t("pos.allCategories")}</TabsTrigger>
+            <TabsTrigger value="lent" data-testid="tab-direction-lent">
+              <ArrowUpRight className="h-3.5 w-3.5 me-1" />
+              {t("debts.lent")}
+            </TabsTrigger>
+            <TabsTrigger value="borrowed" data-testid="tab-direction-borrowed">
+              <ArrowDownLeft className="h-3.5 w-3.5 me-1" />
+              {t("debts.borrowed")}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+          <TabsList data-testid="tabs-debt-filter">
+            <TabsTrigger value="all" data-testid="tab-debt-all">{t("pos.allCategories")}</TabsTrigger>
+            <TabsTrigger value="active" data-testid="tab-debt-active">{t("debts.active")}</TabsTrigger>
+            <TabsTrigger value="paid" data-testid="tab-debt-paid">{t("debts.paid")}</TabsTrigger>
+            <TabsTrigger value="cancelled" data-testid="tab-debt-cancelled">{t("orders.cancelled")}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {filteredDebts.length === 0 ? (
         <Card>
@@ -205,7 +247,7 @@ export default function DebtsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("debts.personName")}</TableHead>
-                <TableHead>{t("debts.personPhone")}</TableHead>
+                <TableHead>{t("debts.direction")}</TableHead>
                 <TableHead>{t("debts.type")}</TableHead>
                 <TableHead>{t("debts.totalAmount")}</TableHead>
                 <TableHead>{t("debts.amountPaid")}</TableHead>
@@ -220,10 +262,23 @@ export default function DebtsPage() {
                 <TableRow key={debt.id} data-testid={`row-debt-${debt.id}`}>
                   <TableCell className="font-medium" data-testid={`text-debt-name-${debt.id}`}>
                     {debt.personName}
+                    {debt.personPhone && <div className="text-xs text-muted-foreground">{debt.personPhone}</div>}
                   </TableCell>
-                  <TableCell>{debt.personPhone || "-"}</TableCell>
                   <TableCell>
-                    <Badge variant={typeVariants[debt.type] || "outline"} className="no-default-active-elevate" data-testid={`badge-debt-type-${debt.id}`}>
+                    <Badge
+                      variant={(debt.direction || "lent") === "lent" ? "destructive" : "default"}
+                      className="no-default-active-elevate"
+                      data-testid={`badge-debt-direction-${debt.id}`}
+                    >
+                      {(debt.direction || "lent") === "lent" ? (
+                        <><ArrowUpRight className="h-3 w-3 me-1" />{t("debts.lent").split(" (")[0]}</>
+                      ) : (
+                        <><ArrowDownLeft className="h-3 w-3 me-1" />{t("debts.borrowed").split(" (")[0]}</>
+                      )}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={typeVariants[debt.type] || "outline"} className="no-default-active-elevate text-nowrap" data-testid={`badge-debt-type-${debt.id}`}>
                       {debt.type === "money" ? t("debts.money") : t("debts.gold")}
                     </Badge>
                   </TableCell>
@@ -316,6 +371,28 @@ export default function DebtsPage() {
               />
             </div>
             <div>
+              <label className="text-sm font-medium">{t("debts.direction")}</label>
+              <Select value={formDirection} onValueChange={setFormDirection}>
+                <SelectTrigger className="mt-1" data-testid="select-debt-direction">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lent" data-testid="option-debt-lent">
+                    <span className="flex items-center gap-1">
+                      <ArrowUpRight className="h-3.5 w-3.5 text-red-500" />
+                      {t("debts.lent")}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="borrowed" data-testid="option-debt-borrowed">
+                    <span className="flex items-center gap-1">
+                      <ArrowDownLeft className="h-3.5 w-3.5 text-blue-500" />
+                      {t("debts.borrowed")}
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-sm font-medium">{t("debts.type")}</label>
               <Select value={formType} onValueChange={setFormType}>
                 <SelectTrigger className="mt-1" data-testid="select-debt-type">
@@ -358,6 +435,7 @@ export default function DebtsPage() {
                 personName: formName,
                 personPhone: formPhone || null,
                 type: formType,
+                direction: formDirection,
                 totalAmount: formAmount,
                 description: formDesc || null,
               })}
@@ -452,6 +530,12 @@ export default function DebtsPage() {
           <DialogHeader>
             <DialogTitle data-testid="text-view-debt-title">
               {viewDebt?.personName} - {viewDebt?.type === "money" ? t("debts.money") : t("debts.gold")}
+              <Badge
+                variant={(viewDebt?.direction || "lent") === "lent" ? "destructive" : "default"}
+                className="no-default-active-elevate ms-2 text-xs"
+              >
+                {(viewDebt?.direction || "lent") === "lent" ? t("debts.lent").split(" (")[0] : t("debts.borrowed").split(" (")[0]}
+              </Badge>
             </DialogTitle>
           </DialogHeader>
           {viewDebt && (

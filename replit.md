@@ -70,7 +70,7 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `repair_orders` - Repair service tracking
 - `layaway_plans` / `layaway_payments` - Layaway installment system
 - `purchases` - Jewelry purchases from customers (buy jewel feature)
-- `debts` - Debts ledger (person name, type money/gold, total amount, amount paid, remaining balance, status)
+- `debts` - Debts ledger (person name, type money/gold, direction lent/borrowed, total amount, amount paid, remaining balance, status)
 - `debt_payments` - Individual payment records against debts
 
 ## Seed Credentials
@@ -97,7 +97,7 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 - `/branding` - Store branding settings (username, password, email, branding)
 - `/backup` - Backup & Restore (download/upload store data)
 - `/stock-audit` - Stock Audit (جرد) — inventory overview with sales/purchases summaries, date filtering, category breakdown, and per-item profit analysis
-- `/debts` - Debts (ديون) — standalone ledger for tracking money/gold lent to people/stores with partial payment recording
+- `/debts` - Debts (ديون) — standalone ledger for tracking money/gold lent to or borrowed from people/stores, with direction (lent/borrowed), partial payment recording
 
 ## Admin-side Pages
 - `/` - Dashboard with stats

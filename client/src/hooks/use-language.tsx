@@ -182,6 +182,13 @@ type TranslationKeys = {
   "debts.totalOwed": string;
   "debts.paymentSuccess": string;
   "debts.debtCreated": string;
+  "debts.direction": string;
+  "debts.lent": string;
+  "debts.borrowed": string;
+  "debts.lentDesc": string;
+  "debts.borrowedDesc": string;
+  "debts.totalLent": string;
+  "debts.totalBorrowed": string;
   "adminBackup.title": string;
   "adminBackup.subtitle": string;
   "adminBackup.downloadBackup": string;
@@ -599,6 +606,13 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.totalOwed": "Total Owed",
     "debts.paymentSuccess": "Payment recorded",
     "debts.debtCreated": "Debt added",
+    "debts.direction": "Direction",
+    "debts.lent": "Lent (They owe me)",
+    "debts.borrowed": "Borrowed (I owe them)",
+    "debts.lentDesc": "I gave them money/gold",
+    "debts.borrowedDesc": "They gave me money/gold",
+    "debts.totalLent": "Total Lent Out",
+    "debts.totalBorrowed": "Total Borrowed",
     "adminBackup.title": "Backup & Restore",
     "adminBackup.subtitle": "Download a full backup of all stores data or restore from a previous backup",
     "adminBackup.downloadBackup": "Download Full Backup",
@@ -998,6 +1012,13 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.totalOwed": "إجمالي المستحق",
     "debts.paymentSuccess": "تم تسجيل الدفعة",
     "debts.debtCreated": "تم إضافة الدين",
+    "debts.direction": "الاتجاه",
+    "debts.lent": "إقراض (هم مديونين لي)",
+    "debts.borrowed": "اقتراض (أنا مديون لهم)",
+    "debts.lentDesc": "أعطيتهم مال/ذهب",
+    "debts.borrowedDesc": "أعطوني مال/ذهب",
+    "debts.totalLent": "إجمالي الإقراض",
+    "debts.totalBorrowed": "إجمالي الاقتراض",
     "adminBackup.title": "النسخ الاحتياطي والاستعادة",
     "adminBackup.subtitle": "تحميل نسخة احتياطية كاملة لجميع بيانات المتاجر أو الاستعادة من نسخة سابقة",
     "adminBackup.downloadBackup": "تحميل نسخة احتياطية كاملة",

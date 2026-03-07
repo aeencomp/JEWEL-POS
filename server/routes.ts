@@ -326,7 +326,7 @@ export async function registerRoutes(
             for (const debt of storeBackup.debts) {
               const [createdDebt] = await tx.insert(debts).values({
                 storeId, personName: debt.personName, personPhone: debt.personPhone || null,
-                type: debt.type || "money", description: debt.description || null,
+                type: debt.type || "money", direction: debt.direction || "lent", description: debt.description || null,
                 totalAmount: debt.totalAmount, amountPaid: debt.amountPaid || "0",
                 remainingBalance: debt.remainingBalance, status: debt.status || "active",
               }).returning();
@@ -1410,6 +1410,7 @@ export async function registerRoutes(
       personName: true,
       personPhone: true,
       type: true,
+      direction: true,
       totalAmount: true,
       description: true,
     });
@@ -1425,6 +1426,7 @@ export async function registerRoutes(
       personName: parsed.data.personName,
       personPhone: parsed.data.personPhone || null,
       type: parsed.data.type,
+      direction: parsed.data.direction || "lent",
       description: parsed.data.description || null,
       storeId,
       totalAmount: total.toFixed(2),
