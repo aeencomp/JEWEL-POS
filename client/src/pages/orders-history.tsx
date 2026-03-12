@@ -24,7 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, ShoppingBag, Eye, Ban, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Loader2, ShoppingBag, Eye, Ban, Pencil, Plus, Trash2, X, Printer } from "lucide-react";
+
+type BrandingData = {
+  name: string;
+  brandColor: string | null;
+  receiptHeader: string | null;
+  receiptFooter: string | null;
+  address: string | null;
+};
 
 type StatusFilter = "all" | "completed" | "cancelled" | "refunded";
 
@@ -68,6 +76,110 @@ export default function OrdersHistory() {
   const { data: inventory = [] } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
   });
+
+  const { data: branding } = useQuery<BrandingData>({
+    queryKey: ["/api/store/branding"],
+  });
+
+  async function printOrderReceipt(order: Order) {
+    const res = await fetch(`/api/orders/${order.id}/items`, { credentials: "include" });
+    if (!res.ok) return;
+    const items: OrderItem[] = await res.json();
+
+    const w = window.open("", "_blank", "width=400,height=600");
+    if (!w) return;
+
+    const brandColor = branding?.brandColor || "#d4a574";
+    const storeName = branding?.name || "Store";
+    const storeAddress = branding?.address || "";
+    const header = branding?.receiptHeader || "";
+    const footer = branding?.receiptFooter || "";
+
+    const customerHtml = order.customerName && order.customerName !== t("pos.walkIn")
+      ? `<div class="customer-block"><div class="customer-label">${t("pos.customer")}</div><div class="customer-name">${order.customerName}</div></div>`
+      : "";
+
+    const itemsHtml = items.map((item, idx) => {
+      const invItem = inventory.find((inv) => inv.id === item.inventoryItemId);
+      const details: string[] = [];
+      if (item.sku) details.push(`${t("inventory.sku")}: ${item.sku}`);
+      if (invItem?.metalType) details.push(`${t("inventory.metalType")}: ${invItem.metalType}`);
+      if (invItem?.purity) details.push(`${t("inventory.purity")}: ${invItem.purity}`);
+      if (invItem?.weightGrams) details.push(`${t("inventory.weight")}: ${invItem.weightGrams}g`);
+      if (invItem?.gemstone) details.push(`${t("inventory.gemstone")}: ${invItem.gemstone}`);
+      const detailsStr = details.length > 0 ? `<div class="item-details">${details.join(" &middot; ")}</div>` : "";
+      const lineTotal = Number(item.price) * item.quantity;
+      const rowBg = idx % 2 === 0 ? "#fafafa" : "#fff";
+      return `
+      <tr style="background:${rowBg}">
+        <td class="item-cell"><div class="item-name">${item.name}</div>${detailsStr}</td>
+        <td class="item-cell" style="text-align:center">${item.quantity}</td>
+        <td class="item-cell" style="text-align:right;white-space:nowrap">
+          ${Number(item.price).toLocaleString()} ${t("common.currency")}
+          ${item.quantity > 1 ? `<div class="item-details">${t("pos.total")}: ${lineTotal.toLocaleString()} ${t("common.currency")}</div>` : ""}
+        </td>
+      </tr>`;
+    }).join("");
+
+    w.document.write(`<!DOCTYPE html>
+<html><head><title>Receipt</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;max-width:350px;margin:0 auto;padding:16px;color:#1a1a1a;font-size:13px;line-height:1.4}
+.header{text-align:center;background:${brandColor};color:#fff;padding:16px 12px;border-radius:8px;margin-bottom:14px}
+.store-name{font-size:22px;font-weight:700;letter-spacing:0.5px}
+.header-sub{font-size:11px;margin-top:4px;opacity:0.9}
+.divider{border:none;border-top:1px dashed #ccc;margin:12px 0}
+.order-info{display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:2px}
+.order-info strong{color:#1a1a1a}
+.customer-block{margin:10px 0;padding:10px 12px;background:#f7f7f7;border-radius:6px;border-left:3px solid ${brandColor}}
+.customer-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${brandColor};font-weight:700;margin-bottom:4px}
+.customer-name{font-weight:600;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:2px}
+thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888;font-weight:600;padding:6px 4px;border-bottom:2px solid #e0e0e0;text-align:left}
+.item-cell{padding:8px 4px;border-bottom:1px solid #eee;vertical-align:top;font-size:12px}
+.item-name{font-weight:600;font-size:12px}
+.item-details{font-size:10px;color:#777;margin-top:2px}
+.totals{margin-top:12px;padding-top:10px;border-top:2px solid #e0e0e0}
+.total-line{display:flex;justify-content:space-between;font-size:12px;color:#555;padding:3px 0}
+.grand-total{display:flex;justify-content:space-between;margin-top:6px;padding:10px 12px;background:${brandColor};color:#fff;border-radius:6px;font-size:16px;font-weight:700}
+.payment-method{font-size:11px;color:#777;margin-top:8px;text-align:center}
+.footer{text-align:center;margin-top:14px;padding-top:12px;border-top:1px dashed #ccc}
+.footer-text{font-size:11px;color:#666;margin-bottom:4px}
+.thank-you{font-size:13px;font-weight:600;color:${brandColor};margin-bottom:6px}
+.website{font-size:10px;color:#999;margin-top:8px;letter-spacing:0.5px}
+.print-btn{display:block;margin:16px auto 0;width:100%;padding:10px;font-size:13px;font-weight:600;background:${brandColor};color:#fff;border:none;border-radius:6px;cursor:pointer}
+.print-btn:hover{opacity:0.9}
+@media print{.print-btn{display:none}}
+</style></head><body>
+<div class="header">
+<div class="store-name">${storeName}</div>
+${storeAddress ? `<div class="header-sub">${storeAddress}</div>` : ""}
+${header ? `<div class="header-sub">${header}</div>` : ""}
+</div>
+<div class="order-info"><span><strong>${t("pos.orderNumber")}</strong> ${order.orderNumber}</span></div>
+<div class="order-info"><span><strong>${t("receipt.date")}:</strong> ${new Date(order.createdAt!).toLocaleString()}</span></div>
+<hr class="divider">
+${customerHtml}
+<table>
+<thead><tr><th>${t("pos.item")}</th><th style="text-align:center">${t("pos.qty")}</th><th style="text-align:right">${t("pos.price")}</th></tr></thead>
+<tbody>${itemsHtml}</tbody>
+</table>
+<div class="totals">
+<div class="total-line"><span>${t("pos.total")}:</span><span>${Number(order.subtotal).toLocaleString()} ${t("common.currency")}</span></div>
+${Number(order.discount) > 0 ? `<div class="total-line"><span>${t("pos.discount")}:</span><span style="color:#e53e3e">-${Number(order.discount).toLocaleString()} ${t("common.currency")}</span></div>` : ""}
+<div class="grand-total"><span>${t("pos.grandTotal")}:</span><span>${Number(order.total).toLocaleString()} ${t("common.currency")}</span></div>
+${order.paymentMethod ? `<div class="payment-method">${t("pos.payment")}: ${order.paymentMethod}</div>` : ""}
+</div>
+<div class="footer">
+${footer ? `<div class="footer-text">${footer}</div>` : ""}
+<div class="thank-you">${t("receipt.thankYou")}</div>
+<div class="website">www.IQ-pos.com</div>
+</div>
+<button class="print-btn" onclick="window.print()">${t("receipt.print")}</button>
+</body></html>`);
+    w.document.close();
+  }
 
   const { data: orderItems = [], isLoading: loadingItems } = useQuery<OrderItem[]>({
     queryKey: ["/api/orders", selectedOrderId, "items"],
@@ -291,6 +403,15 @@ export default function OrdersHistory() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => printOrderReceipt(order)}
+                        data-testid={`button-print-order-${order.id}`}
+                        title={t("pos.printReceipt")}
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
                       {order.status === "completed" && (
                         <>
                           <Button
@@ -377,6 +498,18 @@ export default function OrdersHistory() {
               <span data-testid="text-order-detail-total">
                 {parseFloat(selectedOrder.total).toLocaleString()} {t("common.currency")}
               </span>
+            </div>
+          )}
+          {selectedOrder && (
+            <div className="flex justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => printOrderReceipt(selectedOrder)}
+                data-testid="button-print-order-dialog"
+              >
+                <Printer className="h-4 w-4 me-2" />
+                {t("pos.printReceipt")}
+              </Button>
             </div>
           )}
         </DialogContent>
