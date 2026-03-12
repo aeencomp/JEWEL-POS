@@ -395,7 +395,7 @@ export const insertPurchaseSchema = createInsertSchema(purchases).omit({
 
 export const updateBrandingSchema = z.object({
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color").nullable().optional(),
-  logoUrl: z.string().url("Must be a valid URL").nullable().optional().or(z.literal("").transform(() => null)),
+  logoUrl: z.string().nullable().optional().or(z.literal("").transform(() => null)),
   receiptHeader: z.string().max(200).nullable().optional().or(z.literal("").transform(() => null)),
   receiptFooter: z.string().max(200).nullable().optional().or(z.literal("").transform(() => null)),
 });
