@@ -604,7 +604,6 @@ ${footer ? `<div class="footer-text">${footer}</div>` : ""}
                   <div>{customers.find((c) => c.id === completedOrder.customerId)!.name}</div>
                   {customers.find((c) => c.id === completedOrder.customerId)!.phone && <div className="text-muted-foreground">{t("customers.phone")}: {customers.find((c) => c.id === completedOrder.customerId)!.phone}</div>}
                   {customers.find((c) => c.id === completedOrder.customerId)!.idNumber && <div className="text-muted-foreground">{t("customers.idNumber")}: {customers.find((c) => c.id === completedOrder.customerId)!.idNumber}</div>}
-                  {customers.find((c) => c.id === completedOrder.customerId)!.address && <div className="text-muted-foreground">{t("customers.address")}: {customers.find((c) => c.id === completedOrder.customerId)!.address}</div>}
                 </div>
               )}
               <Table>
