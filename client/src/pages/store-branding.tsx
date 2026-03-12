@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2, Palette, Mail, Shield, User, Lock } from "lucide-react";
+import { Loader2, Palette, Mail, Shield, User, Lock, Upload, X, ImageIcon } from "lucide-react";
 import { z } from "zod";
 
 type BrandingData = UpdateBranding & { name?: string };
@@ -48,6 +48,31 @@ export default function StoreBranding() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Only JPG, PNG, GIF, WEBP allowed", variant: "destructive" });
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      form.setValue("logoUrl", data.url);
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = "";
+    }
+  }
 
   const { data: branding, isLoading } = useQuery<BrandingData>({
     queryKey: ["/api/store/branding"],
@@ -406,7 +431,67 @@ export default function StoreBranding() {
                   <FormItem>
                     <FormLabel>{t("branding.logoUrl")}</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} data-testid="input-logo-url" />
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            id="logo-upload-input"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            className="hidden"
+                            onChange={handleLogoUpload}
+                            data-testid="input-logo-file"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={uploadingLogo}
+                            onClick={() => document.getElementById("logo-upload-input")?.click()}
+                            data-testid="button-browse-logo"
+                          >
+                            {uploadingLogo ? (
+                              <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4 me-2" />
+                            )}
+                            {uploadingLogo ? t("inventory.uploading") : t("inventory.browseFile")}
+                          </Button>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => form.setValue("logoUrl", "")}
+                              data-testid="button-remove-logo"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {field.value ? (
+                          <div className="relative w-fit">
+                            <img
+                              src={field.value}
+                              alt="Store logo"
+                              className="h-16 rounded-md object-contain border"
+                              data-testid="img-logo-preview"
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            className="flex items-center gap-2 h-16 w-32 rounded-md border border-dashed text-muted-foreground justify-center"
+                            data-testid="div-logo-placeholder"
+                          >
+                            <ImageIcon className="h-6 w-6" />
+                          </div>
+                        )}
+                        <Input
+                          {...field}
+                          value={field.value || ""}
+                          placeholder="https://..."
+                          className="text-xs text-muted-foreground"
+                          data-testid="input-logo-url"
+                        />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
