@@ -235,6 +235,8 @@ export default function PosTerminal() {
     const brandColor = branding?.brandColor || "#d4a574";
     const storeName = branding?.name || "Store";
     const storeAddress = branding?.address || "";
+    const logoUrlRaw = branding?.logoUrl || "";
+    const logoUrl = logoUrlRaw && logoUrlRaw.startsWith("/") ? `${window.location.origin}${logoUrlRaw}` : logoUrlRaw;
     const header = branding?.receiptHeader || "";
     const footer = branding?.receiptFooter || "";
 
@@ -313,6 +315,7 @@ thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888
 @media print{.print-btn{display:none}}
 </style></head><body>
 <div class="header">
+${logoUrl ? `<img src="${logoUrl}" alt="logo" style="height:48px;max-width:160px;object-fit:contain;margin-bottom:8px;border-radius:4px">` : ""}
 <div class="store-name">${storeName}</div>
 ${storeAddress ? `<div class="header-sub">${storeAddress}</div>` : ""}
 ${header ? `<div class="header-sub">${header}</div>` : ""}
