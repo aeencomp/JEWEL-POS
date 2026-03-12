@@ -919,7 +919,7 @@ export default function InventoryManagement() {
                   if (svg) {
                     const printWindow = window.open("", "_blank");
                     if (printWindow) {
-                      printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}body{margin:0;padding:0;width:60mm;height:12mm;display:flex;justify-content:center;align-items:center;overflow:hidden}svg{width:60mm;height:12mm}</style></head><body>${svg.outerHTML}</body></html>`);
+                      printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden}svg{display:block;width:60mm;height:12mm}</style></head><body>${svg.outerHTML}</body></html>`);
                       printWindow.document.close();
                       printWindow.print();
                     }
