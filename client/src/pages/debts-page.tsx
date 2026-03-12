@@ -143,6 +143,12 @@ export default function DebtsPage() {
   const totalBorrowedMoney = activeBorrowed
     .filter((d) => d.type === "money")
     .reduce((s, d) => s + parseFloat(d.remainingBalance), 0);
+  const totalLentGold = activeLent
+    .filter((d) => d.type === "gold")
+    .reduce((s, d) => s + parseFloat(d.remainingBalance), 0);
+  const totalBorrowedGold = activeBorrowed
+    .filter((d) => d.type === "gold")
+    .reduce((s, d) => s + parseFloat(d.remainingBalance), 0);
 
   if (isLoading) {
     return (
@@ -164,7 +170,7 @@ export default function DebtsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">{t("debts.totalDebts")}</div>
@@ -175,24 +181,24 @@ export default function DebtsPage() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <ArrowUpRight className="h-3.5 w-3.5 text-red-500" />
-              {t("debts.totalLent")}
+              {t("debts.totalLent")} ({t("debts.money")})
             </div>
             <div className="text-2xl font-bold text-red-600" data-testid="text-total-lent">
               {totalLentMoney.toLocaleString()} {t("common.currency")}
             </div>
-            <div className="text-xs text-muted-foreground">{activeLent.length} {t("debts.active")}</div>
+            <div className="text-xs text-muted-foreground">{activeLent.filter(d => d.type === "money").length} {t("debts.active")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <ArrowDownLeft className="h-3.5 w-3.5 text-blue-500" />
-              {t("debts.totalBorrowed")}
+              {t("debts.totalBorrowed")} ({t("debts.money")})
             </div>
             <div className="text-2xl font-bold text-blue-600" data-testid="text-total-borrowed">
               {totalBorrowedMoney.toLocaleString()} {t("common.currency")}
             </div>
-            <div className="text-xs text-muted-foreground">{activeBorrowed.length} {t("debts.active")}</div>
+            <div className="text-xs text-muted-foreground">{activeBorrowed.filter(d => d.type === "money").length} {t("debts.active")}</div>
           </CardContent>
         </Card>
         <Card>
@@ -204,6 +210,30 @@ export default function DebtsPage() {
             <div className="text-xs text-muted-foreground">
               {totalLentMoney - totalBorrowedMoney >= 0 ? t("debts.lentDesc") : t("debts.borrowedDesc")}
             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <ArrowUpRight className="h-3.5 w-3.5 text-yellow-500" />
+              {t("debts.totalLentGold")}
+            </div>
+            <div className="text-2xl font-bold text-yellow-600" data-testid="text-total-lent-gold">
+              {totalLentGold.toLocaleString()} {t("debts.goldUnit")}
+            </div>
+            <div className="text-xs text-muted-foreground">{activeLent.filter(d => d.type === "gold").length} {t("debts.active")}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <ArrowDownLeft className="h-3.5 w-3.5 text-purple-500" />
+              {t("debts.totalBorrowedGold")}
+            </div>
+            <div className="text-2xl font-bold text-purple-600" data-testid="text-total-borrowed-gold">
+              {totalBorrowedGold.toLocaleString()} {t("debts.goldUnit")}
+            </div>
+            <div className="text-xs text-muted-foreground">{activeBorrowed.filter(d => d.type === "gold").length} {t("debts.active")}</div>
           </CardContent>
         </Card>
       </div>

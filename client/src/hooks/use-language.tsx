@@ -189,6 +189,9 @@ type TranslationKeys = {
   "debts.borrowedDesc": string;
   "debts.totalLent": string;
   "debts.totalBorrowed": string;
+  "debts.totalLentGold": string;
+  "debts.totalBorrowedGold": string;
+  "debts.goldUnit": string;
   "adminBackup.title": string;
   "adminBackup.subtitle": string;
   "adminBackup.downloadBackup": string;
@@ -613,6 +616,9 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.borrowedDesc": "They gave me money/gold",
     "debts.totalLent": "Total Lent Out",
     "debts.totalBorrowed": "Total Borrowed",
+    "debts.totalLentGold": "Gold Lent Out",
+    "debts.totalBorrowedGold": "Gold Borrowed",
+    "debts.goldUnit": "g",
     "adminBackup.title": "Backup & Restore",
     "adminBackup.subtitle": "Download a full backup of all stores data or restore from a previous backup",
     "adminBackup.downloadBackup": "Download Full Backup",
@@ -1019,6 +1025,9 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.borrowedDesc": "أعطوني مال/ذهب",
     "debts.totalLent": "إجمالي الإقراض",
     "debts.totalBorrowed": "إجمالي الاقتراض",
+    "debts.totalLentGold": "ذهب مُقرض",
+    "debts.totalBorrowedGold": "ذهب مُقترض",
+    "debts.goldUnit": "جرام",
     "adminBackup.title": "النسخ الاحتياطي والاستعادة",
     "adminBackup.subtitle": "تحميل نسخة احتياطية كاملة لجميع بيانات المتاجر أو الاستعادة من نسخة سابقة",
     "adminBackup.downloadBackup": "تحميل نسخة احتياطية كاملة",
