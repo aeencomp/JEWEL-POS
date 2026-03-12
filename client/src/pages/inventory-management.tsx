@@ -919,7 +919,7 @@ export default function InventoryManagement() {
                   if (svg) {
                     const printWindow = window.open("", "_blank");
                     if (printWindow) {
-                      printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:40mm 20mm;margin:0}body{margin:0;padding:0;width:40mm;height:20mm;display:flex;justify-content:center;align-items:center;overflow:hidden}svg{width:40mm;height:20mm}</style></head><body>${svg.outerHTML}</body></html>`);
+                      printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}body{margin:0;padding:0;width:60mm;height:12mm;display:flex;justify-content:center;align-items:center;overflow:hidden}svg{width:60mm;height:12mm}</style></head><body>${svg.outerHTML}</body></html>`);
                       printWindow.document.close();
                       printWindow.print();
                     }
@@ -1057,12 +1057,12 @@ function BarcodeDisplay({ value, displayText }: { value: string; displayText?: s
       try {
         JsBarcode(svgRef.current, value, {
           format: "CODE128",
-          width: 1.5,
-          height: 40,
+          width: 1,
+          height: 22,
           displayValue: true,
           text: displayText || value,
-          fontSize: 9,
-          margin: 4,
+          fontSize: 7,
+          margin: 2,
         });
       } catch {
         // fallback - display text
