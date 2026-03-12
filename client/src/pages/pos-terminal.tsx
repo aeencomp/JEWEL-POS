@@ -60,6 +60,7 @@ type BrandingData = {
   logoUrl: string | null;
   receiptHeader: string | null;
   receiptFooter: string | null;
+  address: string | null;
 };
 
 type OrderResponse = Order & { items: OrderItem[] };
@@ -233,6 +234,7 @@ export default function PosTerminal() {
 
     const brandColor = branding?.brandColor || "#d4a574";
     const storeName = branding?.name || "Store";
+    const storeAddress = branding?.address || "";
     const header = branding?.receiptHeader || "";
     const footer = branding?.receiptFooter || "";
 
@@ -246,7 +248,6 @@ export default function PosTerminal() {
 <div class="customer-name">${customer.name}</div>
 ${customer.phone ? `<div class="customer-detail">${t("customers.phone")}: ${customer.phone}</div>` : ""}
 ${customer.idNumber ? `<div class="customer-detail">${t("customers.idNumber")}: ${customer.idNumber}</div>` : ""}
-${customer.address ? `<div class="customer-detail">${t("customers.address")}: ${customer.address}</div>` : ""}
 </div>`
       : completedOrder.customerName && completedOrder.customerName !== t("pos.walkIn")
         ? `<div class="customer-block"><div class="customer-label">${t("pos.customer")}</div><div class="customer-name">${completedOrder.customerName}</div></div>`
@@ -313,6 +314,7 @@ thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888
 </style></head><body>
 <div class="header">
 <div class="store-name">${storeName}</div>
+${storeAddress ? `<div class="header-sub">${storeAddress}</div>` : ""}
 ${header ? `<div class="header-sub">${header}</div>` : ""}
 </div>
 <div class="order-info"><span><strong>${t("pos.orderNumber")}</strong> ${completedOrder.orderNumber}</span></div>

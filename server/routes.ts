@@ -500,6 +500,7 @@ export async function registerRoutes(
       receiptHeader: store.receiptHeader,
       receiptFooter: store.receiptFooter,
       name: store.name,
+      address: store.address,
     });
   });
 
