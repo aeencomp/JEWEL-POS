@@ -918,22 +918,25 @@ export default function InventoryManagement() {
                   const printWindow = window.open("", "_blank");
                   if (printWindow) {
                     const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    document.body.appendChild(tempSvg);
                     try {
                       JsBarcode(tempSvg, barcodeItem.barcode || barcodeItem.sku, {
                         format: "CODE128",
                         width: 2,
-                        height: 28,
+                        height: 26,
                         displayValue: true,
                         text: barcodeItem.barcode || barcodeItem.sku,
                         fontSize: 7,
                         margin: 0,
                       });
                     } catch {}
-                    tempSvg.setAttribute("width", "100%");
-                    tempSvg.setAttribute("height", "100%");
+                    tempSvg.setAttribute("width", "30mm");
+                    tempSvg.setAttribute("height", "12mm");
                     tempSvg.setAttribute("preserveAspectRatio", "none");
+                    const svgHtml = tempSvg.outerHTML;
+                    document.body.removeChild(tempSvg);
                     const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
-                    printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden}.label{display:flex;width:60mm;height:12mm}.info{width:30mm;height:12mm;padding:0.8mm 1.5mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:5.5pt;font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sku{font-size:4.5pt;color:#666}.price{font-size:6pt;font-weight:bold}.bc{width:30mm;height:12mm;display:block;overflow:hidden}.bc svg{display:block;width:100%;height:100%}</style></head><body><div class="label"><div class="info"><div class="name">${barcodeItem.name}</div><div class="sku">${barcodeItem.sku}</div><div class="price">${price} IQD</div></div><div class="bc">${tempSvg.outerHTML}</div></div></body></html>`);
+                    printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:30mm;height:12mm;padding:0.8mm 1.5mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:5.5pt;font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sku{font-size:4.5pt;color:#666}.price{font-size:6pt;font-weight:bold}.bc{position:absolute;left:30mm;top:0;width:30mm;height:12mm}svg{display:block;width:30mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="sku">${barcodeItem.sku}</div><div class="price">${price} IQD</div></div><div class="bc">${svgHtml}</div></body></html>`);
                     printWindow.document.close();
                     printWindow.print();
                   }
