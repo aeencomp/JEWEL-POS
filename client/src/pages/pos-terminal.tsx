@@ -396,6 +396,16 @@ ${footer ? `<div class="footer-text">${footer}</div>` : ""}
                 onClick={() => item.quantity > 0 && addToCart(item)}
                 data-testid={`card-item-${item.id}`}
               >
+                {item.imageUrl && (
+                  <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-muted">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      data-testid={`img-item-${item.id}`}
+                    />
+                  </div>
+                )}
                 <CardContent className="p-3 space-y-1">
                   <div className="font-medium text-sm truncate" data-testid={`text-item-name-${item.id}`}>
                     {item.name}
