@@ -126,32 +126,33 @@ export default function OrdersHistory() {
 
     w.document.write(`<!DOCTYPE html>
 <html><head><title>Receipt</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;max-width:350px;margin:0 auto;padding:16px;color:#1a1a1a;font-size:13px;line-height:1.4}
-.header{text-align:center;background:${brandColor};color:#fff;padding:16px 12px;border-radius:8px;margin-bottom:14px}
-.store-name{font-size:22px;font-weight:700;letter-spacing:0.5px}
-.header-sub{font-size:11px;margin-top:4px;opacity:0.9}
-.divider{border:none;border-top:1px dashed #ccc;margin:12px 0}
-.order-info{display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:2px}
-.order-info strong{color:#1a1a1a}
-.customer-block{margin:10px 0;padding:10px 12px;background:#f7f7f7;border-radius:6px;border-left:3px solid ${brandColor}}
-.customer-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${brandColor};font-weight:700;margin-bottom:4px}
-.customer-name{font-weight:600;font-size:13px}
-table{width:100%;border-collapse:collapse;margin-top:2px}
-thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888;font-weight:600;padding:6px 4px;border-bottom:2px solid #e0e0e0;text-align:left}
-.item-cell{padding:8px 4px;border-bottom:1px solid #eee;vertical-align:top;font-size:12px}
-.item-name{font-weight:600;font-size:12px}
-.item-details{font-size:10px;color:#777;margin-top:2px}
-.totals{margin-top:12px;padding-top:10px;border-top:2px solid #e0e0e0}
-.total-line{display:flex;justify-content:space-between;font-size:12px;color:#555;padding:3px 0}
-.grand-total{display:flex;justify-content:space-between;margin-top:6px;padding:10px 12px;background:${brandColor};color:#fff;border-radius:6px;font-size:16px;font-weight:700}
-.payment-method{font-size:11px;color:#777;margin-top:8px;text-align:center}
-.footer{text-align:center;margin-top:14px;padding-top:12px;border-top:1px dashed #ccc}
-.footer-text{font-size:11px;color:#666;margin-bottom:4px}
-.thank-you{font-size:13px;font-weight:600;color:${brandColor};margin-bottom:6px}
-.website{font-size:10px;color:#999;margin-top:8px;letter-spacing:0.5px}
-.print-btn{display:block;margin:16px auto 0;width:100%;padding:10px;font-size:13px;font-weight:600;background:${brandColor};color:#fff;border:none;border-radius:6px;cursor:pointer}
+body{font-family:'Poppins',sans-serif;max-width:360px;margin:0 auto;padding:18px;color:#111;font-size:13.5px;line-height:1.5;font-weight:400}
+.header{text-align:center;background:${brandColor};color:#fff;padding:18px 14px;border-radius:10px;margin-bottom:16px}
+.store-name{font-size:24px;font-weight:800;letter-spacing:0.5px;text-shadow:0 1px 2px rgba(0,0,0,0.15)}
+.header-sub{font-size:12px;margin-top:5px;opacity:0.92;font-weight:600}
+.divider{border:none;border-top:1.5px dashed #d0d0d0;margin:14px 0}
+.order-info{display:flex;justify-content:space-between;font-size:12.5px;color:#444;margin-bottom:3px;font-weight:400}
+.order-info strong{color:#111;font-weight:700}
+.customer-block{margin:12px 0;padding:11px 14px;background:#f5f5f5;border-radius:8px;border-left:4px solid ${brandColor}}
+.customer-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:${brandColor};font-weight:800;margin-bottom:5px}
+.customer-name{font-weight:700;font-size:14px;color:#111}
+table{width:100%;border-collapse:collapse;margin-top:4px}
+thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#666;font-weight:700;padding:7px 5px;border-bottom:2px solid #ddd;text-align:left}
+.item-cell{padding:9px 5px;border-bottom:1px solid #eee;vertical-align:top;font-size:13px}
+.item-name{font-weight:700;font-size:13px;color:#111}
+.item-details{font-size:11px;color:#777;margin-top:3px;font-weight:400}
+.totals{margin-top:14px;padding-top:12px;border-top:2px solid #ddd}
+.total-line{display:flex;justify-content:space-between;font-size:13px;color:#444;padding:4px 0;font-weight:600}
+.grand-total{display:flex;justify-content:space-between;margin-top:8px;padding:12px 14px;background:${brandColor};color:#fff;border-radius:8px;font-size:18px;font-weight:800;letter-spacing:0.3px}
+.payment-method{font-size:12px;color:#666;margin-top:9px;text-align:center;font-weight:600}
+.footer{text-align:center;margin-top:16px;padding-top:13px;border-top:1.5px dashed #d0d0d0}
+.footer-text{font-size:12px;color:#555;margin-bottom:5px;font-weight:600}
+.thank-you{font-size:14px;font-weight:700;color:${brandColor};margin-bottom:6px}
+.website{font-size:11px;color:#aaa;margin-top:8px;letter-spacing:0.5px;font-weight:400}
+.print-btn{display:block;margin:18px auto 0;width:100%;padding:11px;font-size:14px;font-weight:700;background:${brandColor};color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Poppins',sans-serif}
 .print-btn:hover{opacity:0.9}
 @media print{.print-btn{display:none}}
 </style></head><body>
