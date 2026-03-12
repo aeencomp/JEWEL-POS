@@ -915,14 +915,24 @@ export default function InventoryManagement() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const svg = document.getElementById("barcode-svg");
-                  if (svg) {
-                    const printWindow = window.open("", "_blank");
-                    if (printWindow) {
-                      printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden}svg{display:block;width:60mm;height:12mm}</style></head><body>${svg.outerHTML}</body></html>`);
-                      printWindow.document.close();
-                      printWindow.print();
-                    }
+                  const printWindow = window.open("", "_blank");
+                  if (printWindow) {
+                    const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    try {
+                      JsBarcode(tempSvg, barcodeItem.barcode || barcodeItem.sku, {
+                        format: "CODE128",
+                        width: 1,
+                        height: 24,
+                        displayValue: true,
+                        text: barcodeItem.barcode || barcodeItem.sku,
+                        fontSize: 6,
+                        margin: 1,
+                      });
+                    } catch {}
+                    const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
+                    printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden}.label{display:flex;width:60mm;height:12mm}.info{width:30mm;height:12mm;padding:0.8mm 1.5mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:5.5pt;font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sku{font-size:4.5pt;color:#666}.price{font-size:6pt;font-weight:bold}.bc{width:30mm;height:12mm;display:flex;align-items:center;justify-content:center}.bc svg{width:30mm;height:12mm}</style></head><body><div class="label"><div class="info"><div class="name">${barcodeItem.name}</div><div class="sku">${barcodeItem.sku}</div><div class="price">${price} IQD</div></div><div class="bc">${tempSvg.outerHTML}</div></div></body></html>`);
+                    printWindow.document.close();
+                    printWindow.print();
                   }
                 }}
                 data-testid="button-print-barcode"
