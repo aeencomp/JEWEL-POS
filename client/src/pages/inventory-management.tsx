@@ -59,7 +59,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useEffect } from "react";
-import JsBarcode from "jsbarcode";
+import QRCode from "qrcode";
 
 const categoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -910,27 +910,21 @@ export default function InventoryManagement() {
             <div className="flex flex-col items-center gap-3 py-4">
               <p className="text-sm font-medium">{barcodeItem.name}</p>
               <p className="text-xs text-muted-foreground">{barcodeItem.sku}</p>
-              <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} displayText={barcodeItem.name} />
+              <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} />
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
+                  const qrValue = barcodeItem.barcode || barcodeItem.sku;
+                  const qrDataUrl = await QRCode.toDataURL(qrValue, {
+                    width: 200,
+                    margin: 1,
+                    color: { dark: "#000000", light: "#ffffff" },
+                  });
+                  const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
                   const printWindow = window.open("", "_blank");
                   if (printWindow) {
-                    const barcodeCanvas = document.createElement("canvas");
-                    const barcodeValue = barcodeItem.barcode || barcodeItem.sku;
-                    try {
-                      JsBarcode(barcodeCanvas, barcodeValue, {
-                        format: "CODE128",
-                        width: 3,
-                        height: 100,
-                        displayValue: false,
-                        margin: 4,
-                      });
-                    } catch {}
-                    const barcodeDataUrl = barcodeCanvas.toDataURL("image/png");
-                    const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
-                    printWindow.document.write(`<html><head><title>Barcode - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:40mm;height:12mm;padding:0.8mm 1.5mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:5.5pt;font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sku{font-size:4.5pt;color:#666}.price{font-size:6pt;font-weight:bold}.bcode{font-size:4pt;color:#333;letter-spacing:0.3pt}.bc{position:absolute;left:40mm;top:0;width:20mm;height:12mm}img{display:block;width:20mm;height:12mm;object-fit:fill}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="sku">${barcodeItem.sku}</div><div class="price">${price} IQD</div><div class="bcode">${barcodeValue}</div></div><div class="bc"><img src="${barcodeDataUrl}"></div></body></html>`);
+                    printWindow.document.write(`<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.8mm 1.5mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:5.5pt;font-weight:bold;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sku{font-size:4.5pt;color:#666}.price{font-size:6pt;font-weight:bold}.qcode{font-size:4pt;color:#333;letter-spacing:0.3pt}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="sku">${barcodeItem.sku}</div><div class="price">${price} IQD</div><div class="qcode">${qrValue}</div></div><div class="qr"><img src="${qrDataUrl}"></div></body></html>`);
                     printWindow.document.close();
                     printWindow.print();
                   }
@@ -1059,26 +1053,18 @@ export default function InventoryManagement() {
   );
 }
 
-function BarcodeDisplay({ value, displayText }: { value: string; displayText?: string }) {
-  const svgRef = useRef<SVGSVGElement>(null);
+function BarcodeDisplay({ value }: { value: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (svgRef.current && value) {
-      try {
-        JsBarcode(svgRef.current, value, {
-          format: "CODE128",
-          width: 1,
-          height: 22,
-          displayValue: true,
-          text: displayText || value,
-          fontSize: 7,
-          margin: 2,
-        });
-      } catch {
-        // fallback - display text
-      }
+    if (canvasRef.current && value) {
+      QRCode.toCanvas(canvasRef.current, value, {
+        width: 120,
+        margin: 1,
+        color: { dark: "#000000", light: "#ffffff" },
+      }).catch(() => {});
     }
-  }, [value, displayText]);
+  }, [value]);
 
-  return <svg id="barcode-svg" ref={svgRef} data-testid="img-barcode" />;
+  return <canvas ref={canvasRef} data-testid="img-barcode" className="rounded" />;
 }
