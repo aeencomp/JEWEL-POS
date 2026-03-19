@@ -7,7 +7,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category } from "@shared/schema";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -34,19 +34,30 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Search,
   Plus,
   Trash2,
   Pencil,
   X,
   Loader2,
-  Gem,
-  Barcode,
+  Package,
+  TrendingUp,
+  AlertTriangle,
   Percent,
   Upload,
-  ImageIcon,
-  Eye,
-  EyeOff,
+  ChevronDown,
+  ChevronRight,
+  Barcode,
+  Power,
+  Gem,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
@@ -67,7 +78,7 @@ const inventoryFormSchema = z.object({
   caratWeight: z.string().optional(),
   costPrice: z.string().min(1, "Cost price is required"),
   sellingPrice: z.string().min(1, "Selling price is required"),
-  quantity: z.coerce.number().min(0, "Quantity must be 0 or more"),
+  quantity: z.coerce.number().min(0),
   imageUrl: z.string().optional(),
 });
 
@@ -79,23 +90,6 @@ function generateSku(categories: Category[], categoryId: number, items: Inventor
   const catItems = items.filter((i) => i.categoryId === categoryId);
   const num = String(catItems.length + 1).padStart(3, "0");
   return `${prefix}-${num}`;
-}
-
-function getMetalGradient(metalType: string): string {
-  switch (metalType) {
-    case "gold":
-      return "bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600";
-    case "silver":
-      return "bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400";
-    case "platinum":
-      return "bg-gradient-to-br from-zinc-300 via-zinc-400 to-zinc-500";
-    case "white_gold":
-      return "bg-gradient-to-br from-gray-100 via-gray-300 to-gray-400";
-    case "rose_gold":
-      return "bg-gradient-to-br from-rose-200 via-rose-300 to-rose-400";
-    default:
-      return "bg-gradient-to-br from-purple-200 via-purple-300 to-purple-400";
-  }
 }
 
 function BarcodeDisplay({ value }: { value: string }) {
@@ -112,12 +106,19 @@ function BarcodeDisplay({ value }: { value: string }) {
   return <canvas ref={canvasRef} data-testid="img-barcode" className="rounded" />;
 }
 
+function getStockStatus(qty: number, isAvailable: boolean): { label: string; className: string } {
+  if (!isAvailable || qty === 0) return { label: "Out of Stock", className: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" };
+  if (qty <= 2) return { label: "Low Stock", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+  return { label: "In Stock", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
+}
+
 export default function InventoryManagement() {
   const { t } = useLanguage();
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -313,6 +314,18 @@ export default function InventoryManagement() {
     });
   }, [inventory, selectedCategory, search]);
 
+  // KPI stats
+  const totalValue = inventory.reduce((s, i) => s + parseFloat(i.sellingPrice) * i.quantity, 0);
+  const lowStockCount = inventory.filter((i) => i.quantity <= 2 && i.quantity > 0 && i.isAvailable).length;
+  const outOfStock = inventory.filter((i) => !i.isAvailable || i.quantity === 0).length;
+  const avgMargin = inventory.length > 0
+    ? Math.round(inventory.reduce((s, i) => {
+        const cost = parseFloat(i.costPrice);
+        const sell = parseFloat(i.sellingPrice);
+        return s + (cost > 0 ? ((sell - cost) / cost) * 100 : 0);
+      }, 0) / inventory.length)
+    : 0;
+
   function openAddItem() {
     setEditingItem(null);
     const defaultCategoryId = categories.length > 0 ? categories[0].id : 0;
@@ -383,263 +396,339 @@ export default function InventoryManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-10 bg-white dark:bg-card border-b border-slate-200 dark:border-border shadow-sm">
-        <div className="px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-foreground" data-testid="text-inventory-title">
+    <div className="p-6 space-y-5">
+      {/* Page Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-inventory-title">
             {t("inventory.title")}
           </h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setBulkPriceOpen(true)}
-              className="border-[#d4a574] text-[#d4a574] hover:bg-[#d4a574]/10"
-              data-testid="button-bulk-price"
-            >
-              <Percent className="h-4 w-4 me-2" />
-              {t("inventory.bulkPriceAdjust")}
-            </Button>
-            <Button
-              onClick={openAddItem}
-              className="bg-[#d4a574] hover:bg-[#c39462] text-white shadow-md"
-              data-testid="button-add-item"
-            >
-              <Plus className="h-4 w-4 me-2" />
-              {t("inventory.addItem")}
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("inventory.title")} — {t("inventory.quantity")} & {t("inventory.sellingPrice")}</p>
         </div>
-      </header>
+      </div>
 
-      <main className="px-6 py-6 space-y-5">
-        {/* Category Filter + Search */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                selectedCategory === null
-                  ? "bg-[#d4a574] text-white shadow-sm"
-                  : "bg-white dark:bg-card text-slate-600 dark:text-muted-foreground border border-slate-200 dark:border-border hover:bg-slate-50"
-              }`}
-              data-testid="badge-category-all"
-            >
-              {t("pos.allCategories")} ({inventory.length})
-            </button>
-            {categories.map((cat) => {
-              const count = inventory.filter((i) => i.categoryId === cat.id).length;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-                    selectedCategory === cat.id
-                      ? "bg-[#d4a574] text-white shadow-sm"
-                      : "bg-white dark:bg-card text-slate-600 dark:text-muted-foreground border border-slate-200 dark:border-border hover:bg-slate-50"
-                  }`}
-                  data-testid={`badge-category-${cat.id}`}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-s-4 border-s-amber-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full">
+              <Package className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("inventory.title")}</p>
+              <p className="text-2xl font-bold" data-testid="text-stat-total">{inventory.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-s-4 border-s-emerald-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-full">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("inventory.sellingPrice")}</p>
+              <p className="text-lg font-bold tabular-nums" data-testid="text-stat-value">
+                {totalValue.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">{t("common.currency")}</span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-s-4 border-s-orange-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 rounded-full">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("pos.outOfStock")}</p>
+              <p className="text-2xl font-bold" data-testid="text-stat-lowstock">
+                {lowStockCount + outOfStock}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-s-4 border-s-blue-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full">
+              <Percent className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("inventory.costPrice")} %</p>
+              <p className="text-2xl font-bold" data-testid="text-stat-margin">{avgMargin}%</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Toolbar: Categories + Search + Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-card p-4 rounded-xl shadow-sm border border-slate-100 dark:border-border">
+        <div className="flex flex-wrap gap-2">
+          <Badge
+            variant={selectedCategory === null ? "default" : "outline"}
+            className={`cursor-pointer text-sm px-3 py-1.5 ${
+              selectedCategory === null
+                ? "bg-slate-800 dark:bg-slate-200 hover:bg-slate-700 text-white dark:text-slate-900"
+                : "bg-slate-50 dark:bg-muted hover:bg-slate-100 text-slate-600 dark:text-muted-foreground border-slate-200 dark:border-border"
+            }`}
+            onClick={() => setSelectedCategory(null)}
+            data-testid="badge-category-all"
+          >
+            {t("pos.allCategories")} <span className="ms-1.5 opacity-60 text-xs">({inventory.length})</span>
+          </Badge>
+          {categories.map((cat) => {
+            const count = inventory.filter((i) => i.categoryId === cat.id).length;
+            return (
+              <Badge
+                key={cat.id}
+                variant={selectedCategory === cat.id ? "default" : "outline"}
+                className={`cursor-pointer text-sm px-3 py-1.5 flex items-center gap-1.5 ${
+                  selectedCategory === cat.id
+                    ? "bg-slate-800 dark:bg-slate-200 hover:bg-slate-700 text-white dark:text-slate-900"
+                    : "bg-slate-50 dark:bg-muted hover:bg-slate-100 text-slate-600 dark:text-muted-foreground border-slate-200 dark:border-border"
+                }`}
+                onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
+                data-testid={`badge-category-${cat.id}`}
+              >
+                {cat.name} <span className="opacity-60 text-xs">({count})</span>
+                <span
+                  role="button"
+                  className="opacity-60 hover:opacity-100 ms-0.5"
+                  onClick={(e) => { e.stopPropagation(); deleteCategoryMutation.mutate(cat.id); }}
+                  data-testid={`button-delete-category-${cat.id}`}
                 >
-                  {cat.name} ({count})
-                  <span
-                    role="button"
-                    className="ms-0.5 rounded-full opacity-60 hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteCategoryMutation.mutate(cat.id);
-                    }}
-                    data-testid={`button-delete-category-${cat.id}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </span>
-                </button>
-              );
-            })}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                categoryForm.reset();
-                setCategoryDialogOpen(true);
-              }}
-              className="text-[#d4a574] hover:bg-[#d4a574]/10 rounded-full px-3"
-              data-testid="button-add-category"
-            >
-              <Plus className="h-3.5 w-3.5 me-1" />
-              {t("inventory.addCategory")}
-            </Button>
-          </div>
+                  <X className="h-3 w-3" />
+                </span>
+              </Badge>
+            );
+          })}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { categoryForm.reset(); setCategoryDialogOpen(true); }}
+            className="text-muted-foreground hover:text-foreground h-8 px-2"
+            data-testid="button-add-category"
+          >
+            <Plus className="h-3.5 w-3.5 me-1" />
+            {t("inventory.addCategory")}
+          </Button>
+        </div>
 
-          <div className="relative w-full md:w-72">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-56">
+            <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="ps-9 bg-white dark:bg-card border-slate-200 dark:border-border"
+              className="ps-9 bg-slate-50 dark:bg-muted border-slate-200 dark:border-border"
               data-testid="input-search-inventory"
             />
           </div>
+          <Button
+            variant="outline"
+            className="border-slate-200 dark:border-border text-slate-600 dark:text-muted-foreground hover:bg-slate-50 shrink-0"
+            onClick={() => setBulkPriceOpen(true)}
+            data-testid="button-bulk-price"
+          >
+            <Percent className="h-4 w-4 me-2" />
+            {t("inventory.bulkPriceAdjust")}
+          </Button>
+          <Button
+            onClick={openAddItem}
+            className="bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 shrink-0"
+            data-testid="button-add-item"
+          >
+            <Plus className="h-4 w-4 me-2" />
+            {t("inventory.addItem")}
+          </Button>
         </div>
+      </div>
 
-        {/* Card Grid */}
+      {/* Expandable Table */}
+      <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200 dark:border-border overflow-hidden">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-card rounded-xl border border-dashed border-slate-300 dark:border-border">
-            <Gem className="w-12 h-12 text-slate-300 dark:text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-foreground">{t("inventory.noItems")}</h3>
-            <p className="text-slate-500 dark:text-muted-foreground mt-1 text-sm" data-testid="text-no-items">
-              {t("common.search")}
-            </p>
+          <div className="text-center py-16">
+            <Gem className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm" data-testid="text-no-items">{t("inventory.noItems")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredItems.map((item) => {
-              const cost = parseFloat(item.costPrice);
-              const sell = parseFloat(item.sellingPrice);
-              const margin = cost > 0 ? Math.round(((sell - cost) / cost) * 100) : 0;
-              const catName = categories.find((c) => c.id === item.categoryId)?.name;
+          <Table>
+            <TableHeader className="bg-slate-50/80 dark:bg-muted/30">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-8"></TableHead>
+                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">{t("inventory.name")}</TableHead>
+                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">{t("inventory.metalType")}</TableHead>
+                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground text-end">{t("inventory.sellingPrice")}</TableHead>
+                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground text-end">{t("inventory.quantity")}</TableHead>
+                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">{t("admin.status")}</TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredItems.map((item) => {
+                const cost = parseFloat(item.costPrice);
+                const sell = parseFloat(item.sellingPrice);
+                const margin = cost > 0 ? Math.round(((sell - cost) / cost) * 100) : 0;
+                const catName = categories.find((c) => c.id === item.categoryId)?.name;
+                const stock = getStockStatus(item.quantity, item.isAvailable);
+                const isExpanded = expandedRow === item.id;
 
-              return (
-                <Card
-                  key={item.id}
-                  className="overflow-hidden border-slate-200 dark:border-border hover:border-[#d4a574]/60 hover:shadow-lg transition-all duration-300 bg-white dark:bg-card group"
-                  data-testid={`card-item-${item.id}`}
-                >
-                  {/* Image / Gradient Header */}
-                  <div className={`h-36 w-full relative flex items-center justify-center ${item.imageUrl ? "" : getMetalGradient(item.metalType)}`}>
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                        data-testid={`img-item-${item.id}`}
-                      />
-                    ) : (
-                      <Gem className="w-10 h-10 text-white/50" />
-                    )}
-                    {/* Metal badge top-start */}
-                    <div className="absolute top-2.5 start-2.5">
-                      <span className="bg-white/85 backdrop-blur-sm text-slate-900 text-xs font-semibold px-2 py-0.5 rounded-full shadow-sm">
-                        {t(metalTypeLabels[item.metalType] as any)}
-                      </span>
-                    </div>
-                    {/* Purity badge top-end */}
-                    {item.purity && (
-                      <div className="absolute top-2.5 end-2.5">
-                        <span className="bg-white/85 backdrop-blur-sm text-slate-900 text-xs font-semibold px-2 py-0.5 rounded-full shadow-sm">
-                          {item.purity}
-                        </span>
-                      </div>
-                    )}
-                    {/* Out of stock overlay */}
-                    {!item.isAvailable && (
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                        <span className="bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
-                          {t("inventory.available") === "Available" ? "Unavailable" : "غير متاح"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <CardContent className="p-4 space-y-3">
-                    {/* Name + Weight */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-900 dark:text-foreground truncate" data-testid={`text-name-${item.id}`}>
-                          {item.name}
-                        </p>
-                        {catName && (
-                          <p className="text-xs text-slate-500 dark:text-muted-foreground mt-0.5">{catName}</p>
-                        )}
-                      </div>
-                      {item.weightGrams && (
-                        <span className="shrink-0 text-xs font-medium text-slate-600 dark:text-muted-foreground bg-slate-100 dark:bg-muted px-2 py-0.5 rounded-md">
-                          {parseFloat(item.weightGrams).toLocaleString()}g
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Selling Price */}
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs text-slate-500 dark:text-muted-foreground">{t("inventory.sellingPrice")}</span>
-                      <span className="text-xl font-bold text-slate-900 dark:text-foreground tabular-nums" data-testid={`text-sell-${item.id}`}>
-                        {sell.toLocaleString()} {t("common.currency")}
-                      </span>
-                    </div>
-
-                    {/* Cost + Margin */}
-                    <div className="flex items-center justify-between text-xs border-t border-slate-100 dark:border-border pt-2.5">
-                      <span className="text-slate-500 dark:text-muted-foreground" data-testid={`text-cost-${item.id}`}>
-                        {t("inventory.costPrice")}: {cost.toLocaleString()}
-                      </span>
-                      <span className="text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded" data-testid={`text-margin-${item.id}`}>
-                        {margin}%
-                      </span>
-                    </div>
-
-                    {/* Quantity + Availability */}
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                          item.quantity > 0
-                            ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                            : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                        }`}
-                        data-testid={`text-qty-${item.id}`}
-                      >
-                        {item.quantity > 0 ? `${item.quantity} ${t("inventory.quantity")}` : t("pos.outOfStock")}
-                      </span>
-                      <Switch
-                        checked={item.isAvailable}
-                        onCheckedChange={(checked) =>
-                          toggleAvailabilityMutation.mutate({ id: item.id, isAvailable: checked })
-                        }
-                        className="data-[state=checked]:bg-[#d4a574]"
-                        data-testid={`switch-available-${item.id}`}
-                      />
-                    </div>
-                  </CardContent>
-
-                  {/* Action Footer */}
-                  <CardFooter className="px-4 py-3 border-t border-slate-100 dark:border-border bg-slate-50/60 dark:bg-muted/20 flex justify-between">
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-slate-500 hover:text-[#d4a574] hover:bg-[#d4a574]/10"
-                        onClick={() => openEditItem(item)}
-                        data-testid={`button-edit-item-${item.id}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {item.barcode && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-200 dark:hover:bg-muted"
-                          onClick={() => setBarcodeItem(item)}
-                          data-testid={`button-view-barcode-${item.id}`}
-                        >
-                          <Barcode className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                      onClick={() => deleteItemMutation.mutate(item.id)}
-                      data-testid={`button-delete-item-${item.id}`}
+                return (
+                  <>
+                    <TableRow
+                      key={item.id}
+                      className={`cursor-pointer transition-colors hover:bg-slate-50/80 dark:hover:bg-muted/20 ${isExpanded ? "bg-slate-50 dark:bg-muted/10 border-b-0" : ""}`}
+                      onClick={() => setExpandedRow(isExpanded ? null : item.id)}
+                      data-testid={`row-item-${item.id}`}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </div>
+                      <TableCell className="py-3">
+                        {isExpanded
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium" data-testid={`text-name-${item.id}`}>{item.name}</span>
+                          {catName && <span className="text-xs text-muted-foreground">{catName}</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-muted text-slate-700 dark:text-muted-foreground" data-testid={`text-metal-${item.id}`}>
+                          {t(metalTypeLabels[item.metalType] as any)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 text-end font-semibold tabular-nums" data-testid={`text-sell-${item.id}`}>
+                        {sell.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">{t("common.currency")}</span>
+                      </TableCell>
+                      <TableCell className="py-3 text-end text-muted-foreground" data-testid={`text-qty-${item.id}`}>
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <Badge variant="outline" className={`text-xs border-0 ${stock.className}`} data-testid={`badge-status-${item.id}`}>
+                          {stock.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-3"></TableCell>
+                    </TableRow>
+
+                    {/* Expanded Detail Row */}
+                    {isExpanded && (
+                      <TableRow key={`${item.id}-detail`} className="bg-slate-50/50 dark:bg-muted/5 hover:bg-slate-50/50 border-t-0">
+                        <TableCell colSpan={7} className="p-0 border-b border-slate-200 dark:border-border">
+                          <div className="px-8 py-5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                              {/* Specifications */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("inventory.sku")}</h4>
+                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                                  <div className="text-muted-foreground">{t("inventory.sku")}</div>
+                                  <div className="font-mono font-medium" data-testid={`text-sku-${item.id}`}>{item.sku}</div>
+                                  {item.purity && <>
+                                    <div className="text-muted-foreground">{t("inventory.purity")}</div>
+                                    <div className="font-medium">{item.purity}</div>
+                                  </>}
+                                  {item.weightGrams && <>
+                                    <div className="text-muted-foreground">{t("inventory.weight")}</div>
+                                    <div className="font-medium">{parseFloat(item.weightGrams).toLocaleString()}g</div>
+                                  </>}
+                                  {item.gemstone && <>
+                                    <div className="text-muted-foreground">{t("inventory.gemstone")}</div>
+                                    <div className="font-medium">{item.gemstone}</div>
+                                  </>}
+                                </div>
+                              </div>
+
+                              {/* Financials */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("inventory.costPrice")}</h4>
+                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                                  <div className="text-muted-foreground">{t("inventory.costPrice")}</div>
+                                  <div className="font-medium tabular-nums" data-testid={`text-cost-${item.id}`}>
+                                    {cost.toLocaleString()} {t("common.currency")}
+                                  </div>
+                                  <div className="text-muted-foreground">{t("inventory.sellingPrice")}</div>
+                                  <div className="font-medium tabular-nums">{sell.toLocaleString()} {t("common.currency")}</div>
+                                  <div className="text-muted-foreground">Margin</div>
+                                  <div className="font-semibold text-blue-600" data-testid={`text-margin-${item.id}`}>{margin}%</div>
+                                </div>
+                                {item.description && (
+                                  <p className="text-xs text-muted-foreground leading-relaxed pt-1">
+                                    <span className="font-medium text-foreground">{t("inventory.description")}: </span>
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Quick Actions */}
+                              <div className="space-y-3 md:border-s md:border-slate-200 dark:md:border-border md:ps-6 flex flex-col justify-between">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("admin.actions")}</h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full justify-start text-slate-600 dark:text-muted-foreground hover:text-foreground border-slate-200 dark:border-border"
+                                    onClick={(e) => { e.stopPropagation(); openEditItem(item); }}
+                                    data-testid={`button-edit-item-${item.id}`}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5 me-2" />
+                                    {t("inventory.editItem")}
+                                  </Button>
+                                  {item.barcode && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full justify-start text-slate-600 dark:text-muted-foreground hover:text-foreground border-slate-200 dark:border-border"
+                                      onClick={(e) => { e.stopPropagation(); setBarcodeItem(item); }}
+                                      data-testid={`button-view-barcode-${item.id}`}
+                                    >
+                                      <Barcode className="h-3.5 w-3.5 me-2" />
+                                      {t("inventory.barcode")}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full justify-start text-slate-600 dark:text-muted-foreground hover:text-foreground border-slate-200 dark:border-border"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleAvailabilityMutation.mutate({ id: item.id, isAvailable: !item.isAvailable });
+                                    }}
+                                    data-testid={`switch-available-${item.id}`}
+                                  >
+                                    <Power className="h-3.5 w-3.5 me-2" />
+                                    {item.isAvailable ? t("inventory.available") : t("inventory.available")}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-100 dark:border-rose-900/30"
+                                    onClick={(e) => { e.stopPropagation(); deleteItemMutation.mutate(item.id); }}
+                                    data-testid={`button-delete-item-${item.id}`}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 me-2" />
+                                    {t("common.delete")}
+                                  </Button>
+                                </div>
+                                {item.imageUrl && (
+                                  <img src={item.imageUrl} alt={item.name} className="h-16 w-16 rounded-lg object-cover border border-slate-200 dark:border-border mt-2" data-testid={`img-item-${item.id}`} />
+                                )}
+                              </div>
+
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
-      </main>
+      </div>
 
       {/* ── Add Category Dialog ── */}
       <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
@@ -648,23 +737,14 @@ export default function InventoryManagement() {
             <DialogTitle>{t("inventory.addCategory")}</DialogTitle>
           </DialogHeader>
           <Form {...categoryForm}>
-            <form
-              onSubmit={categoryForm.handleSubmit((values) => createCategoryMutation.mutate(values))}
-              className="space-y-4"
-            >
-              <FormField
-                control={categoryForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("inventory.name")}</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-category-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={categoryForm.handleSubmit((v) => createCategoryMutation.mutate(v))} className="space-y-4">
+              <FormField control={categoryForm.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("inventory.name")}</FormLabel>
+                  <FormControl><Input {...field} data-testid="input-category-name" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setCategoryDialogOpen(false)} data-testid="button-cancel-category">
                   {t("common.cancel")}
@@ -680,18 +760,10 @@ export default function InventoryManagement() {
       </Dialog>
 
       {/* ── Add / Edit Item Dialog ── */}
-      <Dialog
-        open={itemDialogOpen}
-        onOpenChange={(open) => {
-          setItemDialogOpen(open);
-          if (!open) setEditingItem(null);
-        }}
-      >
+      <Dialog open={itemDialogOpen} onOpenChange={(open) => { setItemDialogOpen(open); if (!open) setEditingItem(null); }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingItem ? t("inventory.editItem") : t("inventory.addItem")}
-            </DialogTitle>
+            <DialogTitle>{editingItem ? t("inventory.editItem") : t("inventory.addItem")}</DialogTitle>
           </DialogHeader>
           <Form {...itemForm}>
             <form onSubmit={itemForm.handleSubmit(onItemSubmit)} className="space-y-4">
@@ -718,9 +790,7 @@ export default function InventoryManagement() {
                         <SelectTrigger data-testid="select-item-category"><SelectValue placeholder={t("inventory.category")} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
-                        ))}
+                        {categories.map((cat) => <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -799,22 +869,8 @@ export default function InventoryManagement() {
                     <FormLabel>{t("inventory.uploadImage")}</FormLabel>
                     <div className="space-y-2">
                       <div className="flex gap-2 items-center">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/gif,image/webp"
-                          ref={fileInputRef}
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          data-testid="input-file-upload"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          data-testid="button-browse-image"
-                        >
+                        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" ref={fileInputRef} onChange={handleImageUpload} className="hidden" data-testid="input-file-upload" />
+                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} data-testid="button-browse-image">
                           {uploading ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Upload className="h-4 w-4 me-2" />}
                           {uploading ? t("inventory.uploading") : t("inventory.browseFile")}
                         </Button>
@@ -827,12 +883,8 @@ export default function InventoryManagement() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{t("inventory.orEnterUrl")}</span>
-                      </div>
-                      <FormControl>
-                        <Input {...field} placeholder="https://..." data-testid="input-item-image" />
-                      </FormControl>
+                      <p className="text-xs text-muted-foreground">{t("inventory.orEnterUrl")}</p>
+                      <FormControl><Input {...field} placeholder="https://..." data-testid="input-item-image" /></FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -846,12 +898,7 @@ export default function InventoryManagement() {
                 </FormItem>
               )} />
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setItemDialogOpen(false); setEditingItem(null); }}
-                  data-testid="button-cancel-item"
-                >
+                <Button type="button" variant="outline" onClick={() => { setItemDialogOpen(false); setEditingItem(null); }} data-testid="button-cancel-item">
                   {t("common.cancel")}
                 </Button>
                 <Button type="submit" disabled={isSubmitting} data-testid="button-save-item">
@@ -867,34 +914,23 @@ export default function InventoryManagement() {
       {/* ── Barcode Dialog ── */}
       <Dialog open={!!barcodeItem} onOpenChange={(open) => !open && setBarcodeItem(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("inventory.barcode")}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{t("inventory.barcode")}</DialogTitle></DialogHeader>
           {barcodeItem && (
             <div className="flex flex-col items-center gap-3 py-4">
               <p className="text-sm font-medium">{barcodeItem.name}</p>
               <p className="text-xs text-muted-foreground">{barcodeItem.sku}</p>
               <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const qrValue = barcodeItem.barcode || barcodeItem.sku;
-                  const qrDataUrl = await QRCode.toDataURL(qrValue, {
-                    width: 200,
-                    margin: 1,
-                    color: { dark: "#000000", light: "#ffffff" },
-                  });
-                  const weight = barcodeItem.weightGrams ? `${parseFloat(barcodeItem.weightGrams).toLocaleString()}g` : "";
-                  const printWindow = window.open("", "_blank");
-                  if (printWindow) {
-                    printWindow.document.write(`<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${weight}</div></div><div class="qr"><img src="${qrDataUrl}"></div></body></html>`);
-                    printWindow.document.close();
-                    printWindow.print();
-                  }
-                }}
-                data-testid="button-print-barcode"
-              >
+              <Button variant="outline" size="sm" onClick={async () => {
+                const qrValue = barcodeItem.barcode || barcodeItem.sku;
+                const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } });
+                const weight = barcodeItem.weightGrams ? `${parseFloat(barcodeItem.weightGrams).toLocaleString()}g` : "";
+                const printWindow = window.open("", "_blank");
+                if (printWindow) {
+                  printWindow.document.write(`<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${weight}</div></div><div class="qr"><img src="${qrDataUrl}"></div></body></html>`);
+                  printWindow.document.close();
+                  printWindow.print();
+                }
+              }} data-testid="button-print-barcode">
                 {t("receipt.print")}
               </Button>
             </div>
@@ -905,9 +941,7 @@ export default function InventoryManagement() {
       {/* ── Bulk Price Dialog ── */}
       <Dialog open={bulkPriceOpen} onOpenChange={setBulkPriceOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle data-testid="text-bulk-price-title">{t("inventory.bulkPriceAdjust")}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle data-testid="text-bulk-price-title">{t("inventory.bulkPriceAdjust")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">{t("inventory.adjustType")}</label>
@@ -922,16 +956,7 @@ export default function InventoryManagement() {
             <div>
               <label className="text-sm font-medium">{t("inventory.percentage")}</label>
               <div className="relative">
-                <Input
-                  type="number"
-                  min="0.01"
-                  max="1000"
-                  step="0.01"
-                  value={bulkPercentage}
-                  onChange={(e) => setBulkPercentage(e.target.value)}
-                  placeholder="10"
-                  data-testid="input-bulk-percentage"
-                />
+                <Input type="number" min="0.01" max="1000" step="0.01" value={bulkPercentage} onChange={(e) => setBulkPercentage(e.target.value)} placeholder="10" data-testid="input-bulk-percentage" />
                 <Percent className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
@@ -952,11 +977,7 @@ export default function InventoryManagement() {
                 <SelectTrigger data-testid="select-bulk-category"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" data-testid="option-all-categories">{t("inventory.allCategories")}</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id.toString()} data-testid={`option-category-${cat.id}`}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
+                  {categories.map((cat) => <SelectItem key={cat.id} value={cat.id.toString()} data-testid={`option-category-${cat.id}`}>{cat.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -971,29 +992,19 @@ export default function InventoryManagement() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkPriceOpen(false)} data-testid="button-bulk-cancel">
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleBulkPriceSubmit} disabled={!bulkPercentage || parseFloat(bulkPercentage) <= 0} data-testid="button-bulk-submit">
-              {t("inventory.bulkPriceAdjust")}
-            </Button>
+            <Button variant="outline" onClick={() => setBulkPriceOpen(false)} data-testid="button-bulk-cancel">{t("common.cancel")}</Button>
+            <Button onClick={handleBulkPriceSubmit} disabled={!bulkPercentage || parseFloat(bulkPercentage) <= 0} data-testid="button-bulk-submit">{t("inventory.bulkPriceAdjust")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Bulk Price Confirm Dialog ── */}
+      {/* ── Bulk Confirm Dialog ── */}
       <Dialog open={bulkConfirmOpen} onOpenChange={setBulkConfirmOpen}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t("inventory.bulkPriceAdjust")}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground" data-testid="text-bulk-confirm">
-            {t("inventory.adjustConfirm")}
-          </p>
+          <DialogHeader><DialogTitle>{t("inventory.bulkPriceAdjust")}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground" data-testid="text-bulk-confirm">{t("inventory.adjustConfirm")}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkConfirmOpen(false)} data-testid="button-confirm-cancel">
-              {t("common.cancel")}
-            </Button>
+            <Button variant="outline" onClick={() => setBulkConfirmOpen(false)} data-testid="button-confirm-cancel">{t("common.cancel")}</Button>
             <Button onClick={confirmBulkPrice} disabled={bulkPriceMutation.isPending} data-testid="button-confirm-submit">
               {bulkPriceMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
               {t("common.save")}
