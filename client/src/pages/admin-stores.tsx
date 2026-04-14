@@ -66,6 +66,7 @@ import {
   Pencil,
   Eye,
   User,
+  KeyRound,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
@@ -102,6 +103,8 @@ export default function AdminStores() {
   const [open, setOpen] = useState(false);
   const [editStore, setEditStore] = useState<Store | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
+  const [resetPasswordStore, setResetPasswordStore] = useState<Store | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   const { data: stores, isLoading } = useQuery<StoreWithUsername[]>({
     queryKey: ["/api/stores"],
@@ -211,6 +214,21 @@ export default function AdminStores() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: number; password: string }) => {
+      const res = await apiRequest("PATCH", `/api/stores/${id}`, { password });
+      return res.json();
+    },
+    onSuccess: () => {
+      setResetPasswordStore(null);
+      setNewPassword("");
+      toast({ title: t("admin.resetPassword") });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("admin.resetPassword"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -551,8 +569,19 @@ export default function AdminStores() {
                     className="flex-shrink-0"
                     onClick={() => openEditDialog(store)}
                     data-testid={`button-edit-store-${store.id}`}
+                    title={t("admin.editStore")}
                   >
                     <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="flex-shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-200 dark:border-amber-800"
+                    onClick={() => { setResetPasswordStore(store); setNewPassword(""); }}
+                    data-testid={`button-reset-password-${store.id}`}
+                    title={t("admin.resetPassword")}
+                  >
+                    <KeyRound className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -560,6 +589,7 @@ export default function AdminStores() {
                     className="text-destructive flex-shrink-0"
                     onClick={() => setDeleteTarget(store)}
                     data-testid={`button-delete-store-${store.id}`}
+                    title={t("common.delete")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -713,6 +743,56 @@ export default function AdminStores() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Reset Password Dialog ── */}
+      <Dialog
+        open={!!resetPasswordStore}
+        onOpenChange={(v) => { if (!v) { setResetPasswordStore(null); setNewPassword(""); } }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-amber-600" />
+              {t("admin.resetPassword")}
+            </DialogTitle>
+            <DialogDescription>
+              {resetPasswordStore?.name} — {t("admin.resetPasswordDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <label className="text-sm font-medium">{t("admin.password")}</label>
+            <Input
+              type="password"
+              placeholder="••••••••"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              data-testid="input-reset-password"
+              autoFocus
+            />
+            {newPassword.length > 0 && newPassword.length < 6 && (
+              <p className="text-xs text-destructive">Minimum 6 characters</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setResetPasswordStore(null); setNewPassword(""); }}
+              data-testid="button-cancel-reset-password"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => resetPasswordStore && resetPasswordMutation.mutate({ id: resetPasswordStore.id, password: newPassword })}
+              disabled={newPassword.length < 6 || resetPasswordMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("admin.resetPassword")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

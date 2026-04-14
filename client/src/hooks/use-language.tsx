@@ -58,6 +58,8 @@ type TranslationKeys = {
   "admin.username": string;
   "admin.password": string;
   "admin.newPasswordPlaceholder": string;
+  "admin.resetPassword": string;
+  "admin.resetPasswordDesc": string;
   "admin.viewStore": string;
   "admin.viewingAs": string;
   "admin.backToAdmin": string;
@@ -472,6 +474,8 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.username": "Username",
     "admin.password": "Password",
     "admin.newPasswordPlaceholder": "Leave empty to keep current password",
+    "admin.resetPassword": "Reset Password",
+    "admin.resetPasswordDesc": "Set a new password for this store's login account.",
     "admin.viewStore": "View Store",
     "admin.viewingAs": "Viewing as",
     "admin.backToAdmin": "Back to Admin",
@@ -881,6 +885,8 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.username": "اسم المستخدم",
     "admin.password": "كلمة المرور",
     "admin.newPasswordPlaceholder": "اتركه فارغاً للإبقاء على كلمة المرور الحالية",
+    "admin.resetPassword": "إعادة تعيين كلمة المرور",
+    "admin.resetPasswordDesc": "تعيين كلمة مرور جديدة لحساب تسجيل الدخول بهذا المتجر.",
     "admin.viewStore": "عرض المتجر",
     "admin.viewingAs": "العرض كـ",
     "admin.backToAdmin": "العودة للإدارة",
