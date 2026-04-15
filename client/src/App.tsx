@@ -152,7 +152,7 @@ function MainLayout() {
 }
 
 function AppContent() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isImpersonating } = useAuth();
   const [location] = useLocation();
 
   if (isLoading) {
@@ -194,6 +194,16 @@ function AppContent() {
 
   if (location === "/oil" || location.startsWith("/oil/")) {
     return <OilRouter />;
+  }
+
+  if (location === "/" && (user?.role === "store" || isImpersonating)) {
+    const posSystem = user ? localStorage.getItem(`posSystem_${user.id}`) : null;
+    if (posSystem === "oil") return <Redirect to="/oil" />;
+    return <PosHome />;
+  }
+
+  if (location.startsWith("/pos/")) {
+    return <PosTerminal />;
   }
 
   return <MainLayout />;

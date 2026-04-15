@@ -46,6 +46,7 @@ export default function OilLogin() {
         return;
       }
       queryClient.setQueryData(["/api/user"], data);
+      localStorage.setItem(`posSystem_${data.id}`, "oil");
       navigate("/oil");
     },
     onError: () => {
