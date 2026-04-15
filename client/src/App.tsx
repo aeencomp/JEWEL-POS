@@ -169,10 +169,19 @@ function AppContent() {
     if (location === "/store-portal") {
       return <StorePortal />;
     }
+    if (location === "/oil" || location.startsWith("/oil/")) {
+      sessionStorage.setItem("postLoginRedirect", location);
+      return <Redirect to="/store-portal" />;
+    }
     return <LandingPage />;
   }
 
   if (location === "/auth" || location === "/store-portal") {
+    const redirect = sessionStorage.getItem("postLoginRedirect");
+    if (redirect) {
+      sessionStorage.removeItem("postLoginRedirect");
+      return <Redirect to={redirect} />;
+    }
     const terminalId = sessionStorage.getItem("selectedTerminalId");
     if (terminalId) {
       sessionStorage.removeItem("selectedTerminalId");

@@ -109,10 +109,11 @@ export function setupAuth(app: Express) {
 
       if (portal === "store" && user.role === "store") {
         if (!user.email) {
-          return res.status(400).json({
-            message: "No email configured for this account. Please contact your administrator.",
-            requires2FA: false,
+          req.login(user, (loginErr) => {
+            if (loginErr) return next(loginErr);
+            res.status(200).json(user);
           });
+          return;
         }
 
         try {
