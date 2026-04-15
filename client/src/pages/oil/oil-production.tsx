@@ -81,14 +81,18 @@ export default function OilProduction() {
   const rawMaterials = products.filter(p => ["raw_material", "other"].includes(p.category));
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
-        <div className="flex items-center gap-2">
-          <Factory className="h-5 w-5 text-violet-500" />
-          <h1 className="text-xl font-semibold">{isAr ? "الإنتاج" : "Production"}</h1>
-          <Badge variant="secondary">{batches.length}</Badge>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
+      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center">
+            <Factory className="h-4 w-4 text-violet-500" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-100">{isAr ? "الإنتاج" : "Production"}</h1>
+            <p className="text-xs text-slate-400">{batches.length} {isAr ? "دفعة" : "batches"}</p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => setShowDialog(true)} data-testid="button-new-batch">
+        <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white shadow-sm" onClick={() => setShowDialog(true)} data-testid="button-new-batch">
           <Plus className="h-4 w-4 me-1" />{isAr ? "دفعة إنتاج" : "New Batch"}
         </Button>
       </div>

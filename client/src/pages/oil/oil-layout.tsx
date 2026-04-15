@@ -4,14 +4,14 @@ import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
-  Users, Building2, Receipt, HandCoins, LogOut, Menu, X, Droplets, ChevronRight,
+  Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
+  Droplets, ChevronRight,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", exact: true },
@@ -25,10 +25,14 @@ const navItems = [
   { path: "/oil/debts", icon: HandCoins, label: "Debts", labelAr: "الديون" },
 ];
 
+function NavLabel({ label, labelAr, isAr }: { label: string; labelAr: string; isAr: boolean }) {
+  return <span>{isAr ? labelAr : label}</span>;
+}
+
 export default function OilLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { language } = useLanguage();
-  const { toast } = useToast();
+  const { user } = useAuth();
   const isAr = language === "ar";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -40,26 +44,33 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const isActive = (item: typeof navItems[0]) => {
-    if (item.exact) return location === item.path;
-    return location.startsWith(item.path);
-  };
+  const isActive = (item: (typeof navItems)[0]) =>
+    item.exact ? location === item.path : location.startsWith(item.path);
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-sm">
+  const currentPage = navItems.find((i) => isActive(i));
+
+  const Sidebar = () => (
+    <div className="flex flex-col h-full bg-slate-900 text-slate-100">
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-slate-700/60">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/40">
             <Droplets className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm leading-tight">OilPOS</p>
-            <p className="text-[10px] text-muted-foreground">{isAr ? "نظام مصنع الزيوت" : "Oil Factory System"}</p>
+            <p className="font-bold text-base tracking-tight text-white">OilPOS</p>
+            <p className="text-[11px] text-slate-400 leading-tight">
+              {isAr ? "نظام مصنع الزيوت" : "Oil Factory ERP"}
+            </p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      {/* Nav */}
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 mb-2">
+          {isAr ? "القائمة" : "Navigation"}
+        </p>
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
@@ -67,81 +78,110 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
             <Link key={item.path} href={item.path}>
               <a
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group
                   ${active
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-900/30"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
                   }`}
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{isAr ? item.labelAr : item.label}</span>
-                {active && <ChevronRight className="h-3 w-3 ms-auto opacity-70" />}
+                <Icon className={`h-4 w-4 flex-shrink-0 ${active ? "text-white" : "text-slate-500 group-hover:text-slate-300"}`} />
+                <NavLabel label={item.label} labelAr={item.labelAr} isAr={isAr} />
+                {active && <ChevronRight className="h-3.5 w-3.5 ms-auto text-blue-300" />}
               </a>
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-3 border-t space-y-1">
-        <div className="flex items-center justify-between px-1 pb-1">
+      {/* Footer */}
+      <div className="px-3 py-4 border-t border-slate-700/60 space-y-3">
+        {/* User pill */}
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+            {(user?.username?.[0] ?? "O").toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-slate-200 truncate">{user?.username ?? "oiluser"}</p>
+            <p className="text-[10px] text-slate-500">{isAr ? "مشغّل المصنع" : "Factory Operator"}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
           <LanguageToggle />
           <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 justify-center text-slate-400 hover:text-red-400 hover:bg-red-900/20 text-xs gap-1.5"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            data-testid="button-logout"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            {isAr ? "خروج" : "Sign Out"}
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
-          onClick={() => logoutMutation.mutate()}
-          data-testid="button-logout"
-        >
-          <LogOut className="h-4 w-4 me-2" />
-          {isAr ? "تسجيل الخروج" : "Sign Out"}
-        </Button>
       </div>
     </div>
   );
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950" dir={isAr ? "rtl" : "ltr"}>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-56 border-e bg-card flex-shrink-0">
-        <SidebarContent />
+      <aside className="hidden md:flex flex-col w-60 flex-shrink-0 shadow-xl">
+        <Sidebar />
       </aside>
 
-      {/* Mobile sidebar overlay */}
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute start-0 top-0 bottom-0 w-64 bg-card border-e flex flex-col">
-            <div className="flex items-center justify-end p-3 border-b">
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <SidebarContent />
-            </div>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <aside className="absolute start-0 top-0 bottom-0 w-64 flex flex-col shadow-2xl">
+            <Sidebar />
           </aside>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="absolute top-4 end-4 text-white bg-slate-800 rounded-full p-1.5"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b bg-card">
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+      {/* Main */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Topbar */}
+        <header className="flex items-center gap-3 px-5 h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0 shadow-sm">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1 rounded-lg"
+          >
             <Menu className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Droplets className="h-5 w-5 text-blue-500" />
-            <span className="font-bold">OilPOS</span>
+          </button>
+
+          <div className="flex items-center gap-2 text-sm">
+            <Droplets className="h-4 w-4 text-blue-500 hidden md:block" />
+            <span className="text-slate-400 hidden md:block">OilPOS</span>
+            <span className="text-slate-300 hidden md:block">/</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-200">
+              {isAr ? currentPage?.labelAr : currentPage?.label}
+            </span>
           </div>
-          <Badge variant="secondary" className="ms-auto text-[10px]">Factory</Badge>
-        </div>
-        <div className="flex-1 overflow-y-auto">
+
+          <div className="ms-auto flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {isAr ? "متصل" : "Online"}
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

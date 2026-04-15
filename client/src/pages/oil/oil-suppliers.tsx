@@ -56,19 +56,23 @@ export default function OilSuppliers() {
   const filtered = suppliers.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()) || (s.phone || "").includes(search));
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-cyan-500" />
-          <h1 className="text-xl font-semibold">{isAr ? "الموردون" : "Suppliers"}</h1>
-          <Badge variant="secondary">{suppliers.length}</Badge>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
+      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+            <Building2 className="h-4 w-4 text-cyan-500" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-100">{isAr ? "الموردون" : "Suppliers"}</h1>
+            <p className="text-xs text-slate-400">{suppliers.length} {isAr ? "مورد" : "suppliers"}</p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); form.reset(); setShowDialog(true); }} data-testid="button-add-supplier">
+        <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm" onClick={() => { setEditing(null); form.reset(); setShowDialog(true); }} data-testid="button-add-supplier">
           <Plus className="h-4 w-4 me-1" />{isAr ? "إضافة مورد" : "Add Supplier"}
         </Button>
       </div>
 
-      <div className="px-6 py-3 border-b">
+      <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="relative"><Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="ps-9" placeholder={isAr ? "بحث..." : "Search..."} value={search} onChange={e => setSearch(e.target.value)} /></div>
       </div>
 

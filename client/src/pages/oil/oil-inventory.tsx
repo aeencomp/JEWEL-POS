@@ -96,19 +96,23 @@ export default function OilInventory() {
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
-        <div className="flex items-center gap-2">
-          <Package className="h-5 w-5 text-blue-500" />
-          <h1 className="text-xl font-semibold">{isAr ? "المخزون" : "Inventory"}</h1>
-          <Badge variant="secondary">{products.length}</Badge>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
+      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+            <Package className="h-4 w-4 text-blue-500" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-100">{isAr ? "المخزون" : "Inventory"}</h1>
+            <p className="text-xs text-slate-400">{products.length} {isAr ? "منتج" : "products"}</p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); form.reset(); setShowDialog(true); }} data-testid="button-add-product">
+        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => { setEditing(null); form.reset(); setShowDialog(true); }} data-testid="button-add-product">
           <Plus className="h-4 w-4 me-1" />{isAr ? "إضافة منتج" : "Add Product"}
         </Button>
       </div>
 
-      <div className="px-6 py-3 border-b flex flex-wrap gap-3 items-center">
+      <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input className="ps-9" placeholder={isAr ? "بحث..." : "Search..."} value={search} onChange={e => setSearch(e.target.value)} data-testid="input-search" />

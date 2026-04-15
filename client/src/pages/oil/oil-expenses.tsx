@@ -75,19 +75,23 @@ export default function OilExpenses() {
   }, {} as Record<string, number>);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
-        <div className="flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-orange-500" />
-          <h1 className="text-xl font-semibold">{isAr ? "المصاريف" : "Expenses"}</h1>
-          <Badge variant="secondary">{expenses.length}</Badge>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
+      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <Receipt className="h-4 w-4 text-orange-500" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-100">{isAr ? "المصاريف" : "Expenses"}</h1>
+            <p className="text-xs text-slate-400">{expenses.length} {isAr ? "سجل" : "records"}</p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => { form.reset(); setShowDialog(true); }} data-testid="button-add-expense">
+        <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white shadow-sm" onClick={() => { form.reset(); setShowDialog(true); }} data-testid="button-add-expense">
           <Plus className="h-4 w-4 me-1" />{isAr ? "إضافة مصروف" : "Add Expense"}
         </Button>
       </div>
 
-      <div className="px-6 py-3 border-b flex items-center gap-3 flex-wrap">
+      <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-wrap">
         <Select value={catFilter} onValueChange={setCatFilter}>
           <SelectTrigger className="w-44" data-testid="select-expense-filter"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -95,7 +99,7 @@ export default function OilExpenses() {
             {Object.entries(catLabels).map(([k, v]) => <SelectItem key={k} value={k}>{isAr ? v.ar : v.en}</SelectItem>)}
           </SelectContent>
         </Select>
-        <div className="ms-auto text-sm font-semibold text-orange-600">{isAr ? "الإجمالي:" : "Total:"} {total.toLocaleString()} IQD</div>
+        <div className="ms-auto text-sm font-bold text-orange-600">{isAr ? "الإجمالي:" : "Total:"} {total.toLocaleString()} IQD</div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-2">

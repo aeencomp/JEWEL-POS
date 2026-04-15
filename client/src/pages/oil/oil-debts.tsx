@@ -106,19 +106,23 @@ export default function OilDebts() {
   const entityTypeLabels = { customer: { en: "Customer", ar: "عميل" }, supplier: { en: "Supplier", ar: "مورد" }, other: { en: "Other", ar: "أخرى" } };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
-        <div className="flex items-center gap-2">
-          <HandCoins className="h-5 w-5 text-amber-500" />
-          <h1 className="text-xl font-semibold">{isAr ? "الديون" : "Debts"}</h1>
-          <Badge variant="secondary">{active.length}</Badge>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
+      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <HandCoins className="h-4 w-4 text-amber-500" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-100">{isAr ? "الديون" : "Debts"}</h1>
+            <p className="text-xs text-slate-400">{active.length} {isAr ? "دين نشط" : "active debts"}</p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => { form.reset(); setShowAdd(true); }} data-testid="button-add-debt">
+        <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm" onClick={() => { form.reset(); setShowAdd(true); }} data-testid="button-add-debt">
           <Plus className="h-4 w-4 me-1" />{isAr ? "إضافة دين" : "Add Debt"}
         </Button>
       </div>
 
-      <div className="px-6 py-3 border-b">
+      <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
             <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5 text-green-500" />{isAr ? "مديونون لنا" : "They Owe Us"}</p>

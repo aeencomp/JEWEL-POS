@@ -1,15 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
 import {
   TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle,
-  ShoppingCart, Truck, HandCoins, BarChart3,
+  ShoppingCart, Truck, HandCoins, BarChart3, ArrowRight, Activity,
+  Wallet, Factory,
 } from "lucide-react";
 
 function fmt(n: number) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
   return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
+
+function fmtFull(n: number) {
+  return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+const COLORS = {
+  blue: { bg: "bg-blue-500/10", icon: "text-blue-500", border: "border-blue-500/20", glow: "shadow-blue-500/20" },
+  green: { bg: "bg-emerald-500/10", icon: "text-emerald-500", border: "border-emerald-500/20", glow: "shadow-emerald-500/20" },
+  red: { bg: "bg-red-500/10", icon: "text-red-500", border: "border-red-500/20", glow: "shadow-red-500/20" },
+  amber: { bg: "bg-amber-500/10", icon: "text-amber-500", border: "border-amber-500/20", glow: "shadow-amber-500/20" },
+  cyan: { bg: "bg-cyan-500/10", icon: "text-cyan-500", border: "border-cyan-500/20", glow: "shadow-cyan-500/20" },
+  rose: { bg: "bg-rose-500/10", icon: "text-rose-500", border: "border-rose-500/20", glow: "shadow-rose-500/20" },
+  violet: { bg: "bg-violet-500/10", icon: "text-violet-500", border: "border-violet-500/20", glow: "shadow-violet-500/20" },
+  orange: { bg: "bg-orange-500/10", icon: "text-orange-500", border: "border-orange-500/20", glow: "shadow-orange-500/20" },
+};
 
 export default function OilDashboard() {
   const { language } = useLanguage();
@@ -17,165 +35,302 @@ export default function OilDashboard() {
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/oil/dashboard"],
-    queryFn: () => fetch("/api/oil/dashboard", { credentials: "include" }).then(r => r.json()),
+    queryFn: () => fetch("/api/oil/dashboard", { credentials: "include" }).then((r) => r.json()),
     refetchInterval: 30000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-28 bg-muted animate-pulse rounded-xl" />
-        ))}
-      </div>
-    );
-  }
+  const netProfit = data?.netProfit ?? 0;
+  const profitable = netProfit >= 0;
 
-  const stats = [
+  const metrics = [
     {
-      label: isAr ? "إجمالي الإيرادات" : "Total Revenue",
-      value: `${fmt(data?.totalRevenue ?? 0)} IQD`,
+      label: isAr ? "إجمالي الإيرادات" : "Revenue",
+      value: fmt(data?.totalRevenue ?? 0),
+      full: fmtFull(data?.totalRevenue ?? 0),
       icon: TrendingUp,
-      color: "text-green-500",
-      bg: "bg-green-50 dark:bg-green-950/30",
+      color: COLORS.green,
       testId: "stat-revenue",
+      href: "/oil/sales",
     },
     {
-      label: isAr ? "تكلفة المشتريات" : "Total Purchases",
-      value: `${fmt(data?.totalCOGS ?? 0)} IQD`,
+      label: isAr ? "المشتريات" : "Purchases",
+      value: fmt(data?.totalCOGS ?? 0),
+      full: fmtFull(data?.totalCOGS ?? 0),
       icon: Truck,
-      color: "text-blue-500",
-      bg: "bg-blue-50 dark:bg-blue-950/30",
+      color: COLORS.blue,
       testId: "stat-cogs",
+      href: "/oil/purchases",
     },
     {
       label: isAr ? "المصاريف" : "Expenses",
-      value: `${fmt(data?.totalExpenses ?? 0)} IQD`,
+      value: fmt(data?.totalExpenses ?? 0),
+      full: fmtFull(data?.totalExpenses ?? 0),
       icon: DollarSign,
-      color: "text-orange-500",
-      bg: "bg-orange-50 dark:bg-orange-950/30",
+      color: COLORS.orange,
       testId: "stat-expenses",
+      href: "/oil/expenses",
     },
     {
       label: isAr ? "صافي الربح" : "Net Profit",
-      value: `${fmt(data?.netProfit ?? 0)} IQD`,
+      value: fmt(Math.abs(netProfit)),
+      full: fmtFull(Math.abs(netProfit)),
       icon: BarChart3,
-      color: (data?.netProfit ?? 0) >= 0 ? "text-emerald-500" : "text-red-500",
-      bg: (data?.netProfit ?? 0) >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30",
+      color: profitable ? COLORS.green : COLORS.red,
+      prefix: profitable ? "+" : "-",
       testId: "stat-profit",
+      href: undefined,
     },
     {
       label: isAr ? "ذمم مدينة" : "Receivables",
-      value: `${fmt(data?.totalReceivable ?? 0)} IQD`,
-      icon: TrendingUp,
-      color: "text-cyan-500",
-      bg: "bg-cyan-50 dark:bg-cyan-950/30",
+      value: fmt(data?.totalReceivable ?? 0),
+      full: fmtFull(data?.totalReceivable ?? 0),
+      icon: Wallet,
+      color: COLORS.cyan,
       testId: "stat-receivable",
+      href: "/oil/debts",
     },
     {
       label: isAr ? "ذمم دائنة" : "Payables",
-      value: `${fmt(data?.totalPayable ?? 0)} IQD`,
-      icon: TrendingDown,
-      color: "text-rose-500",
-      bg: "bg-rose-50 dark:bg-rose-950/30",
+      value: fmt(data?.totalPayable ?? 0),
+      full: fmtFull(data?.totalPayable ?? 0),
+      icon: HandCoins,
+      color: COLORS.rose,
       testId: "stat-payable",
+      href: "/oil/debts",
     },
     {
-      label: isAr ? "عدد المنتجات" : "Products",
-      value: data?.productCount ?? 0,
+      label: isAr ? "المنتجات" : "Products",
+      value: String(data?.productCount ?? 0),
+      full: String(data?.productCount ?? 0),
       icon: Package,
-      color: "text-violet-500",
-      bg: "bg-violet-50 dark:bg-violet-950/30",
+      color: COLORS.violet,
       testId: "stat-products",
+      href: "/oil/inventory",
     },
     {
       label: isAr ? "مخزون منخفض" : "Low Stock",
-      value: data?.lowStockCount ?? 0,
+      value: String(data?.lowStockCount ?? 0),
+      full: String(data?.lowStockCount ?? 0),
       icon: AlertTriangle,
-      color: data?.lowStockCount > 0 ? "text-amber-500" : "text-muted-foreground",
-      bg: data?.lowStockCount > 0 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-muted",
+      color: (data?.lowStockCount ?? 0) > 0 ? COLORS.amber : COLORS.violet,
       testId: "stat-low-stock",
+      href: "/oil/inventory",
+      alert: (data?.lowStockCount ?? 0) > 0,
     },
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold mb-1">{isAr ? "لوحة التحكم" : "Dashboard"}</h1>
-        <p className="text-sm text-muted-foreground">{isAr ? "نظرة عامة على المصنع" : "Factory overview"}</p>
+    <div className="min-h-full bg-slate-50 dark:bg-slate-950">
+      {/* Hero banner */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-6 py-8">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 80% 20%, #06b6d4 0%, transparent 40%)" }} />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-end gap-6 justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-slate-400 font-medium">{isAr ? "مراقبة لحظية" : "Live Monitoring"}</span>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-1">{isAr ? "نظرة عامة" : "Factory Overview"}</h1>
+            <p className="text-slate-400 text-sm">{isAr ? "ملخص أداء المصنع" : "Real-time performance summary"}</p>
+          </div>
+
+          {/* Hero profit pill */}
+          <div className={`flex flex-col items-end gap-1 rounded-2xl px-5 py-3 border ${profitable ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+            <span className="text-xs text-slate-400">{isAr ? "صافي الربح" : "Net Profit"}</span>
+            <span className={`text-2xl font-extrabold tracking-tight ${profitable ? "text-emerald-400" : "text-red-400"}`}>
+              {profitable ? "+" : "-"}{fmtFull(Math.abs(netProfit))}
+              <span className="text-sm font-normal ms-1 text-slate-400">IQD</span>
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <Card key={s.testId} data-testid={`card-${s.testId}`}>
-              <CardContent className="p-4">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${s.bg}`}>
-                  <Icon className={`h-4.5 w-4.5 ${s.color}`} />
-                </div>
-                <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
-                <p className={`text-lg font-bold ${s.color}`} data-testid={s.testId}>{s.value}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-green-500" />
-              {isAr ? "آخر المبيعات" : "Recent Sales"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(!data?.recentSales?.length) ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{isAr ? "لا توجد مبيعات بعد" : "No sales yet"}</p>
-            ) : data.recentSales.map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
-                <div>
-                  <p className="font-medium">{s.customerName || s.invoiceNumber}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(s.createdAt).toLocaleDateString()}</p>
-                </div>
-                <div className="text-end">
-                  <p className="font-semibold text-green-600">{fmt(parseFloat(s.totalAmount))} IQD</p>
-                  <Badge variant="outline" className={`text-[10px] ${s.paymentStatus === "paid" ? "text-green-600" : "text-amber-600"}`}>
-                    {s.paymentStatus}
-                  </Badge>
-                </div>
-              </div>
+      <div className="px-5 py-6 space-y-6 max-w-7xl">
+        {/* Metric cards */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-2xl" />
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {metrics.map((m) => {
+              const Icon = m.icon;
+              const c = m.color;
+              const inner = (
+                <div
+                  key={m.testId}
+                  data-testid={`card-${m.testId}`}
+                  className={`relative group bg-white dark:bg-slate-900 rounded-2xl border ${c.border} p-4 shadow-sm hover:shadow-md transition-all duration-200 ${m.href ? "cursor-pointer hover:-translate-y-0.5" : ""} ${m.alert ? "ring-1 ring-amber-400/40" : ""}`}
+                >
+                  {m.alert && (
+                    <span className="absolute top-3 end-3 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  )}
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${c.bg}`}>
+                    <Icon className={`h-4 w-4 ${c.icon}`} />
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">{m.label}</p>
+                  <p className={`text-xl font-extrabold tracking-tight ${c.icon}`} data-testid={m.testId} title={m.full + " IQD"}>
+                    {m.prefix}{m.value}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">IQD</p>
+                  {m.href && (
+                    <ArrowRight className="absolute bottom-3 end-3 h-3.5 w-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              );
+              return m.href ? (
+                <Link key={m.testId} href={m.href}>{inner}</Link>
+              ) : (
+                <div key={m.testId}>{inner}</div>
+              );
+            })}
+          </div>
+        )}
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Truck className="h-4 w-4 text-blue-500" />
-              {isAr ? "آخر المشتريات" : "Recent Purchases"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(!data?.recentPurchases?.length) ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{isAr ? "لا توجد مشتريات بعد" : "No purchases yet"}</p>
-            ) : data.recentPurchases.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
-                <div>
-                  <p className="font-medium">{p.supplierName || p.invoiceNumber || `PO-${p.id}`}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+        {/* Quick nav links */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { href: "/oil/sales", icon: ShoppingCart, label: isAr ? "مبيعات جديدة" : "New Sale", color: "from-emerald-500 to-teal-600" },
+            { href: "/oil/purchases", icon: Truck, label: isAr ? "فاتورة شراء" : "New Purchase", color: "from-blue-500 to-indigo-600" },
+            { href: "/oil/production", icon: Factory, label: isAr ? "دفعة إنتاج" : "Production", color: "from-violet-500 to-purple-600" },
+            { href: "/oil/expenses", icon: Receipt, label: isAr ? "مصروف جديد" : "New Expense", color: "from-orange-500 to-red-600" },
+          ].map((q) => {
+            const Icon = q.icon;
+            return (
+              <Link key={q.href} href={q.href}>
+                <div className={`flex items-center gap-3 bg-gradient-to-r ${q.color} text-white rounded-xl px-4 py-3 cursor-pointer hover:opacity-90 hover:shadow-md transition-all`}>
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-semibold">{q.label}</span>
                 </div>
-                <div className="text-end">
-                  <p className="font-semibold text-blue-600">{fmt(parseFloat(p.totalAmount))} IQD</p>
-                  <Badge variant="outline" className={`text-[10px] ${p.paymentStatus === "paid" ? "text-green-600" : "text-amber-600"}`}>
-                    {p.paymentStatus}
-                  </Badge>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Recent activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Recent Sales */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <ShoppingCart className="h-4 w-4 text-emerald-500" />
                 </div>
+                <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                  {isAr ? "آخر المبيعات" : "Recent Sales"}
+                </span>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <Link href="/oil/sales">
+                <span className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 cursor-pointer">
+                  {isAr ? "عرض الكل" : "View all"} <ArrowRight className="h-3 w-3" />
+                </span>
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {isLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-5 py-3">
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                      <div className="h-2.5 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    </div>
+                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                  </div>
+                ))
+              ) : !data?.recentSales?.length ? (
+                <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                  <Activity className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">{isAr ? "لا توجد مبيعات بعد" : "No sales yet"}</p>
+                </div>
+              ) : data.recentSales.map((s: any) => (
+                <div key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {s.customerName || s.invoiceNumber}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(s.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-end">
+                    <p className="text-sm font-bold text-emerald-600">
+                      {fmtFull(parseFloat(s.totalAmount))} IQD
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className={`text-[10px] px-1.5 ${s.paymentStatus === "paid" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}
+                    >
+                      {s.paymentStatus === "paid" ? (isAr ? "مدفوع" : "Paid") : (isAr ? "معلق" : "Pending")}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Purchases */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <Truck className="h-4 w-4 text-blue-500" />
+                </div>
+                <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                  {isAr ? "آخر المشتريات" : "Recent Purchases"}
+                </span>
+              </div>
+              <Link href="/oil/purchases">
+                <span className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 cursor-pointer">
+                  {isAr ? "عرض الكل" : "View all"} <ArrowRight className="h-3 w-3" />
+                </span>
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {isLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-5 py-3">
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                      <div className="h-2.5 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    </div>
+                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                  </div>
+                ))
+              ) : !data?.recentPurchases?.length ? (
+                <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                  <Activity className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">{isAr ? "لا توجد مشتريات بعد" : "No purchases yet"}</p>
+                </div>
+              ) : data.recentPurchases.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {p.supplierName || p.invoiceNumber || `PO-${p.id}`}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(p.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-end">
+                    <p className="text-sm font-bold text-blue-600">
+                      {fmtFull(parseFloat(p.totalAmount))} IQD
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className={`text-[10px] px-1.5 ${p.paymentStatus === "paid" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}
+                    >
+                      {p.paymentStatus === "paid" ? (isAr ? "مدفوع" : "Paid") : (isAr ? "معلق" : "Pending")}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
