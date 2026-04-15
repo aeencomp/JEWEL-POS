@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { PosTerminal, Category } from "@shared/schema";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,11 @@ import {
   Watch,
   Coins,
   Layers,
+  LogOut,
+  Monitor,
 } from "lucide-react";
+import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const ICON_OPTIONS = [
   { value: "ShoppingCart", label: "Cart", Icon: ShoppingCart },
@@ -92,7 +96,10 @@ const defaultForm: FormState = {
 
 export default function PosHome() {
   const { t } = useLanguage();
+  const { language } = useLanguage();
+  const isAr = language === "ar";
   const { toast } = useToast();
+  const { logoutMutation } = useAuth();
   const [, navigate] = useLocation();
 
   const [manageMode, setManageMode] = useState(false);
@@ -186,156 +193,184 @@ export default function PosHome() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background">
-      {/* Header */}
-      <div
-        className="px-6 pt-8 pb-10"
-        style={{ background: `linear-gradient(135deg, ${brandColor}22 0%, ${brandColor}08 100%)` }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              {branding?.logoUrl ? (
-                <img src={branding.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain border bg-white" />
-              ) : (
-                <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColor }}>
-                  <Gem className="h-5 w-5 text-white" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-foreground" data-testid="text-pos-home-title">
-                  {branding?.name || "JewelPOS"}
-                </h1>
-                <p className="text-sm text-muted-foreground">{t("pos.selectTerminal")}</p>
-              </div>
+    <div className="min-h-screen flex flex-col bg-slate-950" dir={isAr ? "rtl" : "ltr"}>
+      {/* Top bar */}
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt="" className="h-9 w-9 rounded-xl object-contain bg-white p-0.5" />
+          ) : (
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: brandColor }}>
+              <Gem className="h-5 w-5 text-white" />
             </div>
-            <Button
-              variant={manageMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => setManageMode(!manageMode)}
-              data-testid="button-manage-terminals"
-              className="gap-2"
-            >
-              {manageMode ? <X className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
-              {manageMode ? t("common.cancel") : t("pos.manageTerminals")}
-            </Button>
+          )}
+          <div>
+            <h1 className="text-base font-bold text-white leading-none" data-testid="text-pos-home-title">
+              {branding?.name || "JewelPOS"}
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">{isAr ? "اختر نقطة البيع" : t("pos.selectTerminal")}</p>
           </div>
         </div>
-      </div>
 
-      {/* Terminal Grid */}
-      <div className="max-w-5xl mx-auto px-6 -mt-4 pb-10">
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <ThemeToggle />
+          <button
+            onClick={() => setManageMode(!manageMode)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+              manageMode
+                ? "bg-amber-500 text-white"
+                : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+            }`}
+            data-testid="button-manage-terminals"
+          >
+            {manageMode ? <X className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
+            <span className="hidden sm:inline">{manageMode ? t("common.cancel") : t("pos.manageTerminals")}</span>
+          </button>
+          <button
+            onClick={() => logoutMutation.mutate()}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("auth.logout")}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-1 p-6 max-w-6xl mx-auto w-full">
         {terminals.length === 0 && !manageMode ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-              <ShoppingCart className="h-8 w-8 text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-slate-800 flex items-center justify-center mb-6 shadow-xl">
+              <Monitor className="h-10 w-10 text-slate-500" />
             </div>
-            <h3 className="text-lg font-semibold mb-1" data-testid="text-no-terminals">{t("pos.noTerminals")}</h3>
-            <p className="text-sm text-muted-foreground mb-6">{t("pos.noTerminalsHint")}</p>
-            <Button onClick={() => { setManageMode(true); openAdd(); }} data-testid="button-create-first-terminal">
-              <Plus className="h-4 w-4 me-2" />
+            <h3 className="text-xl font-bold text-white mb-2" data-testid="text-no-terminals">{t("pos.noTerminals")}</h3>
+            <p className="text-slate-400 text-sm mb-8 max-w-xs">{t("pos.noTerminalsHint")}</p>
+            <button
+              onClick={() => { setManageMode(true); openAdd(); }}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-white shadow-lg transition-all hover:opacity-90"
+              style={{ backgroundColor: brandColor }}
+              data-testid="button-create-first-terminal"
+            >
+              <Plus className="h-5 w-5" />
               {t("pos.addTerminal")}
-            </Button>
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {terminals.map((terminal) => {
-              const catName = categories.find((c) => c.id === terminal.categoryId)?.name;
-              return (
-                <Card
-                  key={terminal.id}
-                  className={`group relative overflow-hidden border-0 shadow-md transition-all duration-200 ${!manageMode ? "cursor-pointer hover:shadow-xl hover:-translate-y-1" : ""}`}
-                  onClick={() => !manageMode && navigate(`/pos/${terminal.id}`)}
-                  data-testid={`card-terminal-${terminal.id}`}
-                  style={{ background: `linear-gradient(135deg, ${terminal.color}18 0%, ${terminal.color}08 100%)` }}
-                >
-                  {/* Colored left accent bar */}
-                  <div className="absolute start-0 top-0 bottom-0 w-1 rounded-s-lg" style={{ backgroundColor: terminal.color }} />
+          <>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-1">
+                {manageMode ? t("pos.manageTerminals") : (isAr ? "اختر نقطة البيع" : "Choose a Terminal")}
+              </h2>
+              <p className="text-slate-400 text-sm">
+                {manageMode
+                  ? (isAr ? "قم بإضافة أو تعديل أو حذف نقاط البيع" : "Add, edit or remove POS terminals")
+                  : (isAr ? "انقر على نقطة البيع لبدء البيع" : "Tap a terminal to start selling")}
+              </p>
+            </div>
 
-                  <CardContent className="ps-5 pe-4 py-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {terminals.map((terminal) => {
+                const catName = categories.find((c) => c.id === terminal.categoryId)?.name;
+                return (
+                  <div
+                    key={terminal.id}
+                    className={`group relative rounded-2xl overflow-hidden border border-slate-800 transition-all duration-200 ${
+                      !manageMode
+                        ? "cursor-pointer hover:border-slate-600 hover:shadow-2xl hover:-translate-y-1"
+                        : "border-slate-700"
+                    }`}
+                    onClick={() => !manageMode && navigate(`/pos/${terminal.id}`)}
+                    style={{ background: `linear-gradient(135deg, ${terminal.color}18 0%, #0f172a 60%)` }}
+                    data-testid={`card-terminal-${terminal.id}`}
+                  >
+                    {/* Top accent */}
+                    <div className="h-1 w-full" style={{ backgroundColor: terminal.color }} />
+
+                    <div className="p-5">
+                      <div className="flex items-start justify-between mb-4">
                         <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
                           style={{ backgroundColor: terminal.color + "25", color: terminal.color }}
                         >
-                          <TerminalIcon iconName={terminal.icon} size={22} />
+                          <TerminalIcon iconName={terminal.icon} size={26} />
                         </div>
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-base leading-tight" data-testid={`text-terminal-name-${terminal.id}`}>
-                            {terminal.name}
-                          </h3>
-                          {terminal.description && (
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{terminal.description}</p>
-                          )}
-                          {catName && (
-                            <Badge variant="outline" className="mt-1.5 text-xs px-1.5 py-0 h-5" data-testid={`badge-terminal-cat-${terminal.id}`}>
-                              {catName}
-                            </Badge>
-                          )}
-                        </div>
+
+                        {manageMode && (
+                          <div className="flex gap-1">
+                            <button
+                              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                              onClick={(e) => { e.stopPropagation(); openEdit(terminal); }}
+                              data-testid={`button-edit-terminal-${terminal.id}`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-red-500/20 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(terminal.id); }}
+                              data-testid={`button-delete-terminal-${terminal.id}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+
+                        {!manageMode && (
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ backgroundColor: terminal.color + "20", color: terminal.color }}
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </div>
+                        )}
                       </div>
 
-                      {manageMode ? (
-                        <div className="flex gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-white/80 dark:hover:bg-muted"
-                            onClick={(e) => { e.stopPropagation(); openEdit(terminal); }}
-                            data-testid={`button-edit-terminal-${terminal.id}`}
+                      <h3 className="font-bold text-base text-white mb-1 leading-tight" data-testid={`text-terminal-name-${terminal.id}`}>
+                        {terminal.name}
+                      </h3>
+                      {terminal.description && (
+                        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{terminal.description}</p>
+                      )}
+                      {catName && (
+                        <div className="mt-3">
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ backgroundColor: terminal.color + "20", color: terminal.color }}
+                            data-testid={`badge-terminal-cat-${terminal.id}`}
                           >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-red-50 dark:hover:bg-red-950/30"
-                            onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(terminal.id); }}
-                            data-testid={`button-delete-terminal-${terminal.id}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div
-                          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{ backgroundColor: terminal.color + "20", color: terminal.color }}
-                        >
-                          <ArrowRight className="h-4 w-4" />
+                            {catName}
+                          </span>
                         </div>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-
-            {/* Add New Card (manage mode) */}
-            {manageMode && (
-              <Card
-                className="border-2 border-dashed border-muted-foreground/20 cursor-pointer hover:border-muted-foreground/40 hover:bg-muted/30 transition-all duration-200 shadow-none"
-                onClick={openAdd}
-                data-testid="card-add-terminal"
-              >
-                <CardContent className="flex flex-col items-center justify-center py-10 gap-2">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                    <Plus className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <span className="text-sm font-medium text-muted-foreground">{t("pos.addTerminal")}</span>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                );
+              })}
+
+              {/* Add New Card (manage mode) */}
+              {manageMode && (
+                <div
+                  className="rounded-2xl border-2 border-dashed border-slate-700 cursor-pointer hover:border-slate-500 hover:bg-slate-800/30 transition-all duration-200 flex flex-col items-center justify-center p-8 gap-3"
+                  onClick={openAdd}
+                  data-testid="card-add-terminal"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center">
+                    <Plus className="h-7 w-7 text-slate-500" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-500">{t("pos.addTerminal")}</span>
+                </div>
+              )}
+            </div>
+          </>
         )}
-      </div>
+      </main>
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setEditingTerminal(null); }}>
@@ -345,7 +380,6 @@ export default function PosHome() {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Name */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("pos.terminalName")} *</label>
               <Input
@@ -356,7 +390,6 @@ export default function PosHome() {
               />
             </div>
 
-            {/* Description */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("pos.terminalDescription")}</label>
               <Input
@@ -367,7 +400,6 @@ export default function PosHome() {
               />
             </div>
 
-            {/* Category Filter */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("pos.filterCategory")}</label>
               <Select value={form.categoryId} onValueChange={(v) => setForm({ ...form, categoryId: v })}>
@@ -384,7 +416,6 @@ export default function PosHome() {
               <p className="text-xs text-muted-foreground">Only show inventory from this category in the POS.</p>
             </div>
 
-            {/* Icon Picker */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("pos.terminalIcon")}</label>
               <div className="flex flex-wrap gap-2">
@@ -406,7 +437,6 @@ export default function PosHome() {
               </div>
             </div>
 
-            {/* Color Picker */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("pos.terminalColor")}</label>
               <div className="flex items-center gap-2 flex-wrap">
@@ -433,7 +463,6 @@ export default function PosHome() {
               </div>
             </div>
 
-            {/* Live Preview */}
             <div
               className="rounded-xl p-4 flex items-center gap-3 border"
               style={{ background: `linear-gradient(135deg, ${form.color}20 0%, ${form.color}08 100%)` }}
