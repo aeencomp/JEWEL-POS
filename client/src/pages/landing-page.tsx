@@ -19,6 +19,26 @@ import {
   BarChart3,
 } from "lucide-react";
 
+function IqPosLogo({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="url(#iqpos-grad)" />
+      <rect x="7" y="8" width="15" height="11" rx="2.5" fill="white" fillOpacity="0.95" />
+      <rect x="25" y="8" width="8" height="11" rx="2.5" fill="white" fillOpacity="0.55" />
+      <rect x="7" y="22" width="26" height="10" rx="2.5" fill="white" fillOpacity="0.85" />
+      <rect x="10" y="25" width="6" height="2" rx="1" fill="#d97706" fillOpacity="0.6" />
+      <rect x="18" y="25" width="4" height="2" rx="1" fill="#d97706" fillOpacity="0.6" />
+      <rect x="24" y="25" width="6" height="2" rx="1" fill="#d97706" fillOpacity="0.6" />
+      <defs>
+        <linearGradient id="iqpos-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 type Product = {
   id: string;
   name: string;
@@ -133,9 +153,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow">
-              <Gem className="h-4 w-4 text-white" />
-            </div>
+            <IqPosLogo size={32} />
             <span className="font-bold text-lg tracking-tight">IQ-POS</span>
             <Badge variant="secondary" className="text-[10px] px-1.5 hidden sm:flex">Platform</Badge>
           </div>
@@ -268,9 +286,7 @@ export default function LandingPage() {
 
       <footer className="border-t py-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center">
-            <Gem className="h-3 w-3 text-white" />
-          </div>
+          <IqPosLogo size={22} />
           <span className="font-semibold text-sm">IQ-POS</span>
         </div>
         <p className="text-xs text-muted-foreground">
