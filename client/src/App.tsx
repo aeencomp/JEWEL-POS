@@ -25,6 +25,7 @@ import RepairOrders from "@/pages/repair-orders";
 import LayawayPage from "@/pages/layaway-page";
 import StoreBranding from "@/pages/store-branding";
 import StoreBackup from "@/pages/store-backup";
+import LandingPage from "@/pages/landing-page";
 import StockAudit from "@/pages/stock-audit";
 import PurchasesPage from "@/pages/purchases-page";
 import DebtsPage from "@/pages/debts-page";
@@ -139,7 +140,7 @@ function AppContent() {
     if (location === "/store-portal") {
       return <StorePortal />;
     }
-    return <Redirect to="/store-portal" />;
+    return <LandingPage />;
   }
 
   if (location === "/auth" || location === "/store-portal") {
