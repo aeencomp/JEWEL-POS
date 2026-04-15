@@ -30,6 +30,16 @@ import StockAudit from "@/pages/stock-audit";
 import PurchasesPage from "@/pages/purchases-page";
 import DebtsPage from "@/pages/debts-page";
 import AdminBackup from "@/pages/admin-backup";
+import OilLayout from "@/pages/oil/oil-layout";
+import OilDashboard from "@/pages/oil/oil-dashboard";
+import OilInventory from "@/pages/oil/oil-inventory";
+import OilSales from "@/pages/oil/oil-sales";
+import OilPurchases from "@/pages/oil/oil-purchases";
+import OilProduction from "@/pages/oil/oil-production";
+import OilCustomers from "@/pages/oil/oil-customers";
+import OilSuppliers from "@/pages/oil/oil-suppliers";
+import OilExpenses from "@/pages/oil/oil-expenses";
+import OilDebts from "@/pages/oil/oil-debts";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -62,6 +72,25 @@ function StoreRouter() {
       <Route path="/debts" component={DebtsPage} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function OilRouter() {
+  return (
+    <OilLayout>
+      <Switch>
+        <Route path="/oil" component={OilDashboard} />
+        <Route path="/oil/inventory" component={OilInventory} />
+        <Route path="/oil/sales" component={OilSales} />
+        <Route path="/oil/purchases" component={OilPurchases} />
+        <Route path="/oil/production" component={OilProduction} />
+        <Route path="/oil/customers" component={OilCustomers} />
+        <Route path="/oil/suppliers" component={OilSuppliers} />
+        <Route path="/oil/expenses" component={OilExpenses} />
+        <Route path="/oil/debts" component={OilDebts} />
+        <Route component={NotFound} />
+      </Switch>
+    </OilLayout>
   );
 }
 
@@ -150,6 +179,10 @@ function AppContent() {
       return <Redirect to={`/pos/${terminalId}`} />;
     }
     return <Redirect to="/" />;
+  }
+
+  if (location === "/oil" || location.startsWith("/oil/")) {
+    return <OilRouter />;
   }
 
   return <MainLayout />;

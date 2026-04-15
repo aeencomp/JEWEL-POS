@@ -2,6 +2,9 @@ import {
   users, stores, subscriptions, categories, inventoryItems, customers, orders, orderItems,
   repairOrders, layawayPlans, layawayPayments, purchases, verificationCodes, debts, debtPayments,
   posTerminals,
+  oilProducts, oilCustomers, oilSuppliers, oilSales, oilSaleItems,
+  oilPurchases, oilPurchaseItems, oilProductionBatches, oilProductionInputs,
+  oilExpenses, oilDebts, oilDebtPayments,
   type User, type InsertUser,
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
@@ -17,6 +20,13 @@ import {
   type Debt, type InsertDebt,
   type DebtPayment, type InsertDebtPayment,
   type PosTerminal, type InsertPosTerminal,
+  type OilProduct, type OilCustomer, type OilSupplier,
+  type OilSale, type OilSaleItem, type OilPurchase, type OilPurchaseItem,
+  type OilProductionBatch, type OilProductionInput, type OilExpense,
+  type OilDebt, type OilDebtPayment,
+  insertOilProductSchema, insertOilCustomerSchema, insertOilSupplierSchema,
+  insertOilSaleSchema, insertOilPurchaseSchema, insertOilProductionBatchSchema,
+  insertOilExpenseSchema, insertOilDebtSchema,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, gt } from "drizzle-orm";
@@ -426,6 +436,150 @@ export class DatabaseStorage implements IStorage {
 
   async deletePosTerminal(id: number): Promise<void> {
     await db.delete(posTerminals).where(eq(posTerminals.id, id));
+  }
+
+  // ── OilPOS ──────────────────────────────────────────────────────
+  async getOilProducts(storeId: number): Promise<OilProduct[]> {
+    return db.select().from(oilProducts).where(and(eq(oilProducts.storeId, storeId), eq(oilProducts.isActive, 1)));
+  }
+  async getOilProduct(id: number): Promise<OilProduct | undefined> {
+    const [p] = await db.select().from(oilProducts).where(eq(oilProducts.id, id));
+    return p || undefined;
+  }
+  async createOilProduct(data: any): Promise<OilProduct> {
+    const [p] = await db.insert(oilProducts).values(data).returning();
+    return p;
+  }
+  async updateOilProduct(id: number, data: any): Promise<OilProduct | undefined> {
+    const [p] = await db.update(oilProducts).set(data).where(eq(oilProducts.id, id)).returning();
+    return p || undefined;
+  }
+
+  async getOilCustomers(storeId: number): Promise<OilCustomer[]> {
+    return db.select().from(oilCustomers).where(eq(oilCustomers.storeId, storeId)).orderBy(oilCustomers.name);
+  }
+  async createOilCustomer(data: any): Promise<OilCustomer> {
+    const [c] = await db.insert(oilCustomers).values(data).returning();
+    return c;
+  }
+  async updateOilCustomer(id: number, data: any): Promise<OilCustomer | undefined> {
+    const [c] = await db.update(oilCustomers).set(data).where(eq(oilCustomers.id, id)).returning();
+    return c || undefined;
+  }
+
+  async getOilSuppliers(storeId: number): Promise<OilSupplier[]> {
+    return db.select().from(oilSuppliers).where(eq(oilSuppliers.storeId, storeId)).orderBy(oilSuppliers.name);
+  }
+  async createOilSupplier(data: any): Promise<OilSupplier> {
+    const [s] = await db.insert(oilSuppliers).values(data).returning();
+    return s;
+  }
+  async updateOilSupplier(id: number, data: any): Promise<OilSupplier | undefined> {
+    const [s] = await db.update(oilSuppliers).set(data).where(eq(oilSuppliers.id, id)).returning();
+    return s || undefined;
+  }
+
+  async getOilSales(storeId: number): Promise<OilSale[]> {
+    return db.select().from(oilSales).where(eq(oilSales.storeId, storeId)).orderBy(desc(oilSales.createdAt));
+  }
+  async getOilSale(id: number): Promise<OilSale | undefined> {
+    const [s] = await db.select().from(oilSales).where(eq(oilSales.id, id));
+    return s || undefined;
+  }
+  async createOilSale(data: any): Promise<OilSale> {
+    const [s] = await db.insert(oilSales).values(data).returning();
+    return s;
+  }
+  async updateOilSale(id: number, data: any): Promise<OilSale | undefined> {
+    const [s] = await db.update(oilSales).set(data).where(eq(oilSales.id, id)).returning();
+    return s || undefined;
+  }
+  async getOilSaleItems(saleId: number): Promise<OilSaleItem[]> {
+    return db.select().from(oilSaleItems).where(eq(oilSaleItems.saleId, saleId));
+  }
+  async createOilSaleItem(data: any): Promise<OilSaleItem> {
+    const [i] = await db.insert(oilSaleItems).values(data).returning();
+    return i;
+  }
+
+  async getOilPurchases(storeId: number): Promise<OilPurchase[]> {
+    return db.select().from(oilPurchases).where(eq(oilPurchases.storeId, storeId)).orderBy(desc(oilPurchases.createdAt));
+  }
+  async getOilPurchase(id: number): Promise<OilPurchase | undefined> {
+    const [p] = await db.select().from(oilPurchases).where(eq(oilPurchases.id, id));
+    return p || undefined;
+  }
+  async createOilPurchase(data: any): Promise<OilPurchase> {
+    const [p] = await db.insert(oilPurchases).values(data).returning();
+    return p;
+  }
+  async updateOilPurchase(id: number, data: any): Promise<OilPurchase | undefined> {
+    const [p] = await db.update(oilPurchases).set(data).where(eq(oilPurchases.id, id)).returning();
+    return p || undefined;
+  }
+  async getOilPurchaseItems(purchaseId: number): Promise<OilPurchaseItem[]> {
+    return db.select().from(oilPurchaseItems).where(eq(oilPurchaseItems.purchaseId, purchaseId));
+  }
+  async createOilPurchaseItem(data: any): Promise<OilPurchaseItem> {
+    const [i] = await db.insert(oilPurchaseItems).values(data).returning();
+    return i;
+  }
+
+  async getOilBatches(storeId: number): Promise<OilProductionBatch[]> {
+    return db.select().from(oilProductionBatches).where(eq(oilProductionBatches.storeId, storeId)).orderBy(desc(oilProductionBatches.createdAt));
+  }
+  async createOilBatch(data: any): Promise<OilProductionBatch> {
+    const [b] = await db.insert(oilProductionBatches).values(data).returning();
+    return b;
+  }
+  async updateOilBatch(id: number, data: any): Promise<OilProductionBatch | undefined> {
+    const [b] = await db.update(oilProductionBatches).set(data).where(eq(oilProductionBatches.id, id)).returning();
+    return b || undefined;
+  }
+  async getOilBatchInputs(batchId: number): Promise<OilProductionInput[]> {
+    return db.select().from(oilProductionInputs).where(eq(oilProductionInputs.batchId, batchId));
+  }
+  async createOilBatchInput(data: any): Promise<OilProductionInput> {
+    const [i] = await db.insert(oilProductionInputs).values(data).returning();
+    return i;
+  }
+
+  async getOilExpenses(storeId: number): Promise<OilExpense[]> {
+    return db.select().from(oilExpenses).where(eq(oilExpenses.storeId, storeId)).orderBy(desc(oilExpenses.createdAt));
+  }
+  async createOilExpense(data: any): Promise<OilExpense> {
+    const [e] = await db.insert(oilExpenses).values(data).returning();
+    return e;
+  }
+  async updateOilExpense(id: number, data: any): Promise<OilExpense | undefined> {
+    const [e] = await db.update(oilExpenses).set(data).where(eq(oilExpenses.id, id)).returning();
+    return e || undefined;
+  }
+  async deleteOilExpense(id: number): Promise<void> {
+    await db.delete(oilExpenses).where(eq(oilExpenses.id, id));
+  }
+
+  async getOilDebts(storeId: number): Promise<OilDebt[]> {
+    return db.select().from(oilDebts).where(eq(oilDebts.storeId, storeId)).orderBy(desc(oilDebts.createdAt));
+  }
+  async getOilDebt(id: number): Promise<OilDebt | undefined> {
+    const [d] = await db.select().from(oilDebts).where(eq(oilDebts.id, id));
+    return d || undefined;
+  }
+  async createOilDebt(data: any): Promise<OilDebt> {
+    const [d] = await db.insert(oilDebts).values(data).returning();
+    return d;
+  }
+  async updateOilDebt(id: number, data: any): Promise<OilDebt | undefined> {
+    const [d] = await db.update(oilDebts).set(data).where(eq(oilDebts.id, id)).returning();
+    return d || undefined;
+  }
+  async getOilDebtPayments(debtId: number): Promise<OilDebtPayment[]> {
+    return db.select().from(oilDebtPayments).where(eq(oilDebtPayments.debtId, debtId)).orderBy(desc(oilDebtPayments.createdAt));
+  }
+  async createOilDebtPayment(data: any): Promise<OilDebtPayment> {
+    const [p] = await db.insert(oilDebtPayments).values(data).returning();
+    return p;
   }
 }
 

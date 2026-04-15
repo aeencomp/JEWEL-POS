@@ -1560,5 +1560,230 @@ export async function registerRoutes(
     res.sendStatus(200);
   });
 
+  // ── OilPOS Routes ────────────────────────────────────────────────
+  const requireOilAuth = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated() || !req.user?.storeId) return res.status(401).json({ message: "Unauthorized" });
+    next();
+  };
+
+  // Products
+  app.get("/api/oil/products", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilProducts(req.user!.storeId!));
+  });
+  app.post("/api/oil/products", requireOilAuth, async (req, res) => {
+    const data = { ...req.body, storeId: req.user!.storeId! };
+    res.json(await storage.createOilProduct(data));
+  });
+  app.patch("/api/oil/products/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilProduct(parseInt(req.params.id), req.body));
+  });
+
+  // Customers
+  app.get("/api/oil/customers", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilCustomers(req.user!.storeId!));
+  });
+  app.post("/api/oil/customers", requireOilAuth, async (req, res) => {
+    res.json(await storage.createOilCustomer({ ...req.body, storeId: req.user!.storeId! }));
+  });
+  app.patch("/api/oil/customers/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilCustomer(parseInt(req.params.id), req.body));
+  });
+
+  // Suppliers
+  app.get("/api/oil/suppliers", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilSuppliers(req.user!.storeId!));
+  });
+  app.post("/api/oil/suppliers", requireOilAuth, async (req, res) => {
+    res.json(await storage.createOilSupplier({ ...req.body, storeId: req.user!.storeId! }));
+  });
+  app.patch("/api/oil/suppliers/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilSupplier(parseInt(req.params.id), req.body));
+  });
+
+  // Sales
+  app.get("/api/oil/sales", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilSales(req.user!.storeId!));
+  });
+  app.get("/api/oil/sales/:id/items", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilSaleItems(parseInt(req.params.id)));
+  });
+  app.post("/api/oil/sales", requireOilAuth, async (req, res) => {
+    const { items, ...saleData } = req.body;
+    const storeId = req.user!.storeId!;
+    // Generate invoice number
+    const count = (await storage.getOilSales(storeId)).length + 1;
+    const invoiceNumber = `OIL-${String(count).padStart(5, "0")}`;
+    const sale = await storage.createOilSale({ ...saleData, storeId, invoiceNumber });
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        await storage.createOilSaleItem({ ...item, saleId: sale.id });
+        // Update stock
+        const prod = await storage.getOilProduct(item.productId);
+        if (prod) {
+          await storage.updateOilProduct(item.productId, {
+            currentStock: (parseFloat(prod.currentStock) - parseFloat(item.quantity)).toFixed(2),
+          });
+        }
+      }
+    }
+    res.json(sale);
+  });
+  app.patch("/api/oil/sales/:id", requireOilAuth, async (req, res) => {
+    const sale = await storage.getOilSale(parseInt(req.params.id));
+    if (!sale) return res.status(404).json({ message: "Not found" });
+    res.json(await storage.updateOilSale(parseInt(req.params.id), req.body));
+  });
+
+  // Purchases
+  app.get("/api/oil/purchases", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilPurchases(req.user!.storeId!));
+  });
+  app.get("/api/oil/purchases/:id/items", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilPurchaseItems(parseInt(req.params.id)));
+  });
+  app.post("/api/oil/purchases", requireOilAuth, async (req, res) => {
+    const { items, ...purchaseData } = req.body;
+    const purchase = await storage.createOilPurchase({ ...purchaseData, storeId: req.user!.storeId! });
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        await storage.createOilPurchaseItem({ ...item, purchaseId: purchase.id });
+        // Update stock
+        const prod = await storage.getOilProduct(item.productId);
+        if (prod) {
+          await storage.updateOilProduct(item.productId, {
+            currentStock: (parseFloat(prod.currentStock) + parseFloat(item.quantity)).toFixed(2),
+          });
+        }
+      }
+    }
+    res.json(purchase);
+  });
+  app.patch("/api/oil/purchases/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilPurchase(parseInt(req.params.id), req.body));
+  });
+
+  // Production Batches
+  app.get("/api/oil/production", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilBatches(req.user!.storeId!));
+  });
+  app.get("/api/oil/production/:id/inputs", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilBatchInputs(parseInt(req.params.id)));
+  });
+  app.post("/api/oil/production", requireOilAuth, async (req, res) => {
+    const { inputs, ...batchData } = req.body;
+    const storeId = req.user!.storeId!;
+    const count = (await storage.getOilBatches(storeId)).length + 1;
+    const batchNumber = `BATCH-${String(count).padStart(4, "0")}`;
+    const batch = await storage.createOilBatch({ ...batchData, storeId, batchNumber });
+    if (inputs && Array.isArray(inputs)) {
+      for (const input of inputs) {
+        await storage.createOilBatchInput({ ...input, batchId: batch.id });
+        // Deduct raw material stock
+        const prod = await storage.getOilProduct(input.productId);
+        if (prod) {
+          await storage.updateOilProduct(input.productId, {
+            currentStock: (parseFloat(prod.currentStock) - parseFloat(input.quantityUsed)).toFixed(2),
+          });
+        }
+      }
+    }
+    // Add output to stock
+    const outProd = await storage.getOilProduct(batchData.outputProductId);
+    if (outProd) {
+      await storage.updateOilProduct(batchData.outputProductId, {
+        currentStock: (parseFloat(outProd.currentStock) + parseFloat(batchData.outputQuantity)).toFixed(2),
+      });
+    }
+    res.json(batch);
+  });
+  app.patch("/api/oil/production/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilBatch(parseInt(req.params.id), req.body));
+  });
+
+  // Expenses
+  app.get("/api/oil/expenses", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilExpenses(req.user!.storeId!));
+  });
+  app.post("/api/oil/expenses", requireOilAuth, async (req, res) => {
+    res.json(await storage.createOilExpense({ ...req.body, storeId: req.user!.storeId! }));
+  });
+  app.patch("/api/oil/expenses/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilExpense(parseInt(req.params.id), req.body));
+  });
+  app.delete("/api/oil/expenses/:id", requireOilAuth, async (req, res) => {
+    await storage.deleteOilExpense(parseInt(req.params.id));
+    res.sendStatus(200);
+  });
+
+  // Debts
+  app.get("/api/oil/debts", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilDebts(req.user!.storeId!));
+  });
+  app.post("/api/oil/debts", requireOilAuth, async (req, res) => {
+    const { totalAmount, ...rest } = req.body;
+    const amt = parseFloat(totalAmount);
+    res.json(await storage.createOilDebt({
+      ...rest,
+      storeId: req.user!.storeId!,
+      totalAmount: amt.toFixed(2),
+      amountPaid: "0.00",
+      remainingBalance: amt.toFixed(2),
+    }));
+  });
+  app.patch("/api/oil/debts/:id", requireOilAuth, async (req, res) => {
+    res.json(await storage.updateOilDebt(parseInt(req.params.id), req.body));
+  });
+  app.get("/api/oil/debts/:id/payments", requireOilAuth, async (req, res) => {
+    res.json(await storage.getOilDebtPayments(parseInt(req.params.id)));
+  });
+  app.post("/api/oil/debts/:id/payments", requireOilAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const debt = await storage.getOilDebt(id);
+    if (!debt) return res.status(404).json({ message: "Not found" });
+    const amount = parseFloat(req.body.amount);
+    if (amount > parseFloat(debt.remainingBalance)) {
+      return res.status(400).json({ message: "Exceeds remaining balance" });
+    }
+    const payment = await storage.createOilDebtPayment({ debtId: id, amount: amount.toFixed(2), notes: req.body.notes || null });
+    const newPaid = (parseFloat(debt.amountPaid) + amount).toFixed(2);
+    const newRemaining = (parseFloat(debt.remainingBalance) - amount).toFixed(2);
+    await storage.updateOilDebt(id, {
+      amountPaid: newPaid,
+      remainingBalance: newRemaining,
+      status: parseFloat(newRemaining) <= 0 ? "paid" : "active",
+    });
+    res.json(payment);
+  });
+
+  // Dashboard summary
+  app.get("/api/oil/dashboard", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const [products, sales, purchases, expenses, debts] = await Promise.all([
+      storage.getOilProducts(storeId),
+      storage.getOilSales(storeId),
+      storage.getOilPurchases(storeId),
+      storage.getOilExpenses(storeId),
+      storage.getOilDebts(storeId),
+    ]);
+    const totalRevenue = sales.filter(s => s.status !== "cancelled").reduce((s, i) => s + parseFloat(i.totalAmount), 0);
+    const totalCOGS = purchases.filter(p => p.status !== "cancelled").reduce((s, i) => s + parseFloat(i.totalAmount), 0);
+    const totalExpenses = expenses.reduce((s, i) => s + parseFloat(i.amount), 0);
+    const totalReceivable = debts.filter(d => d.direction === "owe_us" && d.status === "active").reduce((s, i) => s + parseFloat(i.remainingBalance), 0);
+    const totalPayable = debts.filter(d => d.direction === "we_owe" && d.status === "active").reduce((s, i) => s + parseFloat(i.remainingBalance), 0);
+    const lowStock = products.filter(p => parseFloat(p.currentStock) <= parseFloat(p.minStock) && parseFloat(p.minStock) > 0);
+    res.json({
+      totalRevenue,
+      totalCOGS,
+      totalExpenses,
+      netProfit: totalRevenue - totalCOGS - totalExpenses,
+      totalReceivable,
+      totalPayable,
+      productCount: products.length,
+      lowStockCount: lowStock.length,
+      recentSales: sales.slice(0, 5),
+      recentPurchases: purchases.slice(0, 5),
+    });
+  });
+
   return httpServer;
 }

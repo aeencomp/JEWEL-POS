@@ -460,3 +460,174 @@ export const posTerminalsRelations = relations(posTerminals, ({ one }) => ({
 export const insertPosTerminalSchema = createInsertSchema(posTerminals).omit({ id: true });
 export type PosTerminal = typeof posTerminals.$inferSelect;
 export type InsertPosTerminal = z.infer<typeof insertPosTerminalSchema>;
+
+// ── OilPOS ─────────────────────────────────────────────────────
+
+export const oilProducts = pgTable("oil_products", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  nameAr: text("name_ar"),
+  category: text("category", { enum: ["finished_oil", "raw_material", "packaging", "spare_part", "other"] }).notNull().default("finished_oil"),
+  unit: text("unit", { enum: ["liter", "kg", "piece", "barrel", "ton"] }).notNull().default("liter"),
+  purchasePrice: decimal("purchase_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  salePrice: decimal("sale_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  currentStock: decimal("current_stock", { precision: 12, scale: 2 }).notNull().default("0"),
+  minStock: decimal("min_stock", { precision: 12, scale: 2 }).notNull().default("0"),
+  description: text("description"),
+  isActive: integer("is_active").notNull().default(1),
+});
+
+export const oilCustomers = pgTable("oil_customers", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  type: text("type", { enum: ["dealer", "distributor", "retail", "factory"] }).notNull().default("dealer"),
+  creditLimit: decimal("credit_limit", { precision: 12, scale: 2 }).notNull().default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilSuppliers = pgTable("oil_suppliers", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilSales = pgTable("oil_sales", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  customerId: integer("customer_id").references(() => oilCustomers.id),
+  customerName: text("customer_name"),
+  invoiceNumber: text("invoice_number").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
+  status: text("status", { enum: ["draft", "confirmed", "delivered", "cancelled"] }).notNull().default("confirmed"),
+  paymentStatus: text("payment_status", { enum: ["unpaid", "partial", "paid"] }).notNull().default("unpaid"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilSaleItems = pgTable("oil_sale_items", {
+  id: serial("id").primaryKey(),
+  saleId: integer("sale_id").notNull().references(() => oilSales.id),
+  productId: integer("product_id").notNull().references(() => oilProducts.id),
+  productName: text("product_name").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 12, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+});
+
+export const oilPurchases = pgTable("oil_purchases", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  supplierId: integer("supplier_id").references(() => oilSuppliers.id),
+  supplierName: text("supplier_name"),
+  invoiceNumber: text("invoice_number"),
+  date: timestamp("date").notNull().defaultNow(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
+  status: text("status", { enum: ["pending", "received", "cancelled"] }).notNull().default("received"),
+  paymentStatus: text("payment_status", { enum: ["unpaid", "partial", "paid"] }).notNull().default("unpaid"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilPurchaseItems = pgTable("oil_purchase_items", {
+  id: serial("id").primaryKey(),
+  purchaseId: integer("purchase_id").notNull().references(() => oilPurchases.id),
+  productId: integer("product_id").notNull().references(() => oilProducts.id),
+  productName: text("product_name").notNull(),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }).notNull(),
+  unitCost: decimal("unit_cost", { precision: 12, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+});
+
+export const oilProductionBatches = pgTable("oil_production_batches", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  batchNumber: text("batch_number").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  outputProductId: integer("output_product_id").notNull().references(() => oilProducts.id),
+  outputQuantity: decimal("output_quantity", { precision: 12, scale: 2 }).notNull(),
+  status: text("status", { enum: ["in_progress", "completed", "cancelled"] }).notNull().default("completed"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilProductionInputs = pgTable("oil_production_inputs", {
+  id: serial("id").primaryKey(),
+  batchId: integer("batch_id").notNull().references(() => oilProductionBatches.id),
+  productId: integer("product_id").notNull().references(() => oilProducts.id),
+  productName: text("product_name").notNull(),
+  quantityUsed: decimal("quantity_used", { precision: 12, scale: 2 }).notNull(),
+});
+
+export const oilExpenses = pgTable("oil_expenses", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  category: text("category", { enum: ["wages", "electricity", "transport", "maintenance", "rent", "other"] }).notNull().default("other"),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  paymentMethod: text("payment_method", { enum: ["cash", "transfer", "card"] }).notNull().default("cash"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilDebts = pgTable("oil_debts", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  entityName: text("entity_name").notNull(),
+  entityPhone: text("entity_phone"),
+  entityType: text("entity_type", { enum: ["customer", "supplier", "other"] }).notNull().default("customer"),
+  direction: text("direction", { enum: ["owe_us", "we_owe"] }).notNull().default("owe_us"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
+  remainingBalance: decimal("remaining_balance", { precision: 12, scale: 2 }).notNull(),
+  description: text("description"),
+  status: text("status", { enum: ["active", "paid", "cancelled"] }).notNull().default("active"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilDebtPayments = pgTable("oil_debt_payments", {
+  id: serial("id").primaryKey(),
+  debtId: integer("debt_id").notNull().references(() => oilDebts.id),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Oil insert schemas & types
+export const insertOilProductSchema = createInsertSchema(oilProducts).omit({ id: true });
+export const insertOilCustomerSchema = createInsertSchema(oilCustomers).omit({ id: true, createdAt: true });
+export const insertOilSupplierSchema = createInsertSchema(oilSuppliers).omit({ id: true, createdAt: true });
+export const insertOilSaleSchema = createInsertSchema(oilSales).omit({ id: true, createdAt: true });
+export const insertOilSaleItemSchema = createInsertSchema(oilSaleItems).omit({ id: true });
+export const insertOilPurchaseSchema = createInsertSchema(oilPurchases).omit({ id: true, createdAt: true });
+export const insertOilPurchaseItemSchema = createInsertSchema(oilPurchaseItems).omit({ id: true });
+export const insertOilProductionBatchSchema = createInsertSchema(oilProductionBatches).omit({ id: true, createdAt: true });
+export const insertOilProductionInputSchema = createInsertSchema(oilProductionInputs).omit({ id: true });
+export const insertOilExpenseSchema = createInsertSchema(oilExpenses).omit({ id: true, createdAt: true });
+export const insertOilDebtSchema = createInsertSchema(oilDebts).omit({ id: true, createdAt: true });
+export const insertOilDebtPaymentSchema = createInsertSchema(oilDebtPayments).omit({ id: true, createdAt: true });
+
+export type OilProduct = typeof oilProducts.$inferSelect;
+export type OilCustomer = typeof oilCustomers.$inferSelect;
+export type OilSupplier = typeof oilSuppliers.$inferSelect;
+export type OilSale = typeof oilSales.$inferSelect;
+export type OilSaleItem = typeof oilSaleItems.$inferSelect;
+export type OilPurchase = typeof oilPurchases.$inferSelect;
+export type OilPurchaseItem = typeof oilPurchaseItems.$inferSelect;
+export type OilProductionBatch = typeof oilProductionBatches.$inferSelect;
+export type OilProductionInput = typeof oilProductionInputs.$inferSelect;
+export type OilExpense = typeof oilExpenses.$inferSelect;
+export type OilDebt = typeof oilDebts.$inferSelect;
+export type OilDebtPayment = typeof oilDebtPayments.$inferSelect;
