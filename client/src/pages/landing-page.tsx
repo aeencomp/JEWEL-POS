@@ -79,7 +79,7 @@ const products: Product[] = [
     gradient: "from-blue-600 to-cyan-600",
     iconBg: "bg-blue-600",
     available: true,
-    href: "/oil",
+    href: "/oil-login",
     tags: ["Factory", "Production", "Accounting"],
     tagsAr: ["مصنع", "إنتاج", "محاسبة"],
   },

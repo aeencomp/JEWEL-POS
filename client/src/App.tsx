@@ -40,6 +40,7 @@ import OilCustomers from "@/pages/oil/oil-customers";
 import OilSuppliers from "@/pages/oil/oil-suppliers";
 import OilExpenses from "@/pages/oil/oil-expenses";
 import OilDebts from "@/pages/oil/oil-debts";
+import OilLogin from "@/pages/oil/oil-login";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -169,19 +170,20 @@ function AppContent() {
     if (location === "/store-portal") {
       return <StorePortal />;
     }
+    if (location === "/oil-login") {
+      return <OilLogin />;
+    }
     if (location === "/oil" || location.startsWith("/oil/")) {
-      sessionStorage.setItem("postLoginRedirect", location);
-      return <Redirect to="/store-portal" />;
+      return <Redirect to="/oil-login" />;
     }
     return <LandingPage />;
   }
 
+  if (location === "/oil-login") {
+    return <Redirect to="/oil" />;
+  }
+
   if (location === "/auth" || location === "/store-portal") {
-    const redirect = sessionStorage.getItem("postLoginRedirect");
-    if (redirect) {
-      sessionStorage.removeItem("postLoginRedirect");
-      return <Redirect to={redirect} />;
-    }
     const terminalId = sessionStorage.getItem("selectedTerminalId");
     if (terminalId) {
       sessionStorage.removeItem("selectedTerminalId");
