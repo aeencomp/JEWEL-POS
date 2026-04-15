@@ -62,6 +62,15 @@ export async function registerRoutes(
   const express = await import("express");
   app.use("/uploads", express.default.static(uploadsDir));
 
+  app.get("/api/public/terminals", async (req, res) => {
+    const username = req.query.username as string;
+    if (!username) return res.json([]);
+    const user = await storage.getUserByUsername(username);
+    if (!user || !user.storeId) return res.json([]);
+    const terminals = await storage.getPosTerminals(user.storeId);
+    res.json(terminals.map((t) => ({ id: t.id, name: t.name, icon: t.icon, color: t.color, description: t.description })));
+  });
+
   app.post("/api/upload", requireAuth, upload.single("image"), (req: any, res) => {
     if (!req.file) return res.status(400).json({ message: "No valid image file provided" });
     const url = `/uploads/${req.file.filename}`;

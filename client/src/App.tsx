@@ -143,6 +143,11 @@ function AppContent() {
   }
 
   if (location === "/auth" || location === "/store-portal") {
+    const terminalId = sessionStorage.getItem("selectedTerminalId");
+    if (terminalId) {
+      sessionStorage.removeItem("selectedTerminalId");
+      return <Redirect to={`/pos/${terminalId}`} />;
+    }
     return <Redirect to="/" />;
   }
 

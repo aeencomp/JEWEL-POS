@@ -20,6 +20,8 @@ type TranslationKeys = {
   "pos.noTerminalsHint": string;
   "pos.manageTerminals": string;
   "pos.openTerminal": string;
+  "pos.selectTerminalHint": string;
+  "pos.enterUsernameForTerminals": string;
   "nav.inventory": string;
   "nav.customers": string;
   "nav.orders": string;
@@ -448,6 +450,8 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.noTerminalsHint": "Create your first POS terminal to get started.",
     "pos.manageTerminals": "Manage",
     "pos.openTerminal": "Open",
+    "pos.selectTerminalHint": "Select your terminal then sign in",
+    "pos.enterUsernameForTerminals": "Enter your username to see available terminals",
     "nav.inventory": "Inventory",
     "nav.customers": "Customers",
     "nav.orders": "Orders",
@@ -872,6 +876,8 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.noTerminalsHint": "أنشئ نقطة البيع الأولى للبدء.",
     "pos.manageTerminals": "إدارة",
     "pos.openTerminal": "فتح",
+    "pos.selectTerminalHint": "اختر نقطة البيع ثم سجّل دخولك",
+    "pos.enterUsernameForTerminals": "أدخل اسم المستخدم لرؤية نقاط البيع المتاحة",
     "nav.inventory": "المخزون",
     "nav.customers": "العملاء",
     "nav.orders": "الطلبات",
