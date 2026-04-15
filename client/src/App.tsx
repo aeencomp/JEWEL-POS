@@ -48,7 +48,7 @@ function AdminRouter() {
 function StoreRouter() {
   return (
     <Switch>
-      <Route path="/" component={PosHome} />
+      <Route path="/" component={PosTerminal} />
       <Route path="/pos/:id" component={PosTerminal} />
       <Route path="/inventory" component={InventoryManagement} />
       <Route path="/customers" component={CustomersPage} />
