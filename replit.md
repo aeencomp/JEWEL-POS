@@ -19,7 +19,7 @@ A multi-tenant jewelry Point of Sale (POS) system with subscription management. 
 ## Key Features
 - Admin dashboard with revenue stats
 - Store account management with subscription plans (Basic 35,000 IQD, Standard 75,000 IQD, Premium 125,000 IQD)
-- Full POS terminal with cart, customer selection, order placement, and receipts
+- Multi-terminal POS home screen (clickable terminal cards) with individual POS terminals filtered by category
 - Inventory management (categories + items with metal type, purity, weight, gemstone, carat weight)
 - Customer database with purchase history
 - Repair order tracking (received, in progress, ready, delivered)

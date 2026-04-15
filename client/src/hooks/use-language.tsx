@@ -7,6 +7,19 @@ type TranslationKeys = {
   "nav.stores": string;
   "nav.subscriptions": string;
   "nav.pos": string;
+  "pos.home": string;
+  "pos.selectTerminal": string;
+  "pos.addTerminal": string;
+  "pos.editTerminal": string;
+  "pos.terminalName": string;
+  "pos.terminalDescription": string;
+  "pos.terminalIcon": string;
+  "pos.terminalColor": string;
+  "pos.filterCategory": string;
+  "pos.noTerminals": string;
+  "pos.noTerminalsHint": string;
+  "pos.manageTerminals": string;
+  "pos.openTerminal": string;
   "nav.inventory": string;
   "nav.customers": string;
   "nav.orders": string;
@@ -422,6 +435,19 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.subscriptions": "Subscriptions",
     "nav.backup": "Backup & Restore",
     "nav.pos": "POS Terminal",
+    "pos.home": "POS Home",
+    "pos.selectTerminal": "Select a Terminal",
+    "pos.addTerminal": "Add Terminal",
+    "pos.editTerminal": "Edit Terminal",
+    "pos.terminalName": "Terminal Name",
+    "pos.terminalDescription": "Description",
+    "pos.terminalIcon": "Icon",
+    "pos.terminalColor": "Color",
+    "pos.filterCategory": "Category Filter",
+    "pos.noTerminals": "No POS Terminals",
+    "pos.noTerminalsHint": "Create your first POS terminal to get started.",
+    "pos.manageTerminals": "Manage",
+    "pos.openTerminal": "Open",
     "nav.inventory": "Inventory",
     "nav.customers": "Customers",
     "nav.orders": "Orders",
@@ -833,6 +859,19 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.subscriptions": "الاشتراكات",
     "nav.backup": "النسخ الاحتياطي",
     "nav.pos": "نقطة البيع",
+    "pos.home": "الرئيسية",
+    "pos.selectTerminal": "اختر نقطة بيع",
+    "pos.addTerminal": "إضافة نقطة بيع",
+    "pos.editTerminal": "تعديل نقطة البيع",
+    "pos.terminalName": "اسم النقطة",
+    "pos.terminalDescription": "الوصف",
+    "pos.terminalIcon": "الأيقونة",
+    "pos.terminalColor": "اللون",
+    "pos.filterCategory": "تصفية الفئة",
+    "pos.noTerminals": "لا توجد نقاط بيع",
+    "pos.noTerminalsHint": "أنشئ نقطة البيع الأولى للبدء.",
+    "pos.manageTerminals": "إدارة",
+    "pos.openTerminal": "فتح",
     "nav.inventory": "المخزون",
     "nav.customers": "العملاء",
     "nav.orders": "الطلبات",

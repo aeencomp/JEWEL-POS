@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AdminStores from "@/pages/admin-stores";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import PosTerminal from "@/pages/pos-terminal";
+import PosHome from "@/pages/pos-home";
 import InventoryManagement from "@/pages/inventory-management";
 import CustomersPage from "@/pages/customers-page";
 import OrdersHistory from "@/pages/orders-history";
@@ -46,7 +47,8 @@ function AdminRouter() {
 function StoreRouter() {
   return (
     <Switch>
-      <Route path="/" component={PosTerminal} />
+      <Route path="/" component={PosHome} />
+      <Route path="/pos/:id" component={PosTerminal} />
       <Route path="/inventory" component={InventoryManagement} />
       <Route path="/customers" component={CustomersPage} />
       <Route path="/orders" component={OrdersHistory} />

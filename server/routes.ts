@@ -1516,5 +1516,40 @@ export async function registerRoutes(
     res.status(201).json(payment);
   });
 
+  // ── POS Terminals ──────────────────────────────────────────────
+  app.get("/api/pos-terminals", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const terminals = await storage.getPosTerminals(storeId);
+    res.json(terminals);
+  });
+
+  app.post("/api/pos-terminals", requireAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const terminal = await storage.createPosTerminal({ ...req.body, storeId });
+    res.status(201).json(terminal);
+  });
+
+  app.get("/api/pos-terminals/:id", requireAuth, async (req, res) => {
+    const terminal = await storage.getPosTerminal(parseInt(req.params.id));
+    if (!terminal || terminal.storeId !== req.user!.storeId!) return res.status(404).json({ message: "Not found" });
+    res.json(terminal);
+  });
+
+  app.patch("/api/pos-terminals/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const existing = await storage.getPosTerminal(id);
+    if (!existing || existing.storeId !== req.user!.storeId!) return res.status(404).json({ message: "Not found" });
+    const updated = await storage.updatePosTerminal(id, req.body);
+    res.json(updated);
+  });
+
+  app.delete("/api/pos-terminals/:id", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const existing = await storage.getPosTerminal(id);
+    if (!existing || existing.storeId !== req.user!.storeId!) return res.status(404).json({ message: "Not found" });
+    await storage.deletePosTerminal(id);
+    res.sendStatus(200);
+  });
+
   return httpServer;
 }

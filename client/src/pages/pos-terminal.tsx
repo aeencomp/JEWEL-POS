@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { InventoryItem, Category, Customer, Order, OrderItem } from "@shared/schema";
+import type { InventoryItem, Category, Customer, Order, OrderItem, PosTerminal } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ import {
   X,
   Loader2,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 
 type CartItem = {
@@ -68,6 +70,18 @@ type OrderResponse = Order & { items: OrderItem[] };
 export default function PosTerminal() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const [match, params] = useRoute("/pos/:id");
+  const terminalId = match && params?.id ? parseInt(params.id) : null;
+
+  const { data: terminalConfig } = useQuery<PosTerminal>({
+    queryKey: ["/api/pos-terminals", terminalId],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/pos-terminals/${terminalId}`);
+      return res.json();
+    },
+    enabled: terminalId !== null,
+  });
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -152,10 +166,12 @@ export default function PosTerminal() {
         !search ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||
         item.sku.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = selectedCategory === null || item.categoryId === selectedCategory;
+      const terminalCategoryId = terminalConfig?.categoryId ?? null;
+      const effectiveCategory = terminalCategoryId !== null ? terminalCategoryId : selectedCategory;
+      const matchesCategory = effectiveCategory === null || item.categoryId === effectiveCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [inventory, search, selectedCategory]);
+  }, [inventory, search, selectedCategory, terminalConfig]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const grandTotal = Math.max(0, subtotal - discount);
@@ -348,7 +364,21 @@ ${footer ? `<div class="footer-text">${footer}</div>` : ""}
   return (
     <div className="flex h-full" data-testid="pos-terminal">
       <div className="flex-[2] flex flex-col p-4 gap-4 overflow-auto">
-        <h1 className="text-xl font-bold" data-testid="text-pos-title">{t("pos.terminal")}</h1>
+        <div className="flex items-center gap-2">
+          {terminalId !== null && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              data-testid="button-back-to-pos-home"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <h1 className="text-xl font-bold" data-testid="text-pos-title">
+            {terminalConfig ? terminalConfig.name : t("pos.terminal")}
+          </h1>
+        </div>
 
         <div className="relative">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

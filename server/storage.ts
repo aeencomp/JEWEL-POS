@@ -1,6 +1,7 @@
 import {
   users, stores, subscriptions, categories, inventoryItems, customers, orders, orderItems,
   repairOrders, layawayPlans, layawayPayments, purchases, verificationCodes, debts, debtPayments,
+  posTerminals,
   type User, type InsertUser,
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
@@ -15,6 +16,7 @@ import {
   type Purchase, type InsertPurchase,
   type Debt, type InsertDebt,
   type DebtPayment, type InsertDebtPayment,
+  type PosTerminal, type InsertPosTerminal,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, gt } from "drizzle-orm";
@@ -95,6 +97,12 @@ export interface IStorage {
   getValidVerificationCode(userId: number, code: string): Promise<boolean>;
   deleteVerificationCodes(userId: number): Promise<void>;
   updateUserEmail(userId: number, email: string): Promise<void>;
+
+  getPosTerminals(storeId: number): Promise<PosTerminal[]>;
+  getPosTerminal(id: number): Promise<PosTerminal | undefined>;
+  createPosTerminal(terminal: InsertPosTerminal): Promise<PosTerminal>;
+  updatePosTerminal(id: number, data: Partial<InsertPosTerminal>): Promise<PosTerminal | undefined>;
+  deletePosTerminal(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -395,6 +403,29 @@ export class DatabaseStorage implements IStorage {
   async createDebtPayment(payment: InsertDebtPayment): Promise<DebtPayment> {
     const [created] = await db.insert(debtPayments).values(payment).returning();
     return created;
+  }
+
+  async getPosTerminals(storeId: number): Promise<PosTerminal[]> {
+    return db.select().from(posTerminals).where(eq(posTerminals.storeId, storeId)).orderBy(posTerminals.sortOrder);
+  }
+
+  async getPosTerminal(id: number): Promise<PosTerminal | undefined> {
+    const [terminal] = await db.select().from(posTerminals).where(eq(posTerminals.id, id));
+    return terminal || undefined;
+  }
+
+  async createPosTerminal(terminal: InsertPosTerminal): Promise<PosTerminal> {
+    const [created] = await db.insert(posTerminals).values(terminal).returning();
+    return created;
+  }
+
+  async updatePosTerminal(id: number, data: Partial<InsertPosTerminal>): Promise<PosTerminal | undefined> {
+    const [updated] = await db.update(posTerminals).set(data).where(eq(posTerminals.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deletePosTerminal(id: number): Promise<void> {
+    await db.delete(posTerminals).where(eq(posTerminals.id, id));
   }
 }
 

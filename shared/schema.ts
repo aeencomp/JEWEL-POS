@@ -440,3 +440,23 @@ export type Debt = typeof debts.$inferSelect;
 export type InsertDebt = z.infer<typeof insertDebtSchema>;
 export type DebtPayment = typeof debtPayments.$inferSelect;
 export type InsertDebtPayment = z.infer<typeof insertDebtPaymentSchema>;
+
+// ── POS Terminals ──────────────────────────────────────────────
+export const posTerminals = pgTable("pos_terminals", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon").notNull().default("ShoppingCart"),
+  color: text("color").notNull().default("#d4a574"),
+  categoryId: integer("category_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+export const posTerminalsRelations = relations(posTerminals, ({ one }) => ({
+  store: one(stores, { fields: [posTerminals.storeId], references: [stores.id] }),
+}));
+
+export const insertPosTerminalSchema = createInsertSchema(posTerminals).omit({ id: true });
+export type PosTerminal = typeof posTerminals.$inferSelect;
+export type InsertPosTerminal = z.infer<typeof insertPosTerminalSchema>;
