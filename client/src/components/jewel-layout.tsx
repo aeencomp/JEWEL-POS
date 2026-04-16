@@ -75,7 +75,7 @@ export default function JewelLayout({
     mutationFn: () => apiRequest("POST", "/api/logout"),
     onSuccess: () => {
       queryClient.clear();
-      window.location.href = "/";
+      window.location.href = "/store-portal";
     },
   });
 

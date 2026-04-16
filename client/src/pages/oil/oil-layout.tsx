@@ -56,7 +56,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     mutationFn: () => apiRequest("POST", "/api/logout"),
     onSuccess: () => {
       queryClient.clear();
-      window.location.href = "/";
+      window.location.href = "/oil-login";
     },
   });
 

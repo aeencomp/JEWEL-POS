@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="14" fill="url(#grad)"/>
+
+  <!-- Receipt / POS icon -->
+  <!-- Receipt body -->
+  <rect x="16" y="10" width="28" height="36" rx="3" fill="white" opacity="0.95"/>
+  <!-- Receipt lines -->
+  <rect x="20" y="17" width="12" height="2.5" rx="1.25" fill="#f97316"/>
+  <rect x="20" y="22" width="16" height="2" rx="1" fill="#f97316" opacity="0.5"/>
+  <rect x="20" y="27" width="14" height="2" rx="1" fill="#f97316" opacity="0.5"/>
+  <rect x="20" y="32" width="16" height="2" rx="1" fill="#f97316" opacity="0.5"/>
+  <!-- Receipt divider -->
+  <rect x="20" y="37" width="16" height="1.5" rx="0.75" fill="#f97316" opacity="0.3"/>
+  <!-- Total line bold -->
+  <rect x="20" y="41" width="10" height="2.5" rx="1.25" fill="#f97316" opacity="0.8"/>
+  <!-- Receipt bottom zigzag via clip -->
+  <path d="M16 46 L18 44 L20 46 L22 44 L24 46 L26 44 L28 46 L30 44 L32 46 L34 44 L36 46 L38 44 L40 46 L44 46 L44 48 L16 48 Z" fill="white" opacity="0.95"/>
+
+  <!-- Coin/chip accent at bottom right -->
+  <circle cx="46" cy="48" r="9" fill="#f97316"/>
+  <path d="M43 48 L46 44.5 L49 48 L46 51.5 Z" fill="white" opacity="0.9"/>
+
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+</svg>
