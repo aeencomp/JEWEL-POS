@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import {
   TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle,
   ShoppingCart, Truck, HandCoins, BarChart3, ArrowRight, Activity,
-  Wallet, Factory,
+  Wallet, Factory, Receipt,
 } from "lucide-react";
 
 function fmt(n: number) {
