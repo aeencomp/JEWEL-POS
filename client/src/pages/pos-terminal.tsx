@@ -297,19 +297,28 @@ export default function PosTerminal() {
 
         {/* Category Sidebar */}
         {!terminalCatLocked && (
-          <aside className="w-20 bg-slate-900 border-e border-slate-800 flex flex-col gap-1 py-3 px-2 overflow-y-auto flex-shrink-0">
+          <aside className="w-20 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800 flex flex-col gap-1 py-3 px-2 overflow-y-auto flex-shrink-0">
             <button
               onClick={() => setSelectedCategory(null)}
               className={`flex flex-col items-center gap-1 py-3 px-1 rounded-xl text-xs font-medium transition-all ${
                 selectedCategory === null
-                  ? "text-white"
-                  : "text-slate-500 hover:text-slate-300 hover:bg-slate-800"
+                  ? ""
+                  : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
-              style={selectedCategory === null ? { backgroundColor: brandColor + "30", color: brandColor } : {}}
+              style={selectedCategory === null ? { backgroundColor: brandColor + "18", color: brandColor } : {}}
               data-testid="button-category-all"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={selectedCategory === null ? { backgroundColor: brandColor } : { backgroundColor: "#1e293b" }}>
-                <Layers className="h-4 w-4 text-white" />
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={
+                  selectedCategory === null
+                    ? { backgroundColor: brandColor, boxShadow: `0 4px 10px ${brandColor}40` }
+                    : {}
+                }
+              >
+                <Layers
+                  className={`h-4 w-4 ${selectedCategory === null ? "text-white" : "text-slate-400 dark:text-slate-500"}`}
+                />
               </div>
               <span className="truncate w-full text-center leading-tight" style={{ fontSize: "10px" }}>
                 {isAr ? "الكل" : "All"}
@@ -321,17 +330,23 @@ export default function PosTerminal() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`flex flex-col items-center gap-1 py-3 px-1 rounded-xl text-xs font-medium transition-all ${
                   selectedCategory === cat.id
-                    ? "text-white"
-                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800"
+                    ? ""
+                    : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
-                style={selectedCategory === cat.id ? { color: brandColor } : {}}
+                style={selectedCategory === cat.id ? { backgroundColor: brandColor + "18", color: brandColor } : {}}
                 data-testid={`button-category-${cat.id}`}
               >
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={selectedCategory === cat.id ? { backgroundColor: brandColor } : { backgroundColor: "#1e293b" }}
+                  style={
+                    selectedCategory === cat.id
+                      ? { backgroundColor: brandColor, boxShadow: `0 4px 10px ${brandColor}40` }
+                      : {}
+                  }
                 >
-                  <Tag className="h-4 w-4 text-white" />
+                  <Tag
+                    className={`h-4 w-4 ${selectedCategory === cat.id ? "text-white" : "text-slate-400 dark:text-slate-500"}`}
+                  />
                 </div>
                 <span className="truncate w-full text-center leading-tight" style={{ fontSize: "10px" }}>
                   {cat.name}
