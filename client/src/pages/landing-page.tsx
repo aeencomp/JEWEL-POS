@@ -339,14 +339,25 @@ export default function LandingPage() {
                   </div>
 
                   {product.available ? (
-                    <Button
-                      className={`w-full bg-gradient-to-r ${product.gradient} text-white border-0 mt-1 group-hover:opacity-90`}
-                      onClick={() => handleOpen(product.id as "jewel" | "oil")}
-                      data-testid={`button-product-${product.id}`}
-                    >
-                      {isAr ? "اطلب الاشتراك" : "Request Access"}
-                      <ArrowRight className="h-4 w-4 ms-2" />
-                    </Button>
+                    <div className="flex flex-col gap-2 mt-1">
+                      <Button
+                        className={`w-full bg-gradient-to-r ${product.gradient} text-white border-0 group-hover:opacity-90`}
+                        onClick={() => navigate(product.href!)}
+                        data-testid={`button-product-${product.id}`}
+                      >
+                        <LogIn className="h-4 w-4 me-2" />
+                        {isAr ? "تسجيل الدخول" : "Sign In"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-sm"
+                        onClick={() => handleOpen(product.id as "jewel" | "oil")}
+                        data-testid={`button-request-${product.id}`}
+                      >
+                        <UserPlus className="h-4 w-4 me-2" />
+                        {isAr ? "طلب الاشتراك" : "Request Access"}
+                      </Button>
+                    </div>
                   ) : (
                     <Button
                       variant="outline"
