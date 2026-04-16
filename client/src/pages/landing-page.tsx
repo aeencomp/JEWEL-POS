@@ -526,9 +526,10 @@ export default function LandingPage() {
           <span className="font-semibold text-sm">IQ-POS</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          {isAr ? "جميع الحقوق محفوظة © 2025 IQ-POS" : "© 2025 IQ-POS Platform. All rights reserved."}
+          {isAr ? "جميع الحقوق محفوظة © 2026 IQ-POS" : "© 2026 IQ-POS Platform. All rights reserved."}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">www.IQ-pos.com</p>
+        <p className="text-xs text-muted-foreground mt-0.5" dir="ltr">+964 781 624 4402</p>
       </footer>
 
       {/* Sign-up Request Dialog */}
