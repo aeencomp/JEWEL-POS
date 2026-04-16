@@ -401,6 +401,7 @@ export async function registerRoutes(
         email: storeData.email || null,
         address: storeData.address || null,
         isActive: true,
+        posSystem: storeData.posSystem === "oil" ? "oil" : "jewel",
       });
 
       const planPrices: Record<string, string> = {

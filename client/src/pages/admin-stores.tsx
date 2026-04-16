@@ -67,6 +67,8 @@ import {
   Eye,
   User,
   KeyRound,
+  Gem,
+  Droplets,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
@@ -79,6 +81,7 @@ const createStoreSchema = z.object({
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
   plan: z.enum(["basic", "standard", "premium"]),
+  posSystem: z.enum(["jewel", "oil"]),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -91,6 +94,7 @@ const editStoreSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
+  posSystem: z.enum(["jewel", "oil"]).optional(),
   password: z.string().min(6, "Password must be at least 6 characters").or(z.literal("")).optional(),
 });
 
@@ -119,6 +123,7 @@ export default function AdminStores() {
       email: "",
       address: "",
       plan: "basic",
+      posSystem: "jewel",
       username: "",
       password: "",
     },
@@ -183,6 +188,7 @@ export default function AdminStores() {
       phone: store.phone || "",
       email: store.email || "",
       address: store.address || "",
+      posSystem: store.posSystem as "jewel" | "oil" || "jewel",
       password: "",
     });
     setEditStore(store);
@@ -382,6 +388,42 @@ export default function AdminStores() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="posSystem"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>POS System</FormLabel>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { value: "jewel", label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
+                          { value: "oil", label: "OilPOS", sub: "Oil factory ERP", Icon: Droplets, color: "#06b6d4" },
+                        ].map(({ value, label, sub, Icon, color }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => field.onChange(value)}
+                            className={`flex items-center gap-3 p-3 rounded-xl border-2 text-start transition-all ${
+                              field.value === value
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-muted-foreground/40"
+                            }`}
+                            data-testid={`button-pos-${value}`}
+                          >
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color + "20" }}>
+                              <Icon className="h-5 w-5" style={{ color }} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm">{label}</p>
+                              <p className="text-xs text-muted-foreground">{sub}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="border-t pt-4 mt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -467,16 +509,35 @@ export default function AdminStores() {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <StoreIcon className="h-5 w-5 text-primary" />
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: store.posSystem === "oil" ? "#06b6d420" : "#d4a57420",
+                      }}
+                    >
+                      {store.posSystem === "oil"
+                        ? <Droplets className="h-5 w-5" style={{ color: "#06b6d4" }} />
+                        : <Gem className="h-5 w-5" style={{ color: "#d4a574" }} />
+                      }
                     </div>
                     <div>
-                      <h3
-                        className="font-semibold text-sm"
-                        data-testid={`text-store-name-${store.id}`}
-                      >
-                        {store.name}
-                      </h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3
+                          className="font-semibold text-sm"
+                          data-testid={`text-store-name-${store.id}`}
+                        >
+                          {store.name}
+                        </h3>
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                          style={{
+                            backgroundColor: store.posSystem === "oil" ? "#06b6d415" : "#d4a57415",
+                            color: store.posSystem === "oil" ? "#06b6d4" : "#d4a574",
+                          }}
+                        >
+                          {store.posSystem === "oil" ? "OilPOS" : "JewelPOS"}
+                        </span>
+                      </div>
                       <p
                         className="text-xs text-muted-foreground"
                         data-testid={`text-store-owner-${store.id}`}
@@ -697,6 +758,42 @@ export default function AdminStores() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="posSystem"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>POS System</FormLabel>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { value: "jewel", label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
+                        { value: "oil", label: "OilPOS", sub: "Oil factory ERP", Icon: Droplets, color: "#06b6d4" },
+                      ].map(({ value, label, sub, Icon, color }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => field.onChange(value)}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 text-start transition-all ${
+                            field.value === value
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-muted-foreground/40"
+                          }`}
+                          data-testid={`button-edit-pos-${value}`}
+                        >
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color + "20" }}>
+                            <Icon className="h-5 w-5" style={{ color }} />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">{label}</p>
+                            <p className="text-xs text-muted-foreground">{sub}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -222,12 +222,17 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const userData: any = { ...req.user };
     if (req.session.impersonatingStoreId) {
       userData.impersonatingStoreId = req.session.impersonatingStoreId;
       userData.impersonatingStoreName = req.session.impersonatingStoreName;
+      const impStore = await storage.getStore(req.session.impersonatingStoreId);
+      if (impStore) userData.posSystem = impStore.posSystem;
+    } else if (req.user?.storeId) {
+      const store = await storage.getStore(req.user.storeId);
+      if (store) userData.posSystem = store.posSystem;
     }
     res.json(userData);
   });

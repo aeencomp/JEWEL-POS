@@ -176,9 +176,11 @@ function AppContent() {
     return <OilRouter />;
   }
 
-  if (location === "/" && (user?.role === "store" || isImpersonating)) {
-    const posSystem = user ? localStorage.getItem(`posSystem_${user.id}`) : null;
-    if (posSystem === "oil") return <Redirect to="/oil" />;
+  if (user?.role === "store" || isImpersonating) {
+    const posSystem = (user as any)?.posSystem;
+    if (posSystem === "oil" && !location.startsWith("/oil")) {
+      return <Redirect to="/oil" />;
+    }
   }
 
   if (user?.role === "admin" && !isImpersonating) {
