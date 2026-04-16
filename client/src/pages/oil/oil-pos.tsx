@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { printOilPosInvoice } from "@/components/oil-sale-invoice";
 import {
   ShoppingCart, Search, Plus, Minus, Trash2, Banknote,
-  ArrowRightLeft, Package, CheckCircle2, X, User, Tag,
+  ArrowRightLeft, Package, CheckCircle2, X, User, Tag, Printer,
 } from "lucide-react";
 
 function fmt(n: string | number) {
@@ -55,7 +56,18 @@ export default function OilPos() {
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("cash");
   const [successDialog, setSuccessDialog] = useState(false);
-  const [lastInvoice, setLastInvoice] = useState<string>("");
+
+  // store last completed sale for printing
+  const [lastSale, setLastSale] = useState<{
+    invoiceNumber: string;
+    date: Date;
+    customerName: string | null;
+    items: CartItem[];
+    subtotal: number;
+    discount: number;
+    total: number;
+    paymentMethod: "cash" | "transfer";
+  } | null>(null);
 
   const { data: products = [] } = useQuery<OilProduct[]>({
     queryKey: ["/api/oil/products"],
@@ -65,6 +77,11 @@ export default function OilPos() {
   const { data: customers = [] } = useQuery<OilCustomer[]>({
     queryKey: ["/api/oil/customers"],
     queryFn: () => fetch("/api/oil/customers", { credentials: "include" }).then(r => r.json()),
+  });
+
+  const { data: storeInfo } = useQuery<any>({
+    queryKey: ["/api/oil/store-info"],
+    queryFn: () => fetch("/api/oil/store-info", { credentials: "include" }).then(r => r.json()),
   });
 
   const filtered = useMemo(() => {
@@ -141,7 +158,20 @@ export default function OilPos() {
       queryClient.invalidateQueries({ queryKey: ["/api/oil/sales"] });
       queryClient.invalidateQueries({ queryKey: ["/api/oil/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
-      setLastInvoice(data.invoiceNumber || "");
+
+      // snapshot the sale before clearing cart
+      const customer = customers.find(c => c.id === Number(customerId));
+      setLastSale({
+        invoiceNumber: data.invoiceNumber || `INV-${data.id}`,
+        date: new Date(),
+        customerName: customer?.name || customerName || null,
+        items: [...cart],
+        subtotal,
+        discount,
+        total,
+        paymentMethod,
+      });
+
       setSuccessDialog(true);
       clearCart();
     },
@@ -172,6 +202,22 @@ export default function OilPos() {
         unitPrice: i.unitPrice.toFixed(2),
         total: i.total.toFixed(2),
       })),
+    });
+  }
+
+  function handlePrintInvoice() {
+    if (!lastSale) return;
+    printOilPosInvoice({
+      invoiceNumber: lastSale.invoiceNumber,
+      date: lastSale.date,
+      customerName: lastSale.customerName,
+      items: lastSale.items,
+      subtotal: lastSale.subtotal,
+      discount: lastSale.discount,
+      total: lastSale.total,
+      paymentMethod: lastSale.paymentMethod,
+      store: storeInfo || null,
+      isAr,
     });
   }
 
@@ -220,7 +266,6 @@ export default function OilPos() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {filtered.map(product => {
                 const inCart = cart.find(i => i.productId === product.id);
-                const stock = parseFloat(product.currentStock);
                 return (
                   <button
                     key={product.id}
@@ -421,27 +466,65 @@ export default function OilPos() {
         )}
       </div>
 
-      {/* Success Dialog */}
+      {/* ── Success Dialog ───────────────────────────────── */}
       <Dialog open={successDialog} onOpenChange={setSuccessDialog}>
-        <DialogContent className="max-w-xs text-center bg-slate-900 border-slate-700" data-testid="dialog-sale-success">
+        <DialogContent className="max-w-sm bg-slate-900 border-slate-700" data-testid="dialog-sale-success">
           <DialogHeader>
             <DialogTitle className="sr-only">{isAr ? "تمت عملية البيع" : "Sale Complete"}</DialogTitle>
           </DialogHeader>
-          <div className="py-4 flex flex-col items-center gap-3">
+          <div className="py-4 flex flex-col items-center gap-4">
+            {/* success icon */}
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
-            <h2 className="text-xl font-bold text-white">{isAr ? "تمت عملية البيع" : "Sale Complete!"}</h2>
-            <p className="text-sm text-slate-400">
-              {isAr ? "رقم الفاتورة:" : "Invoice:"} <span className="text-white font-semibold">{lastInvoice}</span>
-            </p>
-            <Button
-              className="w-full mt-2 bg-cyan-600 hover:bg-cyan-700"
-              onClick={() => setSuccessDialog(false)}
-              data-testid="button-success-ok"
-            >
-              {isAr ? "متابعة" : "Continue"}
-            </Button>
+
+            <h2 className="text-xl font-bold text-white">{isAr ? "تمت عملية البيع!" : "Sale Complete!"}</h2>
+
+            {/* invoice summary */}
+            {lastSale && (
+              <div className="w-full bg-slate-800 rounded-xl p-4 space-y-2 text-sm border border-slate-700">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">{isAr ? "رقم الفاتورة:" : "Invoice:"}</span>
+                  <span className="text-white font-semibold">{lastSale.invoiceNumber}</span>
+                </div>
+                {lastSale.customerName && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{isAr ? "العميل:" : "Customer:"}</span>
+                    <span className="text-white">{lastSale.customerName}</span>
+                  </div>
+                )}
+                {lastSale.discount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{isAr ? "الخصم:" : "Discount:"}</span>
+                    <span className="text-red-400">-{fmt(lastSale.discount)} IQD</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-1 border-t border-slate-700">
+                  <span className="text-slate-300 font-semibold">{isAr ? "الإجمالي:" : "Total:"}</span>
+                  <span className="text-emerald-400 font-bold text-base">{fmt(lastSale.total)} IQD</span>
+                </div>
+              </div>
+            )}
+
+            {/* action buttons */}
+            <div className="w-full grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+                onClick={() => setSuccessDialog(false)}
+                data-testid="button-success-ok"
+              >
+                {isAr ? "متابعة" : "Continue"}
+              </Button>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                onClick={handlePrintInvoice}
+                data-testid="button-print-invoice"
+              >
+                <Printer className="h-4 w-4 me-2" />
+                {isAr ? "طباعة" : "Print"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

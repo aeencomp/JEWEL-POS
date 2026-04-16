@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ShoppingCart, Plus, Trash2, ChevronDown, Banknote, Eye } from "lucide-react";
+import { printOilSaleInvoice } from "@/components/oil-sale-invoice";
+import { ShoppingCart, Plus, Trash2, ChevronDown, Banknote, Printer } from "lucide-react";
 
 function fmt(n: string | number) { return parseFloat(String(n)).toLocaleString("en-US", { maximumFractionDigits: 0 }); }
 
@@ -36,6 +37,10 @@ export default function OilSales() {
   const { data: customers = [] } = useQuery<OilCustomer[]>({
     queryKey: ["/api/oil/customers"],
     queryFn: () => fetch("/api/oil/customers", { credentials: "include" }).then(r => r.json()),
+  });
+  const { data: storeInfo } = useQuery<any>({
+    queryKey: ["/api/oil/store-info"],
+    queryFn: () => fetch("/api/oil/store-info", { credentials: "include" }).then(r => r.json()),
   });
 
   // Sale form state
@@ -155,11 +160,14 @@ export default function OilSales() {
                   {expanded && (
                     <div className="border-t bg-muted/20 px-4 py-3">
                       <SaleItemsView saleId={sale.id} />
-                      {sale.paymentStatus !== "paid" && sale.status !== "cancelled" && (
-                        <Button size="sm" variant="outline" className="mt-3 text-green-700 border-green-300" onClick={() => { setPaymentSale(sale); setPaymentAmount(0); }} data-testid={`button-pay-sale-${sale.id}`}>
-                          <Banknote className="h-3.5 w-3.5 me-1" />{isAr ? "تسجيل دفعة" : "Record Payment"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        {sale.paymentStatus !== "paid" && sale.status !== "cancelled" && (
+                          <Button size="sm" variant="outline" className="text-green-700 border-green-300" onClick={() => { setPaymentSale(sale); setPaymentAmount(0); }} data-testid={`button-pay-sale-${sale.id}`}>
+                            <Banknote className="h-3.5 w-3.5 me-1" />{isAr ? "تسجيل دفعة" : "Record Payment"}
+                          </Button>
+                        )}
+                        <SalePrintButton sale={sale} store={storeInfo} isAr={isAr} />
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -264,7 +272,6 @@ export default function OilSales() {
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setPaymentSale(null)}>{isAr ? "إلغاء" : "Cancel"}</Button>
                 <Button onClick={() => {
-                  const remaining = parseFloat(paymentSale.totalAmount) - parseFloat(paymentSale.amountPaid);
                   const newPaid = parseFloat(paymentSale.amountPaid) + paymentAmount;
                   paymentMutation.mutate({
                     id: paymentSale.id,
@@ -294,5 +301,29 @@ function SaleItemsView({ saleId }: { saleId: number }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function SalePrintButton({ sale, store, isAr }: { sale: OilSale; store: any; isAr: boolean }) {
+  const { data: items = [] } = useQuery<OilSaleItem[]>({
+    queryKey: ["/api/oil/sales", sale.id, "items"],
+    queryFn: () => fetch(`/api/oil/sales/${sale.id}/items`, { credentials: "include" }).then(r => r.json()),
+  });
+
+  function handlePrint() {
+    printOilSaleInvoice({ sale, items, store: store || null, isAr });
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
+      onClick={handlePrint}
+      data-testid={`button-print-sale-${sale.id}`}
+    >
+      <Printer className="h-3.5 w-3.5 me-1" />
+      {isAr ? "طباعة الفاتورة" : "Print Invoice"}
+    </Button>
   );
 }
