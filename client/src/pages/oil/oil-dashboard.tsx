@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import {
   TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle,
   ShoppingCart, Truck, HandCoins, BarChart3, ArrowRight, Activity,
-  Wallet, Factory, Receipt,
+  Wallet, Factory, Receipt, ScanLine,
 } from "lucide-react";
 
 function fmt(n: number) {
@@ -192,8 +192,9 @@ export default function OilDashboard() {
         )}
 
         {/* Quick nav links */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
+            { href: "/oil/pos", icon: ScanLine, label: isAr ? "نقطة البيع" : "POS Terminal", color: "from-cyan-500 to-blue-600" },
             { href: "/oil/sales", icon: ShoppingCart, label: isAr ? "مبيعات جديدة" : "New Sale", color: "from-emerald-500 to-teal-600" },
             { href: "/oil/purchases", icon: Truck, label: isAr ? "فاتورة شراء" : "New Purchase", color: "from-blue-500 to-indigo-600" },
             { href: "/oil/production", icon: Factory, label: isAr ? "دفعة إنتاج" : "Production", color: "from-violet-500 to-purple-600" },

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
-  Droplets, ChevronRight,
+  Droplets, ChevronRight, ScanLine,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", exact: true },
+  { path: "/oil/pos", icon: ScanLine, label: "POS", labelAr: "نقطة البيع" },
   { path: "/oil/inventory", icon: Package, label: "Inventory", labelAr: "المخزون" },
   { path: "/oil/sales", icon: ShoppingCart, label: "Sales", labelAr: "المبيعات" },
   { path: "/oil/purchases", icon: Truck, label: "Purchases", labelAr: "المشتريات" },

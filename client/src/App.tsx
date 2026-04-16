@@ -32,6 +32,7 @@ import DebtsPage from "@/pages/debts-page";
 import AdminBackup from "@/pages/admin-backup";
 import OilLayout from "@/pages/oil/oil-layout";
 import OilDashboard from "@/pages/oil/oil-dashboard";
+import OilPos from "@/pages/oil/oil-pos";
 import OilInventory from "@/pages/oil/oil-inventory";
 import OilSales from "@/pages/oil/oil-sales";
 import OilPurchases from "@/pages/oil/oil-purchases";
@@ -81,6 +82,7 @@ function OilRouter() {
     <OilLayout>
       <Switch>
         <Route path="/oil" component={OilDashboard} />
+        <Route path="/oil/pos" component={OilPos} />
         <Route path="/oil/inventory" component={OilInventory} />
         <Route path="/oil/sales" component={OilSales} />
         <Route path="/oil/purchases" component={OilPurchases} />
