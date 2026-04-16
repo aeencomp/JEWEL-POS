@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageProvider, useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import JewelLayout from "@/components/jewel-layout";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import StorePortal from "@/pages/store-portal";
@@ -17,7 +18,6 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AdminStores from "@/pages/admin-stores";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import PosTerminal from "@/pages/pos-terminal";
-import PosHome from "@/pages/pos-home";
 import InventoryManagement from "@/pages/inventory-management";
 import CustomersPage from "@/pages/customers-page";
 import OrdersHistory from "@/pages/orders-history";
@@ -42,8 +42,7 @@ import OilSuppliers from "@/pages/oil/oil-suppliers";
 import OilExpenses from "@/pages/oil/oil-expenses";
 import OilDebts from "@/pages/oil/oil-debts";
 import OilLogin from "@/pages/oil/oil-login";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 function AdminRouter() {
   return (
@@ -96,35 +95,7 @@ function OilRouter() {
   );
 }
 
-function ImpersonationBanner() {
-  const { impersonatingStoreName, stopImpersonateMutation } = useAuth();
-  const { t } = useLanguage();
-
-  return (
-    <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-amber-500 text-white sticky top-0 z-[60]">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <span>{t("admin.viewingAs")}: {impersonatingStoreName}</span>
-      </div>
-      <Button
-        size="sm"
-        variant="outline"
-        className="bg-white/20 border-white/40 text-white"
-        onClick={() => stopImpersonateMutation.mutate()}
-        disabled={stopImpersonateMutation.isPending}
-        data-testid="button-stop-impersonate"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        <span className="ms-1">{t("admin.backToAdmin")}</span>
-      </Button>
-    </div>
-  );
-}
-
-function MainLayout() {
-  const { user, isImpersonating } = useAuth();
-  const isAdmin = user?.role === "admin";
-  const showStoreView = !isAdmin || isImpersonating;
-
+function AdminLayout() {
   const style = {
     "--sidebar-width": "15rem",
     "--sidebar-width-icon": "3rem",
@@ -135,7 +106,6 @@ function MainLayout() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
-          {isImpersonating && <ImpersonationBanner />}
           <header className="flex items-center justify-between gap-2 p-2 border-b bg-background sticky top-0 z-50">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-1">
@@ -144,11 +114,24 @@ function MainLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-auto flex flex-col">
-            {showStoreView ? <StoreRouter /> : <AdminRouter />}
+            <AdminRouter />
           </main>
         </div>
       </div>
     </SidebarProvider>
+  );
+}
+
+function StoreLayout() {
+  const { isImpersonating, impersonatingStoreName, stopImpersonateMutation } = useAuth();
+  return (
+    <JewelLayout
+      isImpersonating={isImpersonating}
+      impersonatingStoreName={impersonatingStoreName}
+      onStopImpersonate={() => stopImpersonateMutation.mutate()}
+    >
+      <StoreRouter />
+    </JewelLayout>
   );
 }
 
@@ -198,7 +181,11 @@ function AppContent() {
     if (posSystem === "oil") return <Redirect to="/oil" />;
   }
 
-  return <MainLayout />;
+  if (user?.role === "admin" && !isImpersonating) {
+    return <AdminLayout />;
+  }
+
+  return <StoreLayout />;
 }
 
 function App() {
