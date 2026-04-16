@@ -1,9 +1,20 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Gem,
   Droplets,
@@ -17,7 +28,13 @@ import {
   Zap,
   Shield,
   BarChart3,
+  UserPlus,
+  Send,
+  LogIn,
 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 function IqPosLogo({ size = 32 }: { size?: number }) {
   return (
@@ -47,7 +64,6 @@ type Product = {
   descriptionAr: string;
   icon: React.ElementType;
   gradient: string;
-  iconBg: string;
   available: boolean;
   href?: string;
   tags: string[];
@@ -63,7 +79,6 @@ const products: Product[] = [
     descriptionAr: "إدارة شاملة لمحلات المجوهرات — المخزون، الإصلاحات، التقسيط، المبيعات وتتبع العملاء.",
     icon: Gem,
     gradient: "from-amber-500 to-yellow-600",
-    iconBg: "bg-amber-500",
     available: true,
     href: "/store-portal",
     tags: ["Jewelry", "Repairs", "Layaway"],
@@ -77,7 +92,6 @@ const products: Product[] = [
     descriptionAr: "إدارة شاملة لمصنع الزيوت — الإنتاج، المخزون، المبيعات، المشتريات، المصاريف والمحاسبة.",
     icon: Droplets,
     gradient: "from-blue-600 to-cyan-600",
-    iconBg: "bg-blue-600",
     available: true,
     href: "/oil-login",
     tags: ["Factory", "Production", "Accounting"],
@@ -91,7 +105,6 @@ const products: Product[] = [
     descriptionAr: "نقطة بيع سريعة للبقالة والسوبرماركت مع قراءة الباركود وتتبع الصلاحية والموردين.",
     icon: ShoppingBasket,
     gradient: "from-green-500 to-emerald-600",
-    iconBg: "bg-green-500",
     available: false,
     tags: ["Grocery", "Barcode", "Expiry"],
     tagsAr: ["بقالة", "باركود", "صلاحية"],
@@ -104,7 +117,6 @@ const products: Product[] = [
     descriptionAr: "نقطة بيع للمطاعم والمقاهي مع إدارة الطاولات، شاشة المطبخ والقوائم.",
     icon: Utensils,
     gradient: "from-orange-500 to-red-500",
-    iconBg: "bg-orange-500",
     available: false,
     tags: ["Restaurant", "Tables", "Kitchen"],
     tagsAr: ["مطعم", "طاولات", "مطبخ"],
@@ -117,7 +129,6 @@ const products: Product[] = [
     descriptionAr: "إدارة محلات الملابس والأزياء مع متغيرات الحجم واللون والإرجاع وبرامج الولاء.",
     icon: Shirt,
     gradient: "from-pink-500 to-purple-600",
-    iconBg: "bg-pink-500",
     available: false,
     tags: ["Fashion", "Variants", "Loyalty"],
     tagsAr: ["أزياء", "متغيرات", "ولاء"],
@@ -130,7 +141,6 @@ const products: Product[] = [
     descriptionAr: "إدارة الصيدليات مع الوصفات وصلاحية الدواء والتأمين وتنبيهات المخزون.",
     icon: Pill,
     gradient: "from-teal-500 to-cyan-500",
-    iconBg: "bg-teal-500",
     available: false,
     tags: ["Pharmacy", "Prescriptions", "Stock"],
     tagsAr: ["صيدلية", "وصفات", "مخزون"],
@@ -144,10 +154,69 @@ const features = [
   { icon: BarChart3, label: "Built-in Analytics", labelAr: "تحليلات مدمجة" },
 ];
 
+type SignupForm = {
+  name: string;
+  businessName: string;
+  phone: string;
+  email: string;
+  posSystem: "jewel" | "oil";
+  notes: string;
+};
+
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const { language } = useLanguage();
   const isAr = language === "ar";
+  const { toast } = useToast();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState<SignupForm>({
+    name: "",
+    businessName: "",
+    phone: "",
+    email: "",
+    posSystem: "jewel",
+    notes: "",
+  });
+  const [errors, setErrors] = useState<Partial<SignupForm>>({});
+
+  const mutation = useMutation({
+    mutationFn: (data: SignupForm) =>
+      apiRequest("POST", "/api/signup-requests", data),
+    onSuccess: () => {
+      setSubmitted(true);
+    },
+    onError: () => {
+      toast({
+        title: isAr ? "حدث خطأ" : "Something went wrong",
+        description: isAr ? "يرجى المحاولة مرة أخرى" : "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  function validate(): boolean {
+    const e: Partial<SignupForm> = {};
+    if (!form.name.trim()) e.name = isAr ? "الاسم مطلوب" : "Name is required";
+    if (!form.businessName.trim()) e.businessName = isAr ? "اسم العمل مطلوب" : "Business name is required";
+    if (!form.phone.trim()) e.phone = isAr ? "رقم الهاتف مطلوب" : "Phone is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+    mutation.mutate(form);
+  }
+
+  function handleOpen(preselect?: "jewel" | "oil") {
+    setSubmitted(false);
+    setErrors({});
+    setForm({ name: "", businessName: "", phone: "", email: "", posSystem: preselect ?? "jewel", notes: "" });
+    setDialogOpen(true);
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -163,11 +232,22 @@ export default function LandingPage() {
             <ThemeToggle />
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={() => navigate("/store-portal")}
               data-testid="button-header-login"
+              className="hidden sm:flex text-muted-foreground hover:text-foreground"
             >
+              <LogIn className="h-4 w-4 me-1.5" />
               {isAr ? "تسجيل الدخول" : "Sign In"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleOpen()}
+              data-testid="button-header-signup"
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              <UserPlus className="h-4 w-4 me-1.5" />
+              {isAr ? "طلب الاشتراك" : "Request Access"}
             </Button>
           </div>
         </div>
@@ -222,7 +302,6 @@ export default function LandingPage() {
                     ? "hover:shadow-lg hover:-translate-y-0.5 hover:border-amber-300 dark:hover:border-amber-700 cursor-pointer"
                     : "opacity-75"
                   }`}
-                onClick={() => product.available && product.href && navigate(product.href)}
                 data-testid={`card-product-${product.id}`}
               >
                 <div className={`h-2 w-full bg-gradient-to-r ${product.gradient}`} />
@@ -262,10 +341,10 @@ export default function LandingPage() {
                   {product.available ? (
                     <Button
                       className={`w-full bg-gradient-to-r ${product.gradient} text-white border-0 mt-1 group-hover:opacity-90`}
-                      onClick={(e) => { e.stopPropagation(); navigate(product.href!); }}
+                      onClick={() => handleOpen(product.id as "jewel" | "oil")}
                       data-testid={`button-product-${product.id}`}
                     >
-                      {isAr ? "ابدأ الآن" : "Get Started"}
+                      {isAr ? "اطلب الاشتراك" : "Request Access"}
                       <ArrowRight className="h-4 w-4 ms-2" />
                     </Button>
                   ) : (
@@ -295,6 +374,179 @@ export default function LandingPage() {
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">www.IQ-pos.com</p>
       </footer>
+
+      {/* Sign-up Request Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md" dir={isAr ? "rtl" : "ltr"}>
+          {!submitted ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <UserPlus className="h-5 w-5 text-amber-600" />
+                  {isAr ? "طلب الاشتراك في IQ-POS" : "Request Access to IQ-POS"}
+                </DialogTitle>
+                <DialogDescription>
+                  {isAr
+                    ? "أرسل طلبك وسيتواصل معك فريقنا في أقرب وقت."
+                    : "Submit your request and our team will get back to you shortly."}
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                {/* POS System selector */}
+                <div className="space-y-1.5">
+                  <Label>{isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, posSystem: "jewel" }))}
+                      data-testid="pos-select-jewel"
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                        form.posSystem === "jewel"
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                          : "border-border hover:border-amber-300 bg-card"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
+                        <Gem className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold">JewelPOS</span>
+                      <span className="text-[10px] text-muted-foreground">{isAr ? "مجوهرات" : "Jewelry"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, posSystem: "oil" }))}
+                      data-testid="pos-select-oil"
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                        form.posSystem === "oil"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                          : "border-border hover:border-blue-300 bg-card"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+                        <Droplets className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold">OilPOS</span>
+                      <span className="text-[10px] text-muted-foreground">{isAr ? "زيوت / مصنع" : "Oil / Factory"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Full Name */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-name">{isAr ? "الاسم الكامل" : "Full Name"} *</Label>
+                  <Input
+                    id="req-name"
+                    data-testid="input-signup-name"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder={isAr ? "محمد علي" : "John Smith"}
+                  />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                </div>
+
+                {/* Business Name */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-business">{isAr ? "اسم المحل / الشركة" : "Business Name"} *</Label>
+                  <Input
+                    id="req-business"
+                    data-testid="input-signup-business"
+                    value={form.businessName}
+                    onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))}
+                    placeholder={isAr ? "مجوهرات النور" : "Golden Jewelers"}
+                  />
+                  {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-phone">{isAr ? "رقم الهاتف" : "Phone Number"} *</Label>
+                  <Input
+                    id="req-phone"
+                    data-testid="input-signup-phone"
+                    value={form.phone}
+                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="+964 7xx xxx xxxx"
+                    dir="ltr"
+                  />
+                  {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+                </div>
+
+                {/* Email (optional) */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-email">
+                    {isAr ? "البريد الإلكتروني" : "Email"}{" "}
+                    <span className="text-muted-foreground text-xs">({isAr ? "اختياري" : "optional"})</span>
+                  </Label>
+                  <Input
+                    id="req-email"
+                    data-testid="input-signup-email"
+                    type="email"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="you@example.com"
+                    dir="ltr"
+                  />
+                </div>
+
+                {/* Notes (optional) */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-notes">
+                    {isAr ? "ملاحظات" : "Additional Notes"}{" "}
+                    <span className="text-muted-foreground text-xs">({isAr ? "اختياري" : "optional"})</span>
+                  </Label>
+                  <Textarea
+                    id="req-notes"
+                    data-testid="input-signup-notes"
+                    value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder={isAr ? "أي تفاصيل إضافية..." : "Any additional details..."}
+                    rows={2}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  disabled={mutation.isPending}
+                  data-testid="button-signup-submit"
+                >
+                  {mutation.isPending ? (
+                    <>{isAr ? "جاري الإرسال..." : "Sending..."}</>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 me-2" />
+                      {isAr ? "إرسال الطلب" : "Send Request"}
+                    </>
+                  )}
+                </Button>
+              </form>
+            </>
+          ) : (
+            <div className="py-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="font-bold text-xl">
+                {isAr ? "تم إرسال طلبك!" : "Request Sent!"}
+              </h3>
+              <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                {isAr
+                  ? "شكراً لك. سيتواصل معك فريقنا قريباً على الرقم الذي قدمته."
+                  : "Thank you! Our team will contact you soon on the phone number you provided."}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                data-testid="button-signup-close"
+                className="mt-2"
+              >
+                {isAr ? "إغلاق" : "Close"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

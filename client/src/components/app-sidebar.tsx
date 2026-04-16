@@ -34,6 +34,7 @@ import {
   ClipboardCheck,
   HandCoins,
   DatabaseBackup,
+  UserCheck,
 } from "lucide-react";
 
 type BrandingData = {
@@ -61,6 +62,7 @@ export function AppSidebar() {
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
     { title: t("nav.stores"), url: "/restaurants", icon: Store },
     { title: t("nav.subscriptions"), url: "/subscriptions", icon: CreditCard },
+    { title: t("nav.signupRequests"), url: "/signup-requests", icon: UserCheck },
     { title: t("nav.backup"), url: "/backup", icon: DatabaseBackup },
   ];
 

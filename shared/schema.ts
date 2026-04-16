@@ -332,6 +332,28 @@ export const debtPaymentsRelations = relations(debtPayments, ({ one }) => ({
   }),
 }));
 
+// ── Signup Requests ───────────────────────────────────────────
+export const signupRequests = pgTable("signup_requests", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  businessName: text("business_name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil"] }).notNull().default("jewel"),
+  notes: text("notes"),
+  status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSignupRequestSchema = createInsertSchema(signupRequests).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
+
+export type SignupRequest = typeof signupRequests.$inferSelect;
+export type InsertSignupRequest = z.infer<typeof insertSignupRequestSchema>;
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,

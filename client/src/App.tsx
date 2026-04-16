@@ -30,6 +30,7 @@ import StockAudit from "@/pages/stock-audit";
 import PurchasesPage from "@/pages/purchases-page";
 import DebtsPage from "@/pages/debts-page";
 import AdminBackup from "@/pages/admin-backup";
+import AdminSignupRequests from "@/pages/admin-signup-requests";
 import OilLayout from "@/pages/oil/oil-layout";
 import OilDashboard from "@/pages/oil/oil-dashboard";
 import OilPos from "@/pages/oil/oil-pos";
@@ -50,6 +51,7 @@ function AdminRouter() {
       <Route path="/" component={AdminDashboard} />
       <Route path="/restaurants" component={AdminStores} />
       <Route path="/subscriptions" component={AdminSubscriptions} />
+      <Route path="/signup-requests" component={AdminSignupRequests} />
       <Route path="/backup" component={AdminBackup} />
       <Route component={NotFound} />
     </Switch>

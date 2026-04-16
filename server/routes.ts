@@ -2,10 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
-import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema } from "@shared/schema";
+import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema, insertSignupRequestSchema, signupRequests } from "@shared/schema";
 import { db } from "./db";
 import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -1784,6 +1784,37 @@ export async function registerRoutes(
       recentSales: sales.slice(0, 5),
       recentPurchases: purchases.slice(0, 5),
     });
+  });
+
+  // ── Signup Requests (public) ────────────────────────────────
+  app.post("/api/signup-requests", async (req, res) => {
+    const parsed = insertSignupRequestSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+    const [created] = await db.insert(signupRequests).values(parsed.data).returning();
+    res.status(201).json(created);
+  });
+
+  // ── Signup Requests (admin only) ────────────────────────────
+  app.get("/api/signup-requests", requireAdmin, async (_req, res) => {
+    const rows = await db.select().from(signupRequests).orderBy(desc(signupRequests.createdAt));
+    res.json(rows);
+  });
+
+  app.patch("/api/signup-requests/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const [updated] = await db.update(signupRequests).set({ status }).where(eq(signupRequests.id, id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/signup-requests/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    await db.delete(signupRequests).where(eq(signupRequests.id, id));
+    res.sendStatus(204);
   });
 
   return httpServer;

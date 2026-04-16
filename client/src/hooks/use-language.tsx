@@ -29,6 +29,7 @@ type TranslationKeys = {
   "nav.layaway": string;
   "nav.branding": string;
   "nav.backup": string;
+  "nav.signupRequests": string;
   "nav.logout": string;
 
   "auth.login": string;
@@ -436,6 +437,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.stores": "Stores",
     "nav.subscriptions": "Subscriptions",
     "nav.backup": "Backup & Restore",
+    "nav.signupRequests": "Signup Requests",
     "nav.pos": "POS Terminal",
     "pos.home": "POS Home",
     "pos.selectTerminal": "Select a Terminal",
@@ -862,6 +864,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.stores": "المتاجر",
     "nav.subscriptions": "الاشتراكات",
     "nav.backup": "النسخ الاحتياطي",
+    "nav.signupRequests": "طلبات الاشتراك",
     "nav.pos": "نقطة البيع",
     "pos.home": "الرئيسية",
     "pos.selectTerminal": "اختر نقطة بيع",
