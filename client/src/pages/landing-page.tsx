@@ -87,8 +87,8 @@ const products: Product[] = [
   },
   {
     id: "oil",
-    name: "OilPOS",
-    nameAr: "نقطة بيع الزيوت",
+    name: "FactoryPOS",
+    nameAr: "نقطة بيع المصنع",
     description: "Complete oil factory management — production, inventory, sales, purchases, expenses & accounting.",
     descriptionAr: "إدارة شاملة لمصنع الزيوت — الإنتاج، المخزون، المبيعات، المشتريات، المصاريف والمحاسبة.",
     icon: Droplets,
@@ -445,13 +445,13 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* OilPOS Pricing */}
+        {/* FactoryPOS Pricing */}
         <div>
           <div className="flex items-center gap-2 mb-5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
               <Droplets className="h-4 w-4 text-white" />
             </div>
-            <h3 className="font-bold text-lg">OilPOS</h3>
+            <h3 className="font-bold text-lg">FactoryPOS</h3>
             <span className="text-sm text-muted-foreground">{isAr ? "— لمصانع الزيوت" : "— Oil Factories"}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -583,7 +583,7 @@ export default function LandingPage() {
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
                         <Droplets className="h-5 w-5 text-white" />
                       </div>
-                      <span className="text-sm font-semibold">OilPOS</span>
+                      <span className="text-sm font-semibold">FactoryPOS</span>
                       <span className="text-[10px] text-muted-foreground">{isAr ? "زيوت / مصنع" : "Oil / Factory"}</span>
                     </button>
                   </div>
