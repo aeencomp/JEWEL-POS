@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,6 +10,7 @@ import {
   ShoppingCart, Package, Users, ClipboardList, Wrench,
   Clock, Palette, LogOut, Menu, X, Gem, ChevronRight,
   ShoppingBag, HandCoins, ClipboardCheck, HardDrive, ArrowLeft,
+  Wifi,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,8 +35,18 @@ const navItems = [
   { path: "/backup", icon: HardDrive, label: "Backup", labelAr: "النسخ الاحتياطي" },
 ];
 
-function NavLabel({ label, labelAr, isAr }: { label: string; labelAr: string; isAr: boolean }) {
-  return <span>{isAr ? labelAr : label}</span>;
+function useIsDark() {
+  const [isDark, setIsDark] = useState(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains("dark"))
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
 }
 
 export default function JewelLayout({
@@ -53,6 +64,7 @@ export default function JewelLayout({
   const { language } = useLanguage();
   const { user } = useAuth();
   const isAr = language === "ar";
+  const isDark = useIsDark();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { data: branding } = useQuery<BrandingData>({
@@ -67,89 +79,127 @@ export default function JewelLayout({
     },
   });
 
-  const brandColor = branding?.brandColor || "#f97316";
+  const brandColor = branding?.brandColor || "#d4a574";
 
   const isActive = (item: (typeof navItems)[0]) =>
     item.exact ? location === item.path : location.startsWith(item.path);
 
   const currentPage = navItems.find((i) => isActive(i));
 
-  const Sidebar = () => (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-e border-slate-100 dark:border-slate-800">
+  // ── Sidebar theme tokens ──────────────────────────────────────────────────
+  // Light mode → warm rich dark (luxury jewelry feel)
+  // Dark mode  → cool slate dark (sleek modern feel)
+  const sidebarBg = isDark
+    ? "linear-gradient(180deg, #0f172a 0%, #0f172a 100%)"
+    : `linear-gradient(160deg, #1a0e06 0%, #261508 60%, #1a0e06 100%)`;
 
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-5 border-b border-slate-100 dark:border-slate-800">
+  const sidebarBorder = isDark ? "rgba(255,255,255,0.06)" : `${brandColor}22`;
+
+  const inactiveText  = isDark ? "rgba(148,163,184,1)"  : "rgba(255,255,255,0.55)";
+  const inactiveHover = isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.08)";
+  const inactiveIconBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.07)";
+  const sectionLabel  = isDark ? "rgba(100,116,139,1)"  : "rgba(255,255,255,0.3)";
+  const userPillBg    = isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.07)";
+  const userPillBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.12)";
+  const footerBorder  = isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.10)";
+
+  const Sidebar = () => (
+    <div
+      className="flex flex-col h-full"
+      style={{
+        background: sidebarBg,
+        borderInlineEnd: `1px solid ${sidebarBorder}`,
+      }}
+    >
+      {/* ── Logo ── */}
+      <div
+        className="px-5 pt-6 pb-5"
+        style={{ borderBottom: `1px solid ${footerBorder}` }}
+      >
         <div className="flex items-center gap-3">
           {branding?.logoUrl ? (
-            <img
-              src={branding.logoUrl}
-              alt=""
-              className="w-10 h-10 rounded-2xl object-contain border border-slate-100 dark:border-slate-700 bg-white p-0.5 shadow-sm"
-            />
+            <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0 ring-1 ring-white/10 shadow-lg">
+              <img
+                src={branding.logoUrl}
+                alt=""
+                className="w-full h-full object-contain bg-white/10"
+              />
+            </div>
           ) : (
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, ${brandColor}e0, ${brandColor})` }}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${brandColor}dd, ${brandColor})`,
+                boxShadow: `0 4px 18px ${brandColor}50`,
+              }}
             >
-              <Gem className="h-5 w-5 text-white" />
+              <Gem className="h-5 w-5 text-white drop-shadow" />
             </div>
           )}
           <div className="min-w-0">
-            <p className="font-bold text-sm tracking-tight text-slate-900 dark:text-white truncate">
+            <p className="font-bold text-sm tracking-tight text-white truncate leading-tight">
               {branding?.name || "JewelPOS"}
             </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">
-              {isAr ? "نظام إدارة المجوهرات" : "Jewelry Store Management"}
+            <p className="text-[11px] leading-tight mt-0.5" style={{ color: inactiveText }}>
+              {isAr ? "نظام إدارة المجوهرات" : "Jewelry Management"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Nav */}
+      {/* ── Nav ── */}
       <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-widest px-3 mb-2">
-          {isAr ? "القائمة" : "Menu"}
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest px-3 mb-3"
+          style={{ color: sectionLabel }}
+        >
+          {isAr ? "القائمة" : "Main Menu"}
         </p>
+
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
+
           return (
             <Link key={item.path} href={item.path}>
               <div
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group cursor-pointer`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer select-none transition-all duration-150"
                 style={
                   active
                     ? {
-                        backgroundColor: brandColor + "18",
+                        background: `linear-gradient(90deg, ${brandColor}28, ${brandColor}18)`,
                         color: brandColor,
+                        borderInlineStart: `2.5px solid ${brandColor}`,
                       }
-                    : {}
+                    : { color: inactiveText }
                 }
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.background = inactiveHover;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.background = "";
+                }}
                 data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
               >
+                {/* icon box */}
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-                    active ? "" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
-                  }`}
-                  style={active ? { backgroundColor: brandColor + "22", color: brandColor } : {}}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={
+                    active
+                      ? { background: `${brandColor}30`, color: brandColor }
+                      : { background: inactiveIconBg, color: inactiveText }
+                  }
                 >
                   <Icon className="h-3.5 w-3.5" />
                 </div>
-                <span
-                  className={`flex-1 ${
-                    active
-                      ? "font-semibold"
-                      : "text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white"
-                  }`}
-                >
-                  <NavLabel label={item.label} labelAr={item.labelAr} isAr={isAr} />
+
+                <span className={`flex-1 ${active ? "font-semibold" : ""}`}>
+                  {isAr ? item.labelAr : item.label}
                 </span>
+
                 {active && (
-                  <div
-                    className="w-1.5 h-5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: brandColor }}
-                  />
+                  <ChevronRight className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
                 )}
               </div>
             </Link>
@@ -157,33 +207,48 @@ export default function JewelLayout({
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-        {/* User pill */}
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+      {/* ── Footer ── */}
+      <div
+        className="px-3 py-4 space-y-2"
+        style={{ borderTop: `1px solid ${footerBorder}` }}
+      >
+        {/* User card */}
+        <div
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+          style={{ background: userPillBg, border: `1px solid ${userPillBorder}` }}
+        >
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm"
-            style={{ background: `linear-gradient(135deg, ${brandColor}cc, ${brandColor})` }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            style={{
+              background: `linear-gradient(135deg, ${brandColor}cc, ${brandColor})`,
+              boxShadow: `0 2px 8px ${brandColor}40`,
+            }}
           >
             {(user?.username?.[0] ?? "J").toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+            <p className="text-xs font-semibold text-white truncate">
               {user?.username ?? "store"}
             </p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            <p className="text-[10px]" style={{ color: inactiveText }}>
               {isAr ? "مدير المتجر" : "Store Manager"}
             </p>
           </div>
         </div>
 
+        {/* Controls row */}
         <div className="flex items-center gap-1">
-          <LanguageToggle />
-          <ThemeToggle />
+          <div className="[&_button]:text-white/50 [&_button:hover]:text-white [&_button:hover]:bg-white/10">
+            <LanguageToggle />
+          </div>
+          <div className="[&_button]:text-white/50 [&_button:hover]:text-white [&_button:hover]:bg-white/10">
+            <ThemeToggle />
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs gap-1.5"
+            className="flex-1 justify-center text-xs gap-1.5 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+            style={{ color: inactiveText }}
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
             data-testid="button-logout"
@@ -197,36 +262,46 @@ export default function JewelLayout({
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950" dir={isAr ? "rtl" : "ltr"}>
-
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: isDark ? "#020617" : "#f5f5f4" }}
+      dir={isAr ? "rtl" : "ltr"}
+    >
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-60 flex-shrink-0 shadow-sm">
+      <aside className="hidden md:flex flex-col w-60 flex-shrink-0" style={{ boxShadow: "4px 0 24px rgba(0,0,0,0.18)" }}>
         <Sidebar />
       </aside>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute start-0 top-0 bottom-0 w-64 flex flex-col shadow-2xl">
+          <div
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ background: "rgba(0,0,0,0.5)" }}
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside className="absolute start-0 top-0 bottom-0 w-64 flex flex-col" style={{ boxShadow: "8px 0 32px rgba(0,0,0,0.4)" }}>
             <Sidebar />
           </aside>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="absolute top-4 end-4 text-white bg-slate-800/80 rounded-full p-1.5 backdrop-blur"
+            className="absolute top-4 end-4 text-white rounded-full p-1.5"
+            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Main */}
+      {/* Main content column */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
         {/* Impersonation banner */}
         {isImpersonating && (
-          <div className="flex items-center justify-between gap-2 px-4 py-2 flex-shrink-0 text-white"
-            style={{ backgroundColor: brandColor }}>
+          <div
+            className="flex items-center justify-between gap-2 px-4 py-2 flex-shrink-0 text-white"
+            style={{ background: `linear-gradient(90deg, ${brandColor}, ${brandColor}cc)` }}
+          >
             <span className="text-sm font-medium">
               {isAr ? "تصفح باسم:" : "Viewing as:"} {impersonatingStoreName}
             </span>
@@ -244,10 +319,19 @@ export default function JewelLayout({
         )}
 
         {/* Topbar */}
-        <header className="flex items-center gap-3 px-5 h-14 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+        <header
+          className="flex items-center gap-3 px-5 h-14 flex-shrink-0"
+          style={{
+            background: isDark ? "#0f172a" : "#ffffff",
+            borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)",
+            boxShadow: isDark ? "none" : "0 1px 8px rgba(0,0,0,0.06)",
+          }}
+        >
+          {/* Mobile hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="md:hidden p-1.5 rounded-lg transition-colors"
+            style={{ color: isDark ? "rgba(148,163,184,1)" : "rgba(100,116,139,1)" }}
             data-testid="button-sidebar-toggle"
           >
             <Menu className="h-5 w-5" />
@@ -255,36 +339,55 @@ export default function JewelLayout({
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 hidden md:block font-medium">
+            <span
+              className="hidden md:block font-medium text-sm"
+              style={{ color: isDark ? "rgba(100,116,139,1)" : "rgba(156,163,175,1)" }}
+            >
               {branding?.name || "JewelPOS"}
             </span>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 hidden md:block" />
-            <div className="flex items-center gap-1.5">
+            <ChevronRight
+              className="h-3.5 w-3.5 hidden md:block"
+              style={{ color: isDark ? "rgba(71,85,105,1)" : "rgba(209,213,219,1)" }}
+            />
+            <div className="flex items-center gap-2">
               {currentPage && (
                 <div
-                  className="w-5 h-5 rounded-md flex items-center justify-center"
-                  style={{ backgroundColor: brandColor + "18" }}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center"
+                  style={{ background: `${brandColor}20`, color: brandColor }}
                 >
-                  <currentPage.icon className="h-3 w-3" style={{ color: brandColor }} />
+                  <currentPage.icon className="h-3.5 w-3.5" />
                 </div>
               )}
-              <span className="font-semibold text-slate-800 dark:text-slate-100">
+              <span
+                className="font-semibold"
+                style={{ color: isDark ? "#f1f5f9" : "#1e293b" }}
+              >
                 {isAr ? currentPage?.labelAr : currentPage?.label}
               </span>
             </div>
           </div>
 
+          {/* Right side */}
           <div className="ms-auto flex items-center gap-2">
-            {/* Online badge */}
-            <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 px-2.5 py-1 rounded-full">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div
+              className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+              style={{
+                background: "rgba(34,197,94,0.12)",
+                color: "#16a34a",
+                border: "1px solid rgba(34,197,94,0.2)",
+              }}
+            >
+              <Wifi className="h-3 w-3" />
               {isAr ? "متصل" : "Online"}
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto flex flex-col bg-slate-50 dark:bg-slate-950">
+        <main
+          className="flex-1 overflow-y-auto flex flex-col"
+          style={{ background: isDark ? "#020617" : "#f5f5f4" }}
+        >
           {children}
         </main>
       </div>
