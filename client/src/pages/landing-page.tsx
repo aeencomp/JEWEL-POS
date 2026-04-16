@@ -230,25 +230,6 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <LanguageToggle />
             <ThemeToggle />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => navigate("/store-portal")}
-              data-testid="button-header-login"
-              className="hidden sm:flex text-muted-foreground hover:text-foreground"
-            >
-              <LogIn className="h-4 w-4 me-1.5" />
-              {isAr ? "تسجيل الدخول" : "Sign In"}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleOpen()}
-              data-testid="button-header-signup"
-              className="bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              <UserPlus className="h-4 w-4 me-1.5" />
-              {isAr ? "طلب الاشتراك" : "Request Access"}
-            </Button>
           </div>
         </div>
       </header>
