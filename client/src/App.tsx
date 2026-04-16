@@ -60,7 +60,7 @@ function AdminRouter() {
 function StoreRouter() {
   return (
     <Switch>
-      <Route path="/" component={PosTerminal} />
+      <Route path="/" component={PosHome} />
       <Route path="/pos/:id" component={PosTerminal} />
       <Route path="/inventory" component={InventoryManagement} />
       <Route path="/customers" component={CustomersPage} />
@@ -201,7 +201,6 @@ function AppContent() {
   if (location === "/" && (user?.role === "store" || isImpersonating)) {
     const posSystem = user ? localStorage.getItem(`posSystem_${user.id}`) : null;
     if (posSystem === "oil") return <Redirect to="/oil" />;
-    return <PosHome />;
   }
 
   if (location.startsWith("/pos/")) {

@@ -44,11 +44,8 @@ import {
   Watch,
   Coins,
   Layers,
-  LogOut,
   Monitor,
 } from "lucide-react";
-import { LanguageToggle } from "@/components/language-toggle";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const ICON_OPTIONS = [
   { value: "ShoppingCart", label: "Cart", Icon: ShoppingCart },
@@ -99,7 +96,7 @@ export default function PosHome() {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { toast } = useToast();
-  const { logoutMutation } = useAuth();
+  useAuth();
   const [, navigate] = useLocation();
 
   const [manageMode, setManageMode] = useState(false);
@@ -200,52 +197,35 @@ export default function PosHome() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950" dir={isAr ? "rtl" : "ltr"}>
-      {/* Top bar */}
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {branding?.logoUrl ? (
-            <img src={branding.logoUrl} alt="" className="h-9 w-9 rounded-xl object-contain bg-white p-0.5" />
-          ) : (
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: brandColor }}>
-              <Gem className="h-5 w-5 text-white" />
-            </div>
-          )}
-          <div>
-            <h1 className="text-base font-bold text-white leading-none" data-testid="text-pos-home-title">
-              {branding?.name || "JewelPOS"}
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5">{isAr ? "اختر نقطة البيع" : t("pos.selectTerminal")}</p>
-          </div>
+    <div className="p-6 max-w-6xl mx-auto w-full" dir={isAr ? "rtl" : "ltr"} data-testid="pos-home">
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold" data-testid="text-pos-home-title">
+            {manageMode ? t("pos.manageTerminals") : (isAr ? "اختر نقطة البيع" : t("pos.selectTerminal"))}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {manageMode
+              ? (isAr ? "قم بإضافة أو تعديل أو حذف نقاط البيع" : "Add, edit or remove POS terminals")
+              : (isAr ? "انقر على نقطة البيع لبدء البيع" : "Tap a terminal to start selling")}
+          </p>
         </div>
+        <button
+          onClick={() => setManageMode(!manageMode)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all border ${
+            manageMode
+              ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+              : "bg-muted text-muted-foreground hover:text-foreground border-border"
+          }`}
+          data-testid="button-manage-terminals"
+        >
+          {manageMode ? <X className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
+          <span className="hidden sm:inline">{manageMode ? t("common.cancel") : t("pos.manageTerminals")}</span>
+        </button>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <LanguageToggle />
-          <ThemeToggle />
-          <button
-            onClick={() => setManageMode(!manageMode)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-              manageMode
-                ? "bg-amber-500 text-white"
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
-            }`}
-            data-testid="button-manage-terminals"
-          >
-            {manageMode ? <X className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
-            <span className="hidden sm:inline">{manageMode ? t("common.cancel") : t("pos.manageTerminals")}</span>
-          </button>
-          <button
-            onClick={() => logoutMutation.mutate()}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("auth.logout")}</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="flex-1 p-6 max-w-6xl mx-auto w-full">
+      {/* Content */}
+      <div>
         {terminals.length === 0 && !manageMode ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="w-20 h-20 rounded-3xl bg-slate-800 flex items-center justify-center mb-6 shadow-xl">
@@ -370,7 +350,7 @@ export default function PosHome() {
             </div>
           </>
         )}
-      </main>
+      </div>
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setEditingTerminal(null); }}>

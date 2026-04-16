@@ -77,9 +77,9 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
           const active = isActive(item);
           return (
             <Link key={item.path} href={item.path}>
-              <a
+              <div
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group cursor-pointer
                   ${active
                     ? "bg-blue-600 text-white shadow-md shadow-blue-900/30"
                     : "text-slate-400 hover:text-white hover:bg-slate-800"
@@ -89,7 +89,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
                 <Icon className={`h-4 w-4 flex-shrink-0 ${active ? "text-white" : "text-slate-500 group-hover:text-slate-300"}`} />
                 <NavLabel label={item.label} labelAr={item.labelAr} isAr={isAr} />
                 {active && <ChevronRight className="h-3.5 w-3.5 ms-auto text-blue-300" />}
-              </a>
+              </div>
             </Link>
           );
         })}
