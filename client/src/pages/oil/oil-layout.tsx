@@ -7,23 +7,24 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
-  Droplets, ChevronRight, ScanLine,
+  Droplets, ChevronRight, ScanLine, Palette,
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
-const navItems = [
-  { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", exact: true },
-  { path: "/oil/pos", icon: ScanLine, label: "POS", labelAr: "نقطة البيع" },
-  { path: "/oil/inventory", icon: Package, label: "Inventory", labelAr: "المخزون" },
-  { path: "/oil/sales", icon: ShoppingCart, label: "Sales", labelAr: "المبيعات" },
-  { path: "/oil/purchases", icon: Truck, label: "Purchases", labelAr: "المشتريات" },
-  { path: "/oil/production", icon: Factory, label: "Production", labelAr: "الإنتاج" },
-  { path: "/oil/customers", icon: Users, label: "Customers", labelAr: "العملاء" },
-  { path: "/oil/suppliers", icon: Building2, label: "Suppliers", labelAr: "الموردون" },
-  { path: "/oil/expenses", icon: Receipt, label: "Expenses", labelAr: "المصاريف" },
-  { path: "/oil/debts", icon: HandCoins, label: "Debts", labelAr: "الديون" },
+const ALL_NAV_ITEMS = [
+  { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", featureKey: null, exact: true },
+  { path: "/oil/pos", icon: ScanLine, label: "POS", labelAr: "نقطة البيع", featureKey: "pos" },
+  { path: "/oil/inventory", icon: Package, label: "Inventory", labelAr: "المخزون", featureKey: "inventory" },
+  { path: "/oil/sales", icon: ShoppingCart, label: "Sales", labelAr: "المبيعات", featureKey: "sales" },
+  { path: "/oil/purchases", icon: Truck, label: "Purchases", labelAr: "المشتريات", featureKey: "purchases" },
+  { path: "/oil/production", icon: Factory, label: "Production", labelAr: "الإنتاج", featureKey: "production" },
+  { path: "/oil/customers", icon: Users, label: "Customers", labelAr: "العملاء", featureKey: "customers" },
+  { path: "/oil/suppliers", icon: Building2, label: "Suppliers", labelAr: "الموردون", featureKey: "suppliers" },
+  { path: "/oil/expenses", icon: Receipt, label: "Expenses", labelAr: "المصاريف", featureKey: "expenses" },
+  { path: "/oil/debts", icon: HandCoins, label: "Debts", labelAr: "الديون", featureKey: "debts" },
+  { path: "/oil/branding", icon: Palette, label: "Branding", labelAr: "العلامة التجارية", featureKey: null },
 ];
 
 function NavLabel({ label, labelAr, isAr }: { label: string; labelAr: string; isAr: boolean }) {
@@ -37,6 +38,20 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
   const isAr = language === "ar";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const { data: storeInfo } = useQuery<{ name: string; features?: string | null }>({
+    queryKey: ["/api/oil/store-info"],
+    queryFn: () => fetch("/api/oil/store-info", { credentials: "include" }).then(r => r.json()),
+    staleTime: 60000,
+  });
+
+  const allowedFeatures: string[] | null = storeInfo?.features
+    ? JSON.parse(storeInfo.features) as string[]
+    : null;
+
+  const navItems = ALL_NAV_ITEMS.filter(item =>
+    item.featureKey === null || allowedFeatures === null || allowedFeatures.includes(item.featureKey)
+  );
+
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/logout"),
     onSuccess: () => {
@@ -45,10 +60,10 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const isActive = (item: (typeof navItems)[0]) =>
+  const isActive = (item: (typeof ALL_NAV_ITEMS)[0]) =>
     item.exact ? location === item.path : location.startsWith(item.path);
 
-  const currentPage = navItems.find((i) => isActive(i));
+  const currentPage = ALL_NAV_ITEMS.find((i) => isActive(i));
 
   const Sidebar = () => (
     <div className="flex flex-col h-full bg-slate-900 text-slate-100">

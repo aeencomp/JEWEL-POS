@@ -1567,6 +1567,13 @@ export async function registerRoutes(
     next();
   };
 
+  // Store info (branding) for OilPOS
+  app.get("/api/oil/store-info", requireOilAuth, async (req, res) => {
+    const store = await storage.getStore(req.user!.storeId!);
+    if (!store) return res.status(404).json({ message: "Store not found" });
+    res.json(store);
+  });
+
   // Products
   app.get("/api/oil/products", requireOilAuth, async (req, res) => {
     res.json(await storage.getOilProducts(req.user!.storeId!));
@@ -1643,21 +1650,30 @@ export async function registerRoutes(
     res.json(await storage.getOilPurchaseItems(parseInt(req.params.id)));
   });
   app.post("/api/oil/purchases", requireOilAuth, async (req, res) => {
-    const { items, ...purchaseData } = req.body;
-    const purchase = await storage.createOilPurchase({ ...purchaseData, storeId: req.user!.storeId! });
-    if (items && Array.isArray(items)) {
-      for (const item of items) {
-        await storage.createOilPurchaseItem({ ...item, purchaseId: purchase.id });
-        // Update stock
-        const prod = await storage.getOilProduct(item.productId);
-        if (prod) {
-          await storage.updateOilProduct(item.productId, {
-            currentStock: (parseFloat(prod.currentStock) + parseFloat(item.quantity)).toFixed(2),
-          });
+    try {
+      const { items, ...purchaseData } = req.body;
+      // Ensure supplierId is null (not 0) when no real supplier is selected
+      if (!purchaseData.supplierId || Number(purchaseData.supplierId) === 0) {
+        purchaseData.supplierId = null;
+      }
+      const purchase = await storage.createOilPurchase({ ...purchaseData, storeId: req.user!.storeId! });
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.createOilPurchaseItem({ ...item, purchaseId: purchase.id });
+          // Update stock
+          const prod = await storage.getOilProduct(item.productId);
+          if (prod) {
+            await storage.updateOilProduct(item.productId, {
+              currentStock: (parseFloat(prod.currentStock) + parseFloat(item.quantity)).toFixed(2),
+            });
+          }
         }
       }
+      res.json(purchase);
+    } catch (err: any) {
+      console.error("Error creating oil purchase:", err);
+      res.status(500).json({ message: err.message || "Failed to save purchase" });
     }
-    res.json(purchase);
   });
   app.patch("/api/oil/purchases/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilPurchase(parseInt(req.params.id), req.body));

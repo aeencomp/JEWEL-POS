@@ -91,6 +91,7 @@ function OilRouter() {
         <Route path="/oil/suppliers" component={OilSuppliers} />
         <Route path="/oil/expenses" component={OilExpenses} />
         <Route path="/oil/debts" component={OilDebts} />
+        <Route path="/oil/branding" component={StoreBranding} />
         <Route component={NotFound} />
       </Switch>
     </OilLayout>

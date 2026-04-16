@@ -41,6 +41,7 @@ export const stores = pgTable("stores", {
   receiptHeader: text("receipt_header"),
   receiptFooter: text("receipt_footer"),
   posSystem: text("pos_system", { enum: ["jewel", "oil"] }).notNull().default("jewel"),
+  features: text("features"),
 });
 
 export const storesRelations = relations(stores, ({ many, one }) => ({

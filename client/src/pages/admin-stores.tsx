@@ -69,10 +69,23 @@ import {
   KeyRound,
   Gem,
   Droplets,
+  ShieldCheck,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
 type StoreWithUsername = Store & { storeUsername?: string | null };
+
+const OIL_FEATURES = [
+  { key: "pos", label: "POS", labelAr: "نقطة البيع" },
+  { key: "inventory", label: "Inventory", labelAr: "المخزون" },
+  { key: "sales", label: "Sales", labelAr: "المبيعات" },
+  { key: "purchases", label: "Purchases", labelAr: "المشتريات" },
+  { key: "production", label: "Production", labelAr: "الإنتاج" },
+  { key: "customers", label: "Customers", labelAr: "العملاء" },
+  { key: "suppliers", label: "Suppliers", labelAr: "الموردون" },
+  { key: "expenses", label: "Expenses", labelAr: "المصاريف" },
+  { key: "debts", label: "Debts", labelAr: "الديون" },
+];
 
 const createStoreSchema = z.object({
   name: z.string().min(1, "Store name is required"),
@@ -109,6 +122,8 @@ export default function AdminStores() {
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
   const [resetPasswordStore, setResetPasswordStore] = useState<Store | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [permissionsStore, setPermissionsStore] = useState<Store | null>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   const { data: stores, isLoading } = useQuery<StoreWithUsername[]>({
     queryKey: ["/api/stores"],
@@ -235,6 +250,23 @@ export default function AdminStores() {
     },
     onError: (error: Error) => {
       toast({ title: t("admin.resetPassword"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const featuresMutation = useMutation({
+    mutationFn: async ({ id, features }: { id: number; features: string[] }) => {
+      const res = await apiRequest("PATCH", `/api/stores/${id}`, {
+        features: features.length === OIL_FEATURES.length ? null : JSON.stringify(features),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      setPermissionsStore(null);
+      toast({ title: "Permissions updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to update permissions", description: error.message, variant: "destructive" });
     },
   });
 
@@ -644,6 +676,23 @@ export default function AdminStores() {
                   >
                     <KeyRound className="h-4 w-4" />
                   </Button>
+                  {store.posSystem === "oil" && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="flex-shrink-0 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800"
+                      onClick={() => {
+                        const existing = store.features;
+                        const parsed = existing ? JSON.parse(existing) as string[] : OIL_FEATURES.map(f => f.key);
+                        setSelectedFeatures(parsed);
+                        setPermissionsStore(store);
+                      }}
+                      data-testid={`button-permissions-${store.id}`}
+                      title="Module Permissions"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="icon"
@@ -890,6 +939,65 @@ export default function AdminStores() {
               {t("admin.resetPassword")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Module Permissions Dialog (OilPOS only) ── */}
+      <Dialog open={!!permissionsStore} onOpenChange={(v) => !v && setPermissionsStore(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-cyan-600" />
+              Module Permissions — {permissionsStore?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Choose which modules are accessible for this FactoryPOS store.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 py-2">
+            {OIL_FEATURES.map(f => {
+              const enabled = selectedFeatures.includes(f.key);
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setSelectedFeatures(prev =>
+                    enabled ? prev.filter(x => x !== f.key) : [...prev, f.key]
+                  )}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-start transition-all text-sm ${
+                    enabled
+                      ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-300 font-medium"
+                      : "border-border text-muted-foreground hover:border-muted-foreground/40"
+                  }`}
+                  data-testid={`toggle-feature-${f.key}`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${enabled ? "bg-cyan-500 border-cyan-500" : "border-muted-foreground/40"}`} />
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t">
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+              onClick={() => setSelectedFeatures(OIL_FEATURES.map(f => f.key))}
+            >
+              Select All
+            </button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setPermissionsStore(null)}>Cancel</Button>
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                disabled={featuresMutation.isPending || selectedFeatures.length === 0}
+                onClick={() => permissionsStore && featuresMutation.mutate({ id: permissionsStore.id, features: selectedFeatures })}
+                data-testid="button-save-permissions"
+              >
+                {featuresMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+                Save Permissions
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

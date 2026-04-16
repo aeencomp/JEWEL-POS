@@ -10,8 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Truck, Plus, Trash2, ChevronDown, Banknote } from "lucide-react";
+import { Truck, Plus, Trash2, ChevronDown, Banknote, Printer } from "lucide-react";
 import { useQuery as useQueryItems } from "@tanstack/react-query";
+import { printOilPurchaseInvoice } from "@/components/oil-purchase-invoice";
 
 function fmt(n: string | number) { return parseFloat(String(n)).toLocaleString("en-US", { maximumFractionDigits: 0 }); }
 type PurchaseItem = { productId: number; productName: string; quantity: number; unitCost: number; total: number };
@@ -37,6 +38,10 @@ export default function OilPurchases() {
     queryKey: ["/api/oil/suppliers"],
     queryFn: () => fetch("/api/oil/suppliers", { credentials: "include" }).then(r => r.json()),
   });
+  const { data: storeInfo } = useQuery<{ name: string; phone?: string | null; address?: string | null; email?: string | null; logoUrl?: string | null }>({
+    queryKey: ["/api/oil/store-info"],
+    queryFn: () => fetch("/api/oil/store-info", { credentials: "include" }).then(r => r.json()),
+  });
 
   const [formSupplierId, setFormSupplierId] = useState("");
   const [formSupplierName, setFormSupplierName] = useState("");
@@ -54,6 +59,9 @@ export default function OilPurchases() {
       toast({ title: isAr ? "تمت إضافة الشراء" : "Purchase recorded" });
       setShowDialog(false);
       resetForm();
+    },
+    onError: (err: any) => {
+      toast({ title: isAr ? "فشل الحفظ" : "Save failed", description: err.message || String(err), variant: "destructive" });
     },
   });
 
@@ -92,9 +100,10 @@ export default function OilPurchases() {
     if (!items.some(i => i.productId > 0 && i.quantity > 0)) {
       toast({ title: isAr ? "أضف منتجاً على الأقل" : "Add at least one item", variant: "destructive" }); return;
     }
-    const supplier = suppliers.find(s => s.id === Number(formSupplierId));
+    const supplierIdNum = Number(formSupplierId);
+    const supplier = suppliers.find(s => s.id === supplierIdNum);
     createMutation.mutate({
-      supplierId: formSupplierId ? Number(formSupplierId) : null,
+      supplierId: supplierIdNum > 0 ? supplierIdNum : null,
       supplierName: supplier?.name || formSupplierName || null,
       invoiceNumber: formInvoiceNumber || null,
       totalAmount: total.toFixed(2),
@@ -154,11 +163,14 @@ export default function OilPurchases() {
                   {expanded && (
                     <div className="border-t bg-muted/20 px-4 py-3">
                       <PurchaseItemsView purchaseId={purchase.id} />
-                      {purchase.paymentStatus !== "paid" && (
-                        <Button size="sm" variant="outline" className="mt-3 text-green-700 border-green-300" onClick={() => { setPaymentPurchase(purchase); setPaymentAmount(0); }} data-testid={`button-pay-purchase-${purchase.id}`}>
-                          <Banknote className="h-3.5 w-3.5 me-1" />{isAr ? "تسجيل دفعة" : "Record Payment"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2 mt-3">
+                        {purchase.paymentStatus !== "paid" && (
+                          <Button size="sm" variant="outline" className="text-green-700 border-green-300" onClick={() => { setPaymentPurchase(purchase); setPaymentAmount(0); }} data-testid={`button-pay-purchase-${purchase.id}`}>
+                            <Banknote className="h-3.5 w-3.5 me-1" />{isAr ? "تسجيل دفعة" : "Record Payment"}
+                          </Button>
+                        )}
+                        <PrintButton purchase={purchase} storeInfo={storeInfo || null} isAr={isAr} />
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -233,7 +245,9 @@ export default function OilPurchases() {
 
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setShowDialog(false)}>{isAr ? "إلغاء" : "Cancel"}</Button>
-              <Button onClick={handleSubmit} disabled={createMutation.isPending} data-testid="button-submit-purchase">{isAr ? "حفظ" : "Save"}</Button>
+              <Button onClick={handleSubmit} disabled={createMutation.isPending} data-testid="button-submit-purchase">
+                {createMutation.isPending ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? "حفظ" : "Save")}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -261,6 +275,26 @@ export default function OilPurchases() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function PrintButton({ purchase, storeInfo, isAr }: { purchase: OilPurchase; storeInfo: { name: string; phone?: string | null; address?: string | null; email?: string | null; logoUrl?: string | null } | null; isAr: boolean }) {
+  const { data: items = [] } = useQueryItems<OilPurchaseItem[]>({
+    queryKey: ["/api/oil/purchases", purchase.id, "items"],
+    queryFn: () => fetch(`/api/oil/purchases/${purchase.id}/items`, { credentials: "include" }).then(r => r.json()),
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="text-blue-700 border-blue-300"
+      onClick={() => printOilPurchaseInvoice({ purchase, items, store: storeInfo, isAr })}
+      data-testid={`button-print-purchase-${purchase.id}`}
+    >
+      <Printer className="h-3.5 w-3.5 me-1" />
+      {isAr ? "طباعة" : "Print"}
+    </Button>
   );
 }
 
