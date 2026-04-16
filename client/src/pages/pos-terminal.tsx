@@ -96,9 +96,14 @@ export default function PosTerminal() {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  useLocation();
   const [match, params] = useRoute("/pos/:id");
   const terminalId = match && params?.id ? parseInt(params.id) : null;
+
+  const { data: terminalsAll = [] } = useQuery<PosTerminal[]>({
+    queryKey: ["/api/pos-terminals"],
+    enabled: terminalId === null,
+  });
 
   const { data: terminalConfig } = useQuery<PosTerminal>({
     queryKey: ["/api/pos-terminals", terminalId],
@@ -108,6 +113,8 @@ export default function PosTerminal() {
     },
     enabled: terminalId !== null,
   });
+
+  const effectiveTerminalConfig = terminalConfig ?? (terminalsAll.length > 0 ? terminalsAll[0] : undefined);
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -183,12 +190,12 @@ export default function PosTerminal() {
         !search ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||
         item.sku.toLowerCase().includes(search.toLowerCase());
-      const terminalCategoryId = terminalConfig?.categoryId ?? null;
+      const terminalCategoryId = effectiveTerminalConfig?.categoryId ?? null;
       const effectiveCategory = terminalCategoryId !== null ? terminalCategoryId : selectedCategory;
       const matchesCategory = effectiveCategory === null || item.categoryId === effectiveCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [inventory, search, selectedCategory, terminalConfig]);
+  }, [inventory, search, selectedCategory, effectiveTerminalConfig]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const grandTotal = Math.max(0, subtotal - discount);
@@ -280,47 +287,13 @@ export default function PosTerminal() {
     w.document.close();
   }
 
-  const terminalCatLocked = terminalConfig?.categoryId != null;
+  const terminalCatLocked = effectiveTerminalConfig?.categoryId != null;
 
   return (
-    <div className="flex flex-col h-screen bg-slate-100 dark:bg-slate-950 overflow-hidden" data-testid="pos-terminal" dir={isAr ? "rtl" : "ltr"}>
-
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center gap-3 flex-shrink-0">
-        <button
-          onClick={() => navigate("/")}
-          className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors flex-shrink-0"
-          data-testid="button-back-to-pos-home"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-
-        {branding?.logoUrl ? (
-          <img src={branding.logoUrl} alt="" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5 flex-shrink-0" />
-        ) : (
-          <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: brandColor }}>
-            <Gem className="h-4 w-4 text-white" />
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          <h1 className="text-sm font-bold text-white leading-none truncate" data-testid="text-pos-title">
-            {terminalConfig?.name || t("pos.terminal")}
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">{branding?.name}</p>
-        </div>
-
-        {/* Cart count badge */}
-        {cartCount > 0 && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-sm font-semibold" style={{ backgroundColor: brandColor }}>
-            <ShoppingCart className="h-4 w-4" />
-            {cartCount}
-          </div>
-        )}
-      </header>
+    <div className="flex flex-col flex-1 min-h-0 bg-slate-100 dark:bg-slate-950 overflow-hidden" data-testid="pos-terminal" dir={isAr ? "rtl" : "ltr"}>
 
       {/* ── Body ───────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
 
         {/* Category Sidebar */}
         {!terminalCatLocked && (

@@ -60,8 +60,7 @@ function AdminRouter() {
 function StoreRouter() {
   return (
     <Switch>
-      <Route path="/" component={PosHome} />
-      <Route path="/pos/:id" component={PosTerminal} />
+      <Route path="/" component={PosTerminal} />
       <Route path="/inventory" component={InventoryManagement} />
       <Route path="/customers" component={CustomersPage} />
       <Route path="/orders" component={OrdersHistory} />
@@ -144,7 +143,7 @@ function MainLayout() {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto flex flex-col">
             {showStoreView ? <StoreRouter /> : <AdminRouter />}
           </main>
         </div>
@@ -186,11 +185,7 @@ function AppContent() {
   }
 
   if (location === "/auth" || location === "/store-portal") {
-    const terminalId = sessionStorage.getItem("selectedTerminalId");
-    if (terminalId) {
-      sessionStorage.removeItem("selectedTerminalId");
-      return <Redirect to={`/pos/${terminalId}`} />;
-    }
+    sessionStorage.removeItem("selectedTerminalId");
     return <Redirect to="/" />;
   }
 
@@ -201,10 +196,6 @@ function AppContent() {
   if (location === "/" && (user?.role === "store" || isImpersonating)) {
     const posSystem = user ? localStorage.getItem(`posSystem_${user.id}`) : null;
     if (posSystem === "oil") return <Redirect to="/oil" />;
-  }
-
-  if (location.startsWith("/pos/")) {
-    return <PosTerminal />;
   }
 
   return <MainLayout />;
