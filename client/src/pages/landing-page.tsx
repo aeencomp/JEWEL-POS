@@ -28,6 +28,7 @@ import {
   Zap,
   Shield,
   BarChart3,
+  Star,
   UserPlus,
   Send,
   LogIn,
@@ -353,6 +354,169 @@ export default function LandingPage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── Pricing Section ─────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 pb-24">
+        <div className="text-center mb-10">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+            {isAr ? "الأسعار" : "Pricing"}
+          </h2>
+          <p className="text-3xl font-extrabold">
+            {isAr ? "اشتراك شهري يناسب عملك" : "Simple Monthly Pricing"}
+          </p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {isAr ? "تبدأ الأسعار من 35,000 د.ع / شهر حسب النظام المختار" : "Starting from 35,000 IQD / month depending on the system"}
+          </p>
+        </div>
+
+        {/* JewelPOS Pricing */}
+        <div className="mb-12">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
+              <Gem className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-bold text-lg">JewelPOS</h3>
+            <span className="text-sm text-muted-foreground">{isAr ? "— لمحلات المجوهرات" : "— Jewelry Stores"}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Basic */}
+            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-jewel-basic">
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "أساسي" : "Basic"}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold">35,000</span>
+                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                {(isAr ? ["نقطة بيع واحدة","إدارة المخزون","سجل المبيعات","دعم فني"] : ["1 POS terminal","Inventory management","Sales history","Technical support"]).map(f => (
+                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button variant="outline" className="w-full" onClick={() => handleOpen("jewel")} data-testid="button-pricing-jewel-basic">
+                {isAr ? "اطلب الآن" : "Get Started"}
+              </Button>
+            </div>
+
+            {/* Standard — Popular */}
+            <div className="rounded-2xl border-2 border-amber-500 bg-card p-6 flex flex-col gap-4 relative shadow-lg" data-testid="pricing-jewel-standard">
+              <div className="absolute -top-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
+                <Badge className="bg-amber-500 text-white px-3 py-0.5 text-[11px] flex items-center gap-1 whitespace-nowrap">
+                  <Star className="h-3 w-3" />{isAr ? "الأكثر طلباً" : "Most Popular"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-1">{isAr ? "قياسي" : "Standard"}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold">55,000</span>
+                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                {(isAr ? ["كل مزايا الأساسي","طلبات الإصلاح","نظام التقسيط","النسخ الاحتياطي","تقارير مفصلة"] : ["Everything in Basic","Repair orders","Layaway system","Cloud backup","Detailed reports"]).map(f => (
+                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-0" onClick={() => handleOpen("jewel")} data-testid="button-pricing-jewel-standard">
+                {isAr ? "اطلب الآن" : "Get Started"}
+              </Button>
+            </div>
+
+            {/* Premium */}
+            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-jewel-premium">
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "مميز" : "Premium"}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold">85,000</span>
+                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                {(isAr ? ["كل مزايا القياسي","متعدد المستخدمين","إدارة الديون","دعم ذو أولوية","شعار مخصص"] : ["Everything in Standard","Multi-user access","Debt management","Priority support","Custom branding"]).map(f => (
+                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button variant="outline" className="w-full" onClick={() => handleOpen("jewel")} data-testid="button-pricing-jewel-premium">
+                {isAr ? "اطلب الآن" : "Get Started"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* OilPOS Pricing */}
+        <div>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+              <Droplets className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-bold text-lg">OilPOS</h3>
+            <span className="text-sm text-muted-foreground">{isAr ? "— لمصانع الزيوت" : "— Oil Factories"}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Basic */}
+            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-oil-basic">
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "أساسي" : "Basic"}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold">50,000</span>
+                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                {(isAr ? ["إدارة المنتجات","المبيعات الأساسية","إدارة المخزون","دعم فني"] : ["Product management","Basic sales","Inventory control","Technical support"]).map(f => (
+                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button variant="outline" className="w-full" onClick={() => handleOpen("oil")} data-testid="button-pricing-oil-basic">
+                {isAr ? "اطلب الآن" : "Get Started"}
+              </Button>
+            </div>
+
+            {/* Standard — Popular */}
+            <div className="rounded-2xl border-2 border-blue-500 bg-card p-6 flex flex-col gap-4 relative shadow-lg" data-testid="pricing-oil-standard">
+              <div className="absolute -top-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
+                <Badge className="bg-blue-500 text-white px-3 py-0.5 text-[11px] flex items-center gap-1 whitespace-nowrap">
+                  <Star className="h-3 w-3" />{isAr ? "الأكثر طلباً" : "Most Popular"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">{isAr ? "قياسي" : "Standard"}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold">75,000</span>
+                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                {(isAr ? ["كل مزايا الأساسي","إدارة المشتريات","إدارة العملاء","نظام المصاريف","تقارير مفصلة"] : ["Everything in Basic","Purchase management","Customer management","Expense tracking","Detailed reports"]).map(f => (
+                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0" onClick={() => handleOpen("oil")} data-testid="button-pricing-oil-standard">
+                {isAr ? "اطلب الآن" : "Get Started"}
+              </Button>
+            </div>
+
+            {/* Premium */}
+            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-oil-premium">
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "مميز" : "Premium"}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl font-extrabold">110,000</span>
+                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                {(isAr ? ["كل مزايا القياسي","إدارة الإنتاج","محاسبة متكاملة","إدارة الديون","دعم ذو أولوية"] : ["Everything in Standard","Production management","Full accounting","Debt management","Priority support"]).map(f => (
+                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button variant="outline" className="w-full" onClick={() => handleOpen("oil")} data-testid="button-pricing-oil-premium">
+                {isAr ? "اطلب الآن" : "Get Started"}
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
