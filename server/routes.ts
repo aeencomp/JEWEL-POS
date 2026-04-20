@@ -1574,6 +1574,17 @@ export async function registerRoutes(
     res.json(store);
   });
 
+  app.get("/api/oil/subscription", requireOilAuth, async (req, res) => {
+    const sub = await storage.getSubscriptionByStore(req.user!.storeId!);
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    const now = new Date();
+    const endDate = sub.endDate ? new Date(sub.endDate) : null;
+    const daysLeft = endDate
+      ? Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    res.json({ ...sub, daysLeft });
+  });
+
   // Products
   app.get("/api/oil/products", requireOilAuth, async (req, res) => {
     res.json(await storage.getOilProducts(req.user!.storeId!));

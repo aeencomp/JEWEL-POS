@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
   Droplets, ChevronRight, ScanLine, Palette, ClipboardList, BookOpen,
+  AlertTriangle,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -39,12 +43,37 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const isAr = language === "ar";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
 
   const { data: storeInfo } = useQuery<{ name: string; features?: string | null }>({
     queryKey: ["/api/oil/store-info"],
     queryFn: () => fetch("/api/oil/store-info", { credentials: "include" }).then(r => r.json()),
     staleTime: 60000,
   });
+
+  const { data: subscription } = useQuery<{ daysLeft: number | null; endDate: string | null; status: string }>({
+    queryKey: ["/api/oil/subscription"],
+    queryFn: () => fetch("/api/oil/subscription", { credentials: "include" }).then(r => r.ok ? r.json() : null),
+    staleTime: 3600000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!subscription) return;
+    const { daysLeft, status } = subscription;
+    if (status === "expired" || (daysLeft !== null && daysLeft <= 2)) {
+      const dismissKey = `sub_reminder_dismissed_${new Date().toDateString()}`;
+      if (!localStorage.getItem(dismissKey)) {
+        setShowReminderDialog(true);
+      }
+    }
+  }, [subscription]);
+
+  function dismissReminder() {
+    const dismissKey = `sub_reminder_dismissed_${new Date().toDateString()}`;
+    localStorage.setItem(dismissKey, "1");
+    setShowReminderDialog(false);
+  }
 
   const allowedFeatures: string[] | null = storeInfo?.features
     ? JSON.parse(storeInfo.features) as string[]
@@ -147,8 +176,79 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 
+  const isExpired = subscription?.status === "expired";
+  const daysLeft = subscription?.daysLeft ?? null;
+  const endDateStr = subscription?.endDate
+    ? new Date(subscription.endDate).toLocaleDateString(isAr ? "ar-IQ" : "en-GB", { year: "numeric", month: "long", day: "numeric" })
+    : null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950" dir={isAr ? "rtl" : "ltr"}>
+
+      {/* Subscription Reminder Dialog */}
+      <Dialog open={showReminderDialog} onOpenChange={(open) => { if (!open) dismissReminder(); }}>
+        <DialogContent className="max-w-md" data-testid="subscription-reminder-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+              {isExpired
+                ? (isAr ? "انتهت صلاحية الاشتراك" : "Subscription Expired")
+                : (isAr ? "تنبيه: اشتراكك على وشك الانتهاء" : "Subscription Expiring Soon")}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-1">
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-4 text-sm">
+                  {isExpired ? (
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-800 dark:text-amber-300">
+                        {isAr ? "لقد انتهت صلاحية اشتراكك." : "Your subscription has expired."}
+                      </p>
+                      <p className="text-amber-700 dark:text-amber-400">
+                        {isAr
+                          ? "بعض الميزات قد تكون محدودة. يرجى التواصل مع المسؤول لتجديد الاشتراك."
+                          : "Some features may be limited. Please contact the administrator to renew your subscription."}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-800 dark:text-amber-300">
+                        {isAr
+                          ? `ينتهي اشتراكك خلال ${daysLeft} ${daysLeft === 1 ? "يوم" : "أيام"}.`
+                          : `Your subscription expires in ${daysLeft} ${daysLeft === 1 ? "day" : "days"}.`}
+                      </p>
+                      {endDateStr && (
+                        <p className="text-amber-700 dark:text-amber-400">
+                          {isAr ? `تاريخ الانتهاء: ${endDateStr}` : `Expiry date: ${endDateStr}`}
+                        </p>
+                      )}
+                      <p className="text-amber-700 dark:text-amber-400 mt-2">
+                        {isAr
+                          ? "يرجى التواصل مع المسؤول لتجديد اشتراكك وضمان استمرارية الخدمة."
+                          : "Please contact the administrator to renew your subscription and ensure uninterrupted service."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className={`text-xs text-slate-500 dark:text-slate-400 ${isAr ? "text-right" : "text-left"}`}>
+                  {isAr ? "سيتم تذكيرك مرة واحدة يومياً." : "You will be reminded once per day."}
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className={`flex gap-2 ${isAr ? "flex-row-reverse" : ""}`}>
+            <Button
+              variant="outline"
+              onClick={dismissReminder}
+              data-testid="button-dismiss-reminder"
+              className="flex-1"
+            >
+              {isAr ? "إغلاق" : "Dismiss for Today"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-60 flex-shrink-0 shadow-xl">
         <Sidebar />
