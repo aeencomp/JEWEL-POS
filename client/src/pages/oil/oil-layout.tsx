@@ -76,7 +76,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
             <Droplets className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-base tracking-tight text-white">OilPOS</p>
+            <p className="font-bold text-base tracking-tight text-white">{storeInfo?.name || "OilPOS"}</p>
             <p className="text-[11px] text-slate-400 leading-tight">
               {isAr ? "نظام مصنع الزيوت" : "Oil Factory ERP"}
             </p>
@@ -180,7 +180,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-2 text-sm">
             <Droplets className="h-4 w-4 text-blue-500 hidden md:block" />
-            <span className="text-slate-400 hidden md:block">OilPOS</span>
+            <span className="text-slate-400 hidden md:block">{storeInfo?.name || "OilPOS"}</span>
             <span className="text-slate-300 hidden md:block">/</span>
             <span className="font-semibold text-slate-700 dark:text-slate-200">
               {isAr ? currentPage?.labelAr : currentPage?.label}
