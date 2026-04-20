@@ -122,7 +122,7 @@ export default function OilLogin() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
               <Droplets className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-white">OilPOS</span>
+            <span className="font-bold text-white">FACTORY ERP SYSTEM</span>
           </div>
           <div className="lg:hidden" />
           <div className="flex items-center gap-2 ms-auto">
