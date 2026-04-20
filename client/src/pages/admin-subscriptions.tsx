@@ -22,7 +22,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
-import { CreditCard, RefreshCcw, Loader2, Check, Pencil } from "lucide-react";
+import { CreditCard, RefreshCcw, Loader2, Check, Pencil, Bell } from "lucide-react";
 import type { Store, Subscription } from "@shared/schema";
 
 export default function AdminSubscriptions() {
@@ -160,6 +160,12 @@ export default function AdminSubscriptions() {
                     <TableHead>Start</TableHead>
                     <TableHead>End</TableHead>
                     <TableHead>{t("admin.daysLeft")}</TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-1">
+                        <Bell className="h-3.5 w-3.5" />
+                        {language === "ar" ? "طلب التجديد" : "Renewal Request"}
+                      </div>
+                    </TableHead>
                     <TableHead className="text-end">{t("admin.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -251,6 +257,21 @@ export default function AdminSubscriptions() {
                         </TableCell>
                         <TableCell data-testid={`text-days-left-${sub.id}`}>
                           {daysLeft}
+                        </TableCell>
+                        <TableCell data-testid={`text-renewal-req-${sub.id}`}>
+                          {(sub as any).renewalRequestedAt ? (
+                            <div className="space-y-0.5">
+                              <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50 dark:bg-amber-950/30 gap-1 text-[11px]">
+                                <Bell className="h-3 w-3" />
+                                {language === "ar" ? "طلب مُرسَل" : "Requested"}
+                              </Badge>
+                              <p className="text-[10px] text-muted-foreground">
+                                {formatDate((sub as any).renewalRequestedAt)}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">

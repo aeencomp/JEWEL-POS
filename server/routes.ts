@@ -1585,6 +1585,13 @@ export async function registerRoutes(
     res.json({ ...sub, daysLeft });
   });
 
+  app.post("/api/oil/subscription/request-renewal", requireOilAuth, async (req, res) => {
+    const sub = await storage.getSubscriptionByStore(req.user!.storeId!);
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    const updated = await storage.updateSubscription(sub.id, { renewalRequestedAt: new Date() } as any);
+    res.json(updated);
+  });
+
   // Products
   app.get("/api/oil/products", requireOilAuth, async (req, res) => {
     res.json(await storage.getOilProducts(req.user!.storeId!));

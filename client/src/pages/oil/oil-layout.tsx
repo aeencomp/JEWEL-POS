@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
   Droplets, ChevronRight, ScanLine, Palette, ClipboardList, BookOpen,
-  AlertTriangle,
+  AlertTriangle, CalendarDays, RefreshCcw,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 const ALL_NAV_ITEMS = [
   { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", featureKey: null, exact: true },
@@ -41,6 +43,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isAr = language === "ar";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
@@ -51,7 +54,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     staleTime: 60000,
   });
 
-  const { data: subscription } = useQuery<{ daysLeft: number | null; endDate: string | null; status: string }>({
+  const { data: subscription } = useQuery<{ daysLeft: number | null; endDate: string | null; startDate: string | null; status: string; plan: string; pricePerMonth: string; renewalRequestedAt: string | null }>({
     queryKey: ["/api/oil/subscription"],
     queryFn: () => fetch("/api/oil/subscription", { credentials: "include" }).then(r => r.ok ? r.json() : null),
     staleTime: 3600000,
@@ -88,6 +91,26 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     onSuccess: () => {
       queryClient.clear();
       window.location.href = "/oil-login";
+    },
+  });
+
+  const renewalMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/oil/subscription/request-renewal"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/subscription"] });
+      toast({
+        title: isAr ? "تم إرسال طلب التجديد" : "Renewal Request Sent",
+        description: isAr
+          ? "سيتواصل معك المسؤول قريباً لتجديد اشتراكك."
+          : "The administrator will contact you shortly to renew your subscription.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: isAr ? "خطأ" : "Error",
+        description: isAr ? "حدث خطأ. يرجى المحاولة مجدداً." : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -146,6 +169,91 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
 
       {/* Footer */}
       <div className="px-3 py-4 border-t border-slate-700/60 space-y-3">
+
+        {/* Subscription card */}
+        {subscription && (
+          <div className="rounded-xl bg-slate-800 border border-slate-700 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
+                <CalendarDays className="h-3.5 w-3.5 text-blue-400" />
+                {isAr ? "الاشتراك" : "Subscription"}
+              </div>
+              <Badge
+                className={`text-[10px] px-1.5 py-0 h-4 ${
+                  subscription.status === "active"
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                    : subscription.status === "trial"
+                    ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                    : "bg-red-500/20 text-red-400 border-red-500/30"
+                }`}
+                variant="outline"
+              >
+                {subscription.status === "active"
+                  ? (isAr ? "فعّال" : "Active")
+                  : subscription.status === "trial"
+                  ? (isAr ? "تجريبي" : "Trial")
+                  : subscription.status === "expired"
+                  ? (isAr ? "منتهي" : "Expired")
+                  : subscription.status}
+              </Badge>
+            </div>
+
+            <div className="space-y-1 text-[10px] text-slate-400">
+              <div className="flex justify-between">
+                <span>{isAr ? "البداية:" : "Start:"}</span>
+                <span className="text-slate-300">
+                  {subscription.startDate
+                    ? new Date(subscription.startDate).toLocaleDateString(isAr ? "ar-IQ" : "en-GB", { day: "numeric", month: "short", year: "numeric" })
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>{isAr ? "الانتهاء:" : "Expires:"}</span>
+                <span className={`font-medium ${
+                  subscription.daysLeft !== null && subscription.daysLeft <= 2
+                    ? "text-red-400"
+                    : subscription.daysLeft !== null && subscription.daysLeft <= 7
+                    ? "text-amber-400"
+                    : "text-slate-300"
+                }`}>
+                  {subscription.endDate
+                    ? new Date(subscription.endDate).toLocaleDateString(isAr ? "ar-IQ" : "en-GB", { day: "numeric", month: "short", year: "numeric" })
+                    : (isAr ? "غير محدد" : "No limit")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>{isAr ? "السعر:" : "Price:"}</span>
+                <span className="text-slate-300">
+                  {parseFloat(subscription.pricePerMonth || "0").toLocaleString()} {isAr ? "د.ع / شهر" : "IQD/mo"}
+                </span>
+              </div>
+              {subscription.daysLeft !== null && subscription.daysLeft > 0 && (
+                <div className="flex justify-between">
+                  <span>{isAr ? "المتبقي:" : "Remaining:"}</span>
+                  <span className={`font-semibold ${subscription.daysLeft <= 2 ? "text-red-400" : subscription.daysLeft <= 7 ? "text-amber-400" : "text-emerald-400"}`}>
+                    {subscription.daysLeft} {isAr ? "يوم" : "days"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <Button
+              size="sm"
+              className="w-full h-7 text-[11px] gap-1.5 bg-blue-600 hover:bg-blue-500 text-white"
+              onClick={() => renewalMutation.mutate()}
+              disabled={renewalMutation.isPending || !!subscription.renewalRequestedAt}
+              data-testid="button-request-renewal"
+            >
+              <RefreshCcw className="h-3 w-3" />
+              {renewalMutation.isPending
+                ? (isAr ? "جارٍ الإرسال..." : "Sending...")
+                : subscription.renewalRequestedAt
+                ? (isAr ? "تم إرسال الطلب ✓" : "Request Sent ✓")
+                : (isAr ? "طلب تجديد" : "Request Renewal")}
+            </Button>
+          </div>
+        )}
+
         {/* User pill */}
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">

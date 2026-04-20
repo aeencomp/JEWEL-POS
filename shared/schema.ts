@@ -65,6 +65,7 @@ export const subscriptions = pgTable("subscriptions", {
   startDate: timestamp("start_date").notNull().defaultNow(),
   endDate: timestamp("end_date"),
   lastPaymentDate: timestamp("last_payment_date"),
+  renewalRequestedAt: timestamp("renewal_requested_at"),
 });
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
