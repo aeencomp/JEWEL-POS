@@ -139,7 +139,7 @@ export default function OilLogin() {
                 {isAr ? "تسجيل الدخول" : "Sign In"}
               </h2>
               <p className="text-slate-400 text-sm">
-                {isAr ? "أدخل بيانات حسابك للوصول إلى النظام" : "Enter your credentials to access OilPOS"}
+                {isAr ? "أدخل بيانات حسابك للوصول إلى النظام" : "Enter your credentials to access Factory ERP System"}
               </p>
             </div>
 
