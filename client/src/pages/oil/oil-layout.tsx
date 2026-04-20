@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
-  Droplets, ChevronRight, ScanLine, Palette, ClipboardList,
+  Droplets, ChevronRight, ScanLine, Palette, ClipboardList, BookOpen,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -25,6 +25,7 @@ const ALL_NAV_ITEMS = [
   { path: "/oil/expenses", icon: Receipt, label: "Expenses", labelAr: "المصاريف", featureKey: "expenses" },
   { path: "/oil/debts", icon: HandCoins, label: "Debts", labelAr: "الديون", featureKey: "debts" },
   { path: "/oil/delivery", icon: ClipboardList, label: "Delivery Notes", labelAr: "وصولات التسليم", featureKey: "delivery" },
+  { path: "/oil/batch", icon: BookOpen, label: "Product Records", labelAr: "سجل المنتجات", featureKey: "batch" },
   { path: "/oil/branding", icon: Palette, label: "Branding", labelAr: "العلامة التجارية", featureKey: null },
 ];
 

@@ -656,6 +656,35 @@ export const insertOilDeliveryNoteSchema = createInsertSchema(oilDeliveryNotes).
 export type OilDeliveryNote = typeof oilDeliveryNotes.$inferSelect;
 export type OilDeliveryNoteItem = typeof oilDeliveryNoteItems.$inferSelect;
 
+// Oil Batch Records (سجل المنتجات) — matches physical handwritten ledger:
+// columns: الماركة, القياس, النقدة, العدد, السعر الزرادي, السعر الإفصالي
+export const oilBatchRecords = pgTable("oil_batch_records", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  recordNumber: text("record_number").notNull(),
+  customerId: integer("customer_id").references(() => oilCustomers.id),
+  customerName: text("customer_name"),
+  date: timestamp("date").notNull().defaultNow(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilBatchRecordItems = pgTable("oil_batch_record_items", {
+  id: serial("id").primaryKey(),
+  recordId: integer("record_id").notNull().references(() => oilBatchRecords.id),
+  brand: text("brand"),
+  grade: text("grade"),
+  containerSize: text("container_size"),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }),
+  wholesalePrice: decimal("wholesale_price", { precision: 12, scale: 2 }),
+  retailPrice: decimal("retail_price", { precision: 12, scale: 2 }),
+  total: decimal("total", { precision: 12, scale: 2 }),
+});
+
+export type OilBatchRecord = typeof oilBatchRecords.$inferSelect;
+export type OilBatchRecordItem = typeof oilBatchRecordItems.$inferSelect;
+
 // Oil insert schemas & types
 export const insertOilProductSchema = createInsertSchema(oilProducts).omit({ id: true });
 export const insertOilCustomerSchema = createInsertSchema(oilCustomers).omit({ id: true, createdAt: true });

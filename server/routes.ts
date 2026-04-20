@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema, insertSignupRequestSchema, signupRequests } from "@shared/schema";
 import { db } from "./db";
-import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems } from "@shared/schema";
+import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems, oilBatchRecords, oilBatchRecordItems } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -1800,6 +1800,51 @@ export async function registerRoutes(
       recentSales: sales.slice(0, 5),
       recentPurchases: purchases.slice(0, 5),
     });
+  });
+
+  // ── Batch Records (سجل المنتجات) ────────────────────────────
+  app.get("/api/oil/batch-records", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const records = await db.select().from(oilBatchRecords)
+      .where(eq(oilBatchRecords.storeId, storeId))
+      .orderBy(desc(oilBatchRecords.createdAt));
+    res.json(records);
+  });
+
+  app.get("/api/oil/batch-records/:id/items", requireOilAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const items = await db.select().from(oilBatchRecordItems)
+      .where(eq(oilBatchRecordItems.recordId, id));
+    res.json(items);
+  });
+
+  app.post("/api/oil/batch-records", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const { items: rawItems, ...recordData } = req.body;
+    const count = (await db.select().from(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId))).length + 1;
+    const recordNumber = `BR-${String(count).padStart(4, "0")}`;
+    try {
+      const [record] = await db.insert(oilBatchRecords).values({
+        ...recordData, storeId, recordNumber, date: new Date(recordData.date)
+      }).returning();
+      if (rawItems && Array.isArray(rawItems)) {
+        for (const item of rawItems) {
+          if (item.brand || item.quantity || item.retailPrice) {
+            await db.insert(oilBatchRecordItems).values({ ...item, recordId: record.id });
+          }
+        }
+      }
+      res.status(201).json(record);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/oil/batch-records/:id", requireOilAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    await db.delete(oilBatchRecordItems).where(eq(oilBatchRecordItems.recordId, id));
+    await db.delete(oilBatchRecords).where(eq(oilBatchRecords.id, id));
+    res.sendStatus(204);
   });
 
   // ── Delivery Notes ──────────────────────────────────────────
