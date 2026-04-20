@@ -375,23 +375,29 @@ function buildHtml({
   <div class="page">
     <div class="accent-bar"></div>
 
-    <!-- Header -->
-    <div class="header">
-      <div class="store-logo-wrap">
-        ${store?.logoUrl ? `<img class="store-logo" src="${store.logoUrl}" alt="logo" />` : ""}
-        <div>
-          <div class="store-name">${store?.name || "FactoryPOS"}</div>
-          ${store?.address ? `<div class="store-sub">${store.address}</div>` : ""}
-          ${store?.phone ? `<div class="store-sub">${isAr ? "📞" : "Tel:"} ${store.phone}</div>` : ""}
-          ${store?.email ? `<div class="store-sub">${store.email}</div>` : ""}
-        </div>
+    <!-- Bilingual Header -->
+    <div class="header" style="display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div class="store-name">${store?.name || "FactoryPOS"}</div>
+        ${store?.receiptHeader ? `<div class="store-sub" style="white-space:pre-line;margin-top:3px;">${store.receiptHeader}</div>` : ""}
+        ${store?.address ? `<div class="store-sub">${store.address}</div>` : ""}
+        ${store?.phone ? `<div class="store-sub">📞 ${store.phone}</div>` : ""}
       </div>
-      <div class="invoice-meta">
+      <div style="text-align:center;flex-shrink:0;padding:0 10px;">
+        ${store?.logoUrl ? `<img class="store-logo" src="${store.logoUrl}" alt="logo" style="height:60px;width:60px;object-fit:contain;" />` : ""}
+      </div>
+      <div style="flex:1;text-align:right;direction:rtl;">
+        <div class="store-name">${store?.name || ""}</div>
+        ${store?.receiptFooter ? `<div class="store-sub" style="white-space:pre-line;margin-top:3px;">${store.receiptFooter}</div>` : ""}
+      </div>
+    </div>
+    <div class="invoice-meta" style="display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 14px;margin-top:8px;">
+      <div>
         <div class="invoice-title">${isAr ? "فاتورة مبيعات" : "Sales Invoice"}</div>
         <div class="invoice-num">${invoiceNumber}</div>
-        <div class="invoice-date">
-          ${date.toLocaleDateString(isAr ? "ar-IQ" : "en-US", { year: "numeric", month: "long", day: "numeric" })}
-        </div>
+      </div>
+      <div style="text-align:center;">
+        <div class="invoice-date">${date.toLocaleDateString(isAr ? "ar-IQ" : "en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
         <div><span class="status-badge">${payStatusLabel}</span></div>
       </div>
     </div>

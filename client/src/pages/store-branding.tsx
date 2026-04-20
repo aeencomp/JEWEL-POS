@@ -10,6 +10,7 @@ import { updateBrandingSchema, type UpdateBranding } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   Form,
@@ -503,10 +504,23 @@ export default function StoreBranding() {
                 name="receiptHeader"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("branding.receiptHeader")}</FormLabel>
+                    <FormLabel>
+                      {isAr ? "رأس الفاتورة (إنجليزي)" : "Receipt Header — English"}
+                    </FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} data-testid="input-receipt-header" />
+                      <Textarea
+                        {...field}
+                        value={field.value || ""}
+                        rows={3}
+                        placeholder={isAr
+                          ? "مثال: To manufacture local oils for all vehicles\n99864 License number"
+                          : "e.g. To manufacture local oils for all vehicles\n99864 License number"}
+                        data-testid="input-receipt-header"
+                      />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr ? "يظهر في الجهة الإنجليزية من رأس الفاتورة عند الطباعة" : "Shown on the English side of printed invoice headers"}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -517,10 +531,22 @@ export default function StoreBranding() {
                 name="receiptFooter"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("branding.receiptFooter")}</FormLabel>
+                    <FormLabel>
+                      {isAr ? "رأس الفاتورة (عربي)" : "Receipt Header — Arabic"}
+                    </FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} data-testid="input-receipt-footer" />
+                      <Textarea
+                        {...field}
+                        value={field.value || ""}
+                        rows={3}
+                        dir="rtl"
+                        placeholder="مثال: لصناعة الزيوت المحلية لكافة المركبات&#10;رقم الاجازة ٩٩٨٦٤"
+                        data-testid="input-receipt-footer"
+                      />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr ? "يظهر في الجهة العربية من رأس الفاتورة عند الطباعة" : "Shown on the Arabic side of printed invoice headers"}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

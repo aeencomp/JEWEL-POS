@@ -558,19 +558,22 @@ function printDeliveryNote(note: OilDeliveryNote, store: any, isAr: boolean) {
 <body>
   <button class="print-btn no-print" onclick="window.print()">🖨️ ${isAr ? "طباعة" : "Print"}</button>
   <div class="page">
-    <!-- Header -->
+    <!-- Bilingual Header — matches physical letterhead -->
     <div class="header">
-      <div>
+      <div style="flex:1;">
         <div class="store-name">${store?.name || "FactoryPOS"}</div>
+        ${store?.receiptHeader ? `<div class="store-sub" style="white-space:pre-line;">${store.receiptHeader}</div>` : ""}
         ${store?.address ? `<div class="store-sub">${store.address}</div>` : ""}
-        ${store?.phone ? `<div class="store-sub">${isAr ? "📞" : "Tel:"} ${store.phone}</div>` : ""}
+        ${store?.phone ? `<div class="store-sub">📞 ${store.phone}</div>` : ""}
       </div>
-      <div style="text-align:center;">
-        ${store?.logoUrl ? `<img src="${store.logoUrl}" style="height:56px;width:56px;object-fit:contain;border-radius:6px;" />` : ""}
-      </div>
-      <div style="text-align:${isAr ? "left" : "right"};">
-        <div class="doc-title">${isAr ? "وصل تسليم" : "Delivery Note"}</div>
+      <div style="text-align:center;flex-shrink:0;padding:0 12px;">
+        ${store?.logoUrl ? `<img src="${store.logoUrl}" style="height:64px;width:64px;object-fit:contain;border-radius:6px;" />` : ""}
+        <div style="margin-top:6px;font-size:11px;font-weight:700;color:#b45309;">${isAr ? "وصل تسليم" : "Delivery Note"}</div>
         <div class="note-badge">No. ${note.noteNumber}</div>
+      </div>
+      <div style="flex:1;text-align:right;direction:rtl;">
+        <div class="store-name">${store?.name || ""}</div>
+        ${store?.receiptFooter ? `<div class="store-sub" style="white-space:pre-line;">${store.receiptFooter}</div>` : ""}
       </div>
     </div>
 

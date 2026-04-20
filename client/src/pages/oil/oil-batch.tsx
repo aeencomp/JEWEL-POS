@@ -529,16 +529,20 @@ function printBatchRecord(rec: OilBatchRecord, store: any, isAr: boolean) {
   <button class="print-btn no-print" onclick="window.print()">🖨️ ${isAr ? "طباعة" : "Print"}</button>
   <div class="page">
     <div class="header">
-      <div>
+      <div style="flex:1;">
         <div class="store-name">${store?.name || "FactoryPOS"}</div>
+        ${store?.receiptHeader ? `<div class="store-sub" style="white-space:pre-line;">${store.receiptHeader}</div>` : ""}
         ${store?.address ? `<div class="store-sub">${store.address}</div>` : ""}
+        ${store?.phone ? `<div class="store-sub">📞 ${store.phone}</div>` : ""}
       </div>
-      <div style="text-align:center;">
-        ${store?.logoUrl ? `<img src="${store.logoUrl}" style="height:52px;width:52px;object-fit:contain;border-radius:6px;"/>` : ""}
-      </div>
-      <div style="text-align:${isAr ? "left" : "right"};">
-        <div class="doc-title">${isAr ? "سجل المنتجات" : "Product Record"}</div>
+      <div style="text-align:center;flex-shrink:0;padding:0 12px;">
+        ${store?.logoUrl ? `<img src="${store.logoUrl}" style="height:60px;width:60px;object-fit:contain;border-radius:6px;"/>` : ""}
+        <div style="margin-top:5px;font-size:10px;font-weight:700;color:#059669;">${isAr ? "سجل المنتجات" : "Product Record"}</div>
         <div class="rec-badge">No. ${rec.recordNumber}</div>
+      </div>
+      <div style="flex:1;text-align:right;direction:rtl;">
+        <div class="store-name">${store?.name || ""}</div>
+        ${store?.receiptFooter ? `<div class="store-sub" style="white-space:pre-line;">${store.receiptFooter}</div>` : ""}
       </div>
     </div>
 
