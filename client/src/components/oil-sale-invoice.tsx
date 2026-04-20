@@ -7,6 +7,8 @@ interface StoreInfo {
   address?: string | null;
   email?: string | null;
   logoUrl?: string | null;
+  receiptHeader?: string | null;
+  receiptFooter?: string | null;
 }
 
 interface PosItem {
