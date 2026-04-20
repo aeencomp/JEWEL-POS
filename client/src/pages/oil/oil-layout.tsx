@@ -72,8 +72,11 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-slate-700/60">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/40">
-            <Droplets className="h-5 w-5 text-white" />
+          <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg shadow-blue-900/40">
+            {storeInfo?.logoUrl
+              ? <img src={storeInfo.logoUrl} alt="logo" className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"><Droplets className="h-5 w-5 text-white" /></div>
+            }
           </div>
           <div>
             <p className="font-bold text-base tracking-tight text-white">{storeInfo?.name || "OilPOS"}</p>
