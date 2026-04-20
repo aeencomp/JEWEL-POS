@@ -471,6 +471,30 @@ export async function registerRoutes(
     res.sendStatus(200);
   });
 
+  const DEFAULT_PRICING = {
+    jewel: { basic: 35000, standard: 55000, premium: 85000 },
+    oil:   { basic: 50000, standard: 75000, premium: 110000 },
+  };
+
+  app.get("/api/pricing", async (_req, res) => {
+    try {
+      const raw = await storage.getSetting("pricing");
+      res.json(raw ? JSON.parse(raw) : DEFAULT_PRICING);
+    } catch {
+      res.json(DEFAULT_PRICING);
+    }
+  });
+
+  app.patch("/api/admin/pricing", requireAdmin, async (req, res) => {
+    try {
+      await storage.setSetting("pricing", JSON.stringify(req.body));
+      res.json(req.body);
+    } catch (err: any) {
+      console.error("[PATCH /api/admin/pricing]", err);
+      res.status(500).json({ message: err?.message || "Failed to save pricing" });
+    }
+  });
+
   app.get("/api/subscriptions", requireAdmin, async (req, res) => {
     const subs = await storage.getSubscriptions();
     res.json(subs);

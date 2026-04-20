@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -164,11 +165,28 @@ type SignupForm = {
   notes: string;
 };
 
+type PricingPlan = { basic: number; standard: number; premium: number };
+type Pricing = { jewel: PricingPlan; oil: PricingPlan };
+
+const DEFAULT_PRICING: Pricing = {
+  jewel: { basic: 35000, standard: 55000, premium: 85000 },
+  oil:   { basic: 50000, standard: 75000, premium: 110000 },
+};
+
+function fmtPrice(n: number) {
+  return n.toLocaleString("en-US");
+}
+
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { toast } = useToast();
+
+  const { data: pricing = DEFAULT_PRICING } = useQuery<Pricing>({
+    queryKey: ["/api/pricing"],
+    staleTime: 5 * 60 * 1000,
+  });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -367,7 +385,9 @@ export default function LandingPage() {
             {isAr ? "اشتراك شهري يناسب عملك" : "Simple Monthly Pricing"}
           </p>
           <p className="text-muted-foreground mt-2 text-sm">
-            {isAr ? "تبدأ الأسعار من 35,000 د.ع / شهر حسب النظام المختار" : "Starting from 35,000 IQD / month depending on the system"}
+            {isAr
+              ? `تبدأ الأسعار من ${fmtPrice(pricing.jewel.basic)} د.ع / شهر حسب النظام المختار`
+              : `Starting from ${fmtPrice(pricing.jewel.basic)} IQD / month depending on the system`}
           </p>
         </div>
 
@@ -386,7 +406,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "أساسي" : "Basic"}</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold">35,000</span>
+                  <span className="text-3xl font-extrabold" data-testid="price-jewel-basic">{fmtPrice(pricing.jewel.basic)}</span>
                   <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
                 </div>
               </div>
@@ -410,7 +430,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-1">{isAr ? "قياسي" : "Standard"}</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold">55,000</span>
+                  <span className="text-3xl font-extrabold" data-testid="price-jewel-standard">{fmtPrice(pricing.jewel.standard)}</span>
                   <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
                 </div>
               </div>
@@ -429,7 +449,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "مميز" : "Premium"}</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold">85,000</span>
+                  <span className="text-3xl font-extrabold" data-testid="price-jewel-premium">{fmtPrice(pricing.jewel.premium)}</span>
                   <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
                 </div>
               </div>
@@ -460,7 +480,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "أساسي" : "Basic"}</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold">50,000</span>
+                  <span className="text-3xl font-extrabold" data-testid="price-oil-basic">{fmtPrice(pricing.oil.basic)}</span>
                   <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
                 </div>
               </div>
@@ -484,7 +504,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">{isAr ? "قياسي" : "Standard"}</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold">75,000</span>
+                  <span className="text-3xl font-extrabold" data-testid="price-oil-standard">{fmtPrice(pricing.oil.standard)}</span>
                   <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
                 </div>
               </div>
@@ -503,7 +523,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "مميز" : "Premium"}</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold">110,000</span>
+                  <span className="text-3xl font-extrabold" data-testid="price-oil-premium">{fmtPrice(pricing.oil.premium)}</span>
                   <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
                 </div>
               </div>

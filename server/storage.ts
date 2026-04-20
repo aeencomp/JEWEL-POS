@@ -27,6 +27,7 @@ import {
   insertOilProductSchema, insertOilCustomerSchema, insertOilSupplierSchema,
   insertOilSaleSchema, insertOilPurchaseSchema, insertOilProductionBatchSchema,
   insertOilExpenseSchema, insertOilDebtSchema,
+  settings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, gt } from "drizzle-orm";
@@ -580,6 +581,16 @@ export class DatabaseStorage implements IStorage {
   async createOilDebtPayment(data: any): Promise<OilDebtPayment> {
     const [p] = await db.insert(oilDebtPayments).values(data).returning();
     return p;
+  }
+
+  async getSetting(key: string): Promise<string | null> {
+    const [row] = await db.select().from(settings).where(eq(settings.key, key));
+    return row?.value ?? null;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    await db.insert(settings).values({ key, value })
+      .onConflictDoUpdate({ target: settings.key, set: { value } });
   }
 }
 

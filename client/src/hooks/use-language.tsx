@@ -6,6 +6,7 @@ type TranslationKeys = {
   "nav.dashboard": string;
   "nav.stores": string;
   "nav.subscriptions": string;
+  "nav.pricing": string;
   "nav.pos": string;
   "pos.home": string;
   "pos.selectTerminal": string;
@@ -436,6 +437,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.dashboard": "Dashboard",
     "nav.stores": "Stores",
     "nav.subscriptions": "Subscriptions",
+    "nav.pricing": "Pricing",
     "nav.backup": "Backup & Restore",
     "nav.signupRequests": "Signup Requests",
     "nav.pos": "POS Terminal",
@@ -863,6 +865,7 @@ const translations: Record<Language, TranslationKeys> = {
     "nav.dashboard": "لوحة التحكم",
     "nav.stores": "المتاجر",
     "nav.subscriptions": "الاشتراكات",
+    "nav.pricing": "الأسعار",
     "nav.backup": "النسخ الاحتياطي",
     "nav.signupRequests": "طلبات الاشتراك",
     "nav.pos": "نقطة البيع",

@@ -700,6 +700,11 @@ export const insertOilExpenseSchema = createInsertSchema(oilExpenses).omit({ id:
 export const insertOilDebtSchema = createInsertSchema(oilDebts).omit({ id: true, createdAt: true });
 export const insertOilDebtPaymentSchema = createInsertSchema(oilDebtPayments).omit({ id: true, createdAt: true });
 
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
 export type OilProduct = typeof oilProducts.$inferSelect;
 export type OilCustomer = typeof oilCustomers.$inferSelect;
 export type OilSupplier = typeof oilSuppliers.$inferSelect;

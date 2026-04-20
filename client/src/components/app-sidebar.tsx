@@ -35,6 +35,7 @@ import {
   HandCoins,
   DatabaseBackup,
   UserCheck,
+  Tag,
 } from "lucide-react";
 
 type BrandingData = {
@@ -63,6 +64,7 @@ export function AppSidebar() {
     { title: t("nav.stores"), url: "/restaurants", icon: Store },
     { title: t("nav.subscriptions"), url: "/subscriptions", icon: CreditCard },
     { title: t("nav.signupRequests"), url: "/signup-requests", icon: UserCheck },
+    { title: t("nav.pricing"), url: "/pricing", icon: Tag },
     { title: t("nav.backup"), url: "/backup", icon: DatabaseBackup },
   ];
 
