@@ -477,10 +477,16 @@ export async function registerRoutes(
   });
 
   app.patch("/api/subscriptions/:id", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const updated = await storage.updateSubscription(id, req.body);
-    if (!updated) return res.status(404).json({ message: "Subscription not found" });
-    res.json(updated);
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid subscription id" });
+      const updated = await storage.updateSubscription(id, req.body);
+      if (!updated) return res.status(404).json({ message: "Subscription not found" });
+      res.json(updated);
+    } catch (err: any) {
+      console.error("[PATCH /api/subscriptions/:id]", err);
+      res.status(500).json({ message: err?.message || "Failed to update subscription" });
+    }
   });
 
   app.post("/api/subscriptions/:id/renew", requireAdmin, async (req, res) => {

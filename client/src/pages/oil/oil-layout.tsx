@@ -57,7 +57,8 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
   const { data: subscription } = useQuery<{ daysLeft: number | null; endDate: string | null; startDate: string | null; status: string; plan: string; pricePerMonth: string; renewalRequestedAt: string | null }>({
     queryKey: ["/api/oil/subscription"],
     queryFn: () => fetch("/api/oil/subscription", { credentials: "include" }).then(r => r.ok ? r.json() : null),
-    staleTime: 3600000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     retry: false,
   });
 

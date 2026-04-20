@@ -46,12 +46,15 @@ export default function AdminSubscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      toast({ title: t("admin.subscriptions") });
+      toast({ title: language === "ar" ? "تم تحديث الخطة بنجاح" : "Plan updated successfully" });
     },
     onError: (error: Error) => {
+      const is403 = error.message.startsWith("403");
       toast({
-        title: t("admin.subscriptions"),
-        description: error.message,
+        title: language === "ar" ? "فشل التحديث" : "Update failed",
+        description: is403
+          ? (language === "ar" ? "انتهت الجلسة. يرجى تسجيل الخروج وإعادة الدخول." : "Session expired. Please log out and log in again.")
+          : error.message,
         variant: "destructive",
       });
     },
@@ -65,12 +68,15 @@ export default function AdminSubscriptions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
       setEditingPrice(null);
-      toast({ title: t("admin.subscriptions") });
+      toast({ title: language === "ar" ? "تم تحديث السعر بنجاح" : "Price updated successfully" });
     },
     onError: (error: Error) => {
+      const is403 = error.message.startsWith("403");
       toast({
-        title: t("admin.subscriptions"),
-        description: error.message,
+        title: language === "ar" ? "فشل التحديث" : "Update failed",
+        description: is403
+          ? (language === "ar" ? "انتهت الجلسة. يرجى تسجيل الخروج وإعادة الدخول." : "Session expired. Please log out and log in again.")
+          : error.message,
         variant: "destructive",
       });
     },
@@ -119,6 +125,7 @@ export default function AdminSubscriptions() {
     basic: t("common.basic"),
     standard: t("common.standard"),
     premium: t("common.premium"),
+    custom: language === "ar" ? "مخصص" : "Custom",
   };
 
   if (isLoading) {
@@ -296,6 +303,9 @@ export default function AdminSubscriptions() {
                                 </SelectItem>
                                 <SelectItem value="premium">
                                   {t("common.premium")}
+                                </SelectItem>
+                                <SelectItem value="custom">
+                                  {language === "ar" ? "مخصص" : "Custom"}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
