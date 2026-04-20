@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { printOilPosInvoice } from "@/components/oil-sale-invoice";
 import {
   ShoppingCart, Search, Plus, Minus, Trash2, Banknote,
-  ArrowRightLeft, Package, CheckCircle2, X, User, Tag, Printer,
+  ArrowRightLeft, Package, CheckCircle2, X, User, Tag, Printer, Clock,
 } from "lucide-react";
 
 function fmt(n: string | number) {
@@ -41,6 +41,7 @@ const CATEGORIES = [
 const PAYMENT_METHODS = [
   { value: "cash", icon: Banknote, en: "Cash", ar: "نقداً", color: "bg-emerald-600 hover:bg-emerald-700" },
   { value: "transfer", icon: ArrowRightLeft, en: "Transfer", ar: "تحويل", color: "bg-blue-600 hover:bg-blue-700" },
+  { value: "deferred", icon: Clock, en: "Deferred", ar: "آجل", color: "bg-amber-600 hover:bg-amber-700" },
 ];
 
 export default function OilPos() {
@@ -54,7 +55,7 @@ export default function OilPos() {
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "deferred">("cash");
   const [successDialog, setSuccessDialog] = useState(false);
 
   // store last completed sale for printing
@@ -66,7 +67,8 @@ export default function OilPos() {
     subtotal: number;
     discount: number;
     total: number;
-    paymentMethod: "cash" | "transfer";
+    amountPaid: number;
+    paymentMethod: "cash" | "transfer" | "deferred";
   } | null>(null);
 
   const { data: products = [] } = useQuery<OilProduct[]>({
@@ -161,6 +163,7 @@ export default function OilPos() {
 
       // snapshot the sale before clearing cart
       const customer = customers.find(c => c.id === Number(customerId));
+      const paidNow = paymentMethod === "deferred" ? 0 : total;
       setLastSale({
         invoiceNumber: data.invoiceNumber || `INV-${data.id}`,
         date: new Date(),
@@ -169,6 +172,7 @@ export default function OilPos() {
         subtotal,
         discount,
         total,
+        amountPaid: paidNow,
         paymentMethod,
       });
 
@@ -185,14 +189,23 @@ export default function OilPos() {
       toast({ title: isAr ? "السلة فارغة" : "Cart is empty", variant: "destructive" });
       return;
     }
+    if (paymentMethod === "deferred" && (!customerId || customerId === "0") && !customerName.trim()) {
+      toast({
+        title: isAr ? "يرجى اختيار العميل" : "Customer required",
+        description: isAr ? "يجب تحديد العميل للدفع الآجل" : "A customer must be selected for deferred payment",
+        variant: "destructive",
+      });
+      return;
+    }
+    const isDeferred = paymentMethod === "deferred";
     const customer = customers.find(c => c.id === Number(customerId));
     saleMutation.mutate({
       customerId: customerId && customerId !== "0" ? Number(customerId) : null,
       customerName: customer?.name || customerName || null,
       totalAmount: subtotal.toFixed(2),
       discountAmount: discount.toFixed(2),
-      amountPaid: total.toFixed(2),
-      paymentStatus: "paid",
+      amountPaid: isDeferred ? "0.00" : total.toFixed(2),
+      paymentStatus: isDeferred ? "unpaid" : "paid",
       status: "confirmed",
       notes: null,
       items: cart.map(i => ({
@@ -215,6 +228,8 @@ export default function OilPos() {
       subtotal: lastSale.subtotal,
       discount: lastSale.discount,
       total: lastSale.total,
+      amountPaid: lastSale.amountPaid,
+      paymentStatus: lastSale.paymentMethod === "deferred" ? "unpaid" : "paid",
       paymentMethod: lastSale.paymentMethod,
       store: storeInfo || null,
       isAr,
@@ -428,33 +443,52 @@ export default function OilPos() {
             </div>
 
             {/* Payment method */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {PAYMENT_METHODS.map(pm => (
                 <button
                   key={pm.value}
                   onClick={() => setPaymentMethod(pm.value as any)}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg text-[11px] font-semibold transition-all ${
                     paymentMethod === pm.value
                       ? `${pm.color} text-white ring-2 ring-white/20`
                       : "bg-slate-800 text-slate-400 hover:bg-slate-700"
                   }`}
                   data-testid={`button-payment-${pm.value}`}
                 >
-                  <pm.icon className="h-3.5 w-3.5" />
+                  <pm.icon className="h-4 w-4" />
                   {isAr ? pm.ar : pm.en}
                 </button>
               ))}
             </div>
 
+            {/* Deferred hint */}
+            {paymentMethod === "deferred" && (
+              <div className="flex items-center gap-1.5 text-[11px] text-amber-400 bg-amber-950/40 border border-amber-800/50 rounded-lg px-2.5 py-1.5">
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                {isAr
+                  ? "سيُسجَّل المبلغ كدَين على العميل — اختر عميلاً أولاً"
+                  : "Amount will be recorded as debt — customer required"}
+              </div>
+            )}
+
             {/* Checkout */}
             <Button
-              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-11 text-sm shadow-lg shadow-cyan-900/40"
+              className={`w-full text-white font-bold h-11 text-sm shadow-lg ${
+                paymentMethod === "deferred"
+                  ? "bg-amber-600 hover:bg-amber-700 shadow-amber-900/40"
+                  : "bg-cyan-600 hover:bg-cyan-700 shadow-cyan-900/40"
+              }`}
               onClick={handleCheckout}
               disabled={saleMutation.isPending}
               data-testid="button-checkout"
             >
               {saleMutation.isPending ? (
                 <span className="flex items-center gap-2"><span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />{isAr ? "جارٍ..." : "Processing..."}</span>
+              ) : paymentMethod === "deferred" ? (
+                <span className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {isAr ? "تسجيل — آجل" : "Record as Deferred"}
+                </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" />
@@ -473,12 +507,22 @@ export default function OilPos() {
             <DialogTitle className="sr-only">{isAr ? "تمت عملية البيع" : "Sale Complete"}</DialogTitle>
           </DialogHeader>
           <div className="py-4 flex flex-col items-center gap-4">
-            {/* success icon */}
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-            </div>
-
-            <h2 className="text-xl font-bold text-white">{isAr ? "تمت عملية البيع!" : "Sale Complete!"}</h2>
+            {/* success icon — changes based on payment method */}
+            {lastSale?.paymentMethod === "deferred" ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Clock className="h-8 w-8 text-amber-400" />
+                </div>
+                <h2 className="text-xl font-bold text-white">{isAr ? "تم التسجيل — آجل" : "Recorded as Deferred!"}</h2>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-400" />
+                </div>
+                <h2 className="text-xl font-bold text-white">{isAr ? "تمت عملية البيع!" : "Sale Complete!"}</h2>
+              </>
+            )}
 
             {/* invoice summary */}
             {lastSale && (
@@ -499,10 +543,30 @@ export default function OilPos() {
                     <span className="text-red-400">-{fmt(lastSale.discount)} IQD</span>
                   </div>
                 )}
+                <div className="flex justify-between">
+                  <span className="text-slate-400">{isAr ? "طريقة الدفع:" : "Payment:"}</span>
+                  <span className={`font-semibold ${
+                    lastSale.paymentMethod === "cash" ? "text-emerald-400" :
+                    lastSale.paymentMethod === "transfer" ? "text-blue-400" :
+                    "text-amber-400"
+                  }`}>
+                    {lastSale.paymentMethod === "cash"
+                      ? (isAr ? "نقداً" : "Cash")
+                      : lastSale.paymentMethod === "transfer"
+                      ? (isAr ? "تحويل" : "Transfer")
+                      : (isAr ? "آجل" : "Deferred")}
+                  </span>
+                </div>
                 <div className="flex justify-between pt-1 border-t border-slate-700">
                   <span className="text-slate-300 font-semibold">{isAr ? "الإجمالي:" : "Total:"}</span>
                   <span className="text-emerald-400 font-bold text-base">{fmt(lastSale.total)} IQD</span>
                 </div>
+                {lastSale.paymentMethod === "deferred" && (
+                  <div className="flex justify-between bg-amber-950/40 rounded-lg px-2 py-1.5 border border-amber-800/40">
+                    <span className="text-amber-300 font-semibold">{isAr ? "مبلغ الدَين:" : "Debt Amount:"}</span>
+                    <span className="text-amber-400 font-bold">{fmt(lastSale.total)} IQD</span>
+                  </div>
+                )}
               </div>
             )}
 

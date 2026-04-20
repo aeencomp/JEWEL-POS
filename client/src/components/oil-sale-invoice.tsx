@@ -36,7 +36,9 @@ interface PosInvoiceProps {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: "cash" | "transfer";
+  amountPaid?: number;
+  paymentStatus?: string;
+  paymentMethod: "cash" | "transfer" | "deferred";
   store: StoreInfo | null;
   isAr?: boolean;
 }
@@ -553,10 +555,13 @@ export function printOilPosInvoice({
   subtotal,
   discount,
   total,
+  amountPaid,
+  paymentStatus,
   paymentMethod,
   store,
   isAr = false,
 }: PosInvoiceProps) {
+  const isDeferred = paymentMethod === "deferred";
   const html = buildHtml({
     invoiceNumber,
     date,
@@ -571,9 +576,9 @@ export function printOilPosInvoice({
     subtotal,
     discount,
     total,
-    amountPaid: total,
-    paymentStatus: "paid",
-    paymentMethod,
+    amountPaid: amountPaid ?? (isDeferred ? 0 : total),
+    paymentStatus: paymentStatus ?? (isDeferred ? "unpaid" : "paid"),
+    paymentMethod: isDeferred ? undefined : paymentMethod,
     notes: null,
     store,
     isAr,
