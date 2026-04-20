@@ -37,6 +37,9 @@ export default function AdminSubscriptions() {
 
   const { data: subscriptions, isLoading: loadingSubs } = useQuery<Subscription[]>({
     queryKey: ["/api/subscriptions"],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 60000,
   });
 
   const updateMutation = useMutation({
