@@ -1825,7 +1825,7 @@ export async function registerRoutes(
     const count = (await db.select().from(oilDeliveryNotes).where(eq(oilDeliveryNotes.storeId, storeId))).length + 1;
     const noteNumber = `DN-${String(count).padStart(4, "0")}`;
     try {
-      const [note] = await db.insert(oilDeliveryNotes).values({ ...noteData, storeId, noteNumber }).returning();
+      const [note] = await db.insert(oilDeliveryNotes).values({ ...noteData, storeId, noteNumber, date: new Date(noteData.date) }).returning();
       if (rawItems && Array.isArray(rawItems)) {
         for (const item of rawItems) {
           if (item.description || item.quantity || item.unitPrice) {
