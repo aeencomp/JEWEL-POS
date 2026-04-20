@@ -505,21 +505,19 @@ export default function StoreBranding() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {isAr ? "رأس الفاتورة (إنجليزي)" : "Receipt Header — English"}
+                      Receipt Header — English / رأس الفاتورة (إنجليزي)
                     </FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
                         value={field.value || ""}
                         rows={3}
-                        placeholder={isAr
-                          ? "مثال: To manufacture local oils for all vehicles\n99864 License number"
-                          : "e.g. To manufacture local oils for all vehicles\n99864 License number"}
+                        placeholder={"e.g. To manufacture local oils for all vehicles\n99864 License number"}
                         data-testid="input-receipt-header"
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground">
-                      {isAr ? "يظهر في الجهة الإنجليزية من رأس الفاتورة عند الطباعة" : "Shown on the English side of printed invoice headers"}
+                      Shown on the English side of printed invoice headers
                     </p>
                     <FormMessage />
                   </FormItem>
@@ -532,7 +530,7 @@ export default function StoreBranding() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {isAr ? "رأس الفاتورة (عربي)" : "Receipt Header — Arabic"}
+                      Receipt Header — Arabic / رأس الفاتورة (عربي)
                     </FormLabel>
                     <FormControl>
                       <Textarea
@@ -545,7 +543,7 @@ export default function StoreBranding() {
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground">
-                      {isAr ? "يظهر في الجهة العربية من رأس الفاتورة عند الطباعة" : "Shown on the Arabic side of printed invoice headers"}
+                      Shown on the Arabic side of printed invoice headers / يظهر في الجهة العربية من رأس الفاتورة
                     </p>
                     <FormMessage />
                   </FormItem>
