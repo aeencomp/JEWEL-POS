@@ -74,7 +74,7 @@ export default function OilLogin() {
             <Droplets className="h-6 w-6 text-white" />
           </div>
           <div>
-            <p className="text-xl font-bold text-white tracking-tight">OilPOS</p>
+            <p className="text-xl font-bold text-white tracking-tight">FACTORY ERP SYSTEM</p>
             <p className="text-xs text-blue-300">{isAr ? "نظام مصنع الزيوت" : "Oil Factory ERP"}</p>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function OilLogin() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    {isAr ? "دخول إلى النظام" : "Sign In to OilPOS"}
+                    {isAr ? "دخول إلى النظام" : "Sign In to Factory ERP System"}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
