@@ -629,6 +629,33 @@ export const oilDebtPayments = pgTable("oil_debt_payments", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Delivery Notes (وصل تسليم) — matches physical paper invoice format
+export const oilDeliveryNotes = pgTable("oil_delivery_notes", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  noteNumber: text("note_number").notNull(),
+  customerId: integer("customer_id").references(() => oilCustomers.id),
+  customerName: text("customer_name"),
+  date: timestamp("date").notNull().defaultNow(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const oilDeliveryNoteItems = pgTable("oil_delivery_note_items", {
+  id: serial("id").primaryKey(),
+  noteId: integer("note_id").notNull().references(() => oilDeliveryNotes.id),
+  rowNumber: integer("row_number").notNull(),
+  description: text("description"),
+  quantity: decimal("quantity", { precision: 12, scale: 2 }),
+  unitPrice: decimal("unit_price", { precision: 12, scale: 2 }),
+  total: decimal("total", { precision: 12, scale: 2 }),
+});
+
+export const insertOilDeliveryNoteSchema = createInsertSchema(oilDeliveryNotes).omit({ id: true, createdAt: true });
+export type OilDeliveryNote = typeof oilDeliveryNotes.$inferSelect;
+export type OilDeliveryNoteItem = typeof oilDeliveryNoteItems.$inferSelect;
+
 // Oil insert schemas & types
 export const insertOilProductSchema = createInsertSchema(oilProducts).omit({ id: true });
 export const insertOilCustomerSchema = createInsertSchema(oilCustomers).omit({ id: true, createdAt: true });

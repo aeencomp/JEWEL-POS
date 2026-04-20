@@ -85,6 +85,7 @@ const OIL_FEATURES = [
   { key: "suppliers", label: "Suppliers", labelAr: "الموردون" },
   { key: "expenses", label: "Expenses", labelAr: "المصاريف" },
   { key: "debts", label: "Debts", labelAr: "الديون" },
+  { key: "delivery", label: "Delivery Notes", labelAr: "وصولات التسليم" },
 ];
 
 const createStoreSchema = z.object({

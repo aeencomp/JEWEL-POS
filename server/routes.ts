@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema, insertSignupRequestSchema, signupRequests } from "@shared/schema";
 import { db } from "./db";
-import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users } from "@shared/schema";
+import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -1800,6 +1800,50 @@ export async function registerRoutes(
       recentSales: sales.slice(0, 5),
       recentPurchases: purchases.slice(0, 5),
     });
+  });
+
+  // ── Delivery Notes ──────────────────────────────────────────
+  app.get("/api/oil/delivery-notes", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const notes = await db.select().from(oilDeliveryNotes)
+      .where(eq(oilDeliveryNotes.storeId, storeId))
+      .orderBy(desc(oilDeliveryNotes.createdAt));
+    res.json(notes);
+  });
+
+  app.get("/api/oil/delivery-notes/:id/items", requireOilAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const items = await db.select().from(oilDeliveryNoteItems)
+      .where(eq(oilDeliveryNoteItems.noteId, id))
+      .orderBy(oilDeliveryNoteItems.rowNumber);
+    res.json(items);
+  });
+
+  app.post("/api/oil/delivery-notes", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const { items: rawItems, ...noteData } = req.body;
+    const count = (await db.select().from(oilDeliveryNotes).where(eq(oilDeliveryNotes.storeId, storeId))).length + 1;
+    const noteNumber = `DN-${String(count).padStart(4, "0")}`;
+    try {
+      const [note] = await db.insert(oilDeliveryNotes).values({ ...noteData, storeId, noteNumber }).returning();
+      if (rawItems && Array.isArray(rawItems)) {
+        for (const item of rawItems) {
+          if (item.description || item.quantity || item.unitPrice) {
+            await db.insert(oilDeliveryNoteItems).values({ ...item, noteId: note.id });
+          }
+        }
+      }
+      res.status(201).json(note);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/oil/delivery-notes/:id", requireOilAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    await db.delete(oilDeliveryNoteItems).where(eq(oilDeliveryNoteItems.noteId, id));
+    await db.delete(oilDeliveryNotes).where(eq(oilDeliveryNotes.id, id));
+    res.sendStatus(204);
   });
 
   // ── Signup Requests (public) ────────────────────────────────
