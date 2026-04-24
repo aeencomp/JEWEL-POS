@@ -1486,6 +1486,28 @@ export async function registerRoutes(
     if (!debt || debt.storeId !== storeId) {
       return res.status(404).json({ message: "Debt not found" });
     }
+
+    // Amount adjustment mode
+    if (req.body.totalAmount !== undefined) {
+      const newTotal = parseFloat(req.body.totalAmount);
+      if (isNaN(newTotal) || newTotal < 0) {
+        return res.status(400).json({ message: "Invalid totalAmount" });
+      }
+      const paid = parseFloat(debt.amountPaid);
+      if (newTotal < paid) {
+        return res.status(400).json({ message: "Total amount cannot be less than amount already paid" });
+      }
+      const newRemaining = (newTotal - paid).toFixed(2);
+      const updateData: any = {
+        totalAmount: newTotal.toFixed(2),
+        remainingBalance: newRemaining,
+      };
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      const updated = await storage.updateDebt(id, updateData);
+      return res.json(updated);
+    }
+
+    // Status update mode
     const allowedStatuses = ["active", "paid", "cancelled"];
     const { status } = req.body;
     if (!status || !allowedStatuses.includes(status)) {

@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, HandCoins, Banknote, CheckCircle, Ban, Eye, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Loader2, Plus, HandCoins, Banknote, CheckCircle, Ban, Eye, ArrowUpRight, ArrowDownLeft, Pencil } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "paid" | "cancelled";
 type DirectionFilter = "all" | "lent" | "borrowed";
@@ -57,6 +57,9 @@ export default function DebtsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [paymentDebt, setPaymentDebt] = useState<Debt | null>(null);
   const [viewDebt, setViewDebt] = useState<Debt | null>(null);
+  const [editDebt, setEditDebt] = useState<Debt | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDesc, setEditDesc] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNotes, setPaymentNotes] = useState("");
@@ -115,6 +118,21 @@ export default function DebtsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/debts"] });
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, totalAmount, description }: { id: number; totalAmount: string; description: string }) => {
+      const res = await apiRequest("PATCH", `/api/debts/${id}`, { totalAmount, description });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/debts"] });
+      setEditDebt(null);
+      toast({ title: t("debts.debtUpdated") });
+    },
+    onError: (err: Error) => {
+      toast({ title: err.message, variant: "destructive" });
     },
   });
 
@@ -342,6 +360,19 @@ export default function DebtsPage() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="text-blue-600 hover:text-blue-600"
+                            onClick={() => {
+                              setEditDebt(debt);
+                              setEditAmount(parseFloat(debt.totalAmount).toString());
+                              setEditDesc(debt.description || "");
+                            }}
+                            data-testid={`button-edit-debt-${debt.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             className="text-green-600 hover:text-green-600"
                             onClick={() => { setPaymentDebt(debt); setPaymentAmount(""); setPaymentNotes(""); setPaymentMethod("cash"); }}
                             data-testid={`button-record-payment-${debt.id}`}
@@ -473,6 +504,71 @@ export default function DebtsPage() {
               data-testid="button-save-debt"
             >
               {createMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Debt Dialog ── */}
+      <Dialog open={editDebt !== null} onOpenChange={(open) => { if (!open) setEditDebt(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle data-testid="text-edit-debt-title">{t("debts.editDebt")}</DialogTitle>
+          </DialogHeader>
+          {editDebt && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
+                <div className="font-medium">{editDebt.personName}</div>
+                <div className="text-muted-foreground">
+                  {t("debts.amountPaid")}: <span className="font-mono">{parseFloat(editDebt.amountPaid).toLocaleString()}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("debts.totalAmount")}</label>
+                <Input
+                  type="number"
+                  min={parseFloat(editDebt.amountPaid)}
+                  step="0.01"
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  className="mt-1"
+                  data-testid="input-edit-debt-amount"
+                />
+                {editAmount && parseFloat(editAmount) >= parseFloat(editDebt.amountPaid) && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("debts.remaining")}: <span className="font-mono font-semibold">
+                      {(parseFloat(editAmount) - parseFloat(editDebt.amountPaid)).toLocaleString()}
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("debts.description")}</label>
+                <Textarea
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="mt-1 resize-none"
+                  rows={2}
+                  data-testid="input-edit-debt-description"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDebt(null)} data-testid="button-cancel-edit-debt">
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => editDebt && editMutation.mutate({
+                id: editDebt.id,
+                totalAmount: editAmount,
+                description: editDesc,
+              })}
+              disabled={editMutation.isPending || !editAmount || (editDebt !== null && parseFloat(editAmount) < parseFloat(editDebt.amountPaid))}
+              data-testid="button-save-edit-debt"
+            >
+              {editMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
               {t("common.save")}
             </Button>
           </DialogFooter>

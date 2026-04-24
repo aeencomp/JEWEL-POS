@@ -201,6 +201,8 @@ type TranslationKeys = {
   "debts.totalOwed": string;
   "debts.paymentSuccess": string;
   "debts.debtCreated": string;
+  "debts.editDebt": string;
+  "debts.debtUpdated": string;
   "debts.direction": string;
   "debts.lent": string;
   "debts.borrowed": string;
@@ -647,6 +649,8 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.totalOwed": "Total Owed",
     "debts.paymentSuccess": "Payment recorded",
     "debts.debtCreated": "Debt added",
+    "debts.editDebt": "Edit Debt",
+    "debts.debtUpdated": "Debt updated",
     "debts.direction": "Direction",
     "debts.lent": "Lent (They owe me)",
     "debts.borrowed": "Borrowed (I owe them)",
@@ -1075,6 +1079,8 @@ const translations: Record<Language, TranslationKeys> = {
     "debts.totalOwed": "إجمالي المستحق",
     "debts.paymentSuccess": "تم تسجيل الدفعة",
     "debts.debtCreated": "تم إضافة الدين",
+    "debts.editDebt": "تعديل الدين",
+    "debts.debtUpdated": "تم تحديث الدين",
     "debts.direction": "الاتجاه",
     "debts.lent": "إقراض (هم مديونين لي)",
     "debts.borrowed": "اقتراض (أنا مديون لهم)",
