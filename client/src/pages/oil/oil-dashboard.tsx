@@ -1,11 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import {
   TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle,
   ShoppingCart, Truck, HandCoins, BarChart3, ArrowRight, Activity,
-  Wallet, Factory, Receipt, ScanLine,
+  Wallet, Factory, Receipt, ScanLine, PiggyBank, Edit2, TrendingDown as SpendIcon,
 } from "lucide-react";
 
 function fmt(n: number) {
@@ -27,11 +33,15 @@ const COLORS = {
   rose: { bg: "bg-rose-500/10", icon: "text-rose-500", border: "border-rose-500/20", glow: "shadow-rose-500/20" },
   violet: { bg: "bg-violet-500/10", icon: "text-violet-500", border: "border-violet-500/20", glow: "shadow-violet-500/20" },
   orange: { bg: "bg-orange-500/10", icon: "text-orange-500", border: "border-orange-500/20", glow: "shadow-orange-500/20" },
+  teal: { bg: "bg-teal-500/10", icon: "text-teal-500", border: "border-teal-500/20", glow: "shadow-teal-500/20" },
 };
 
 export default function OilDashboard() {
   const { language } = useLanguage();
+  const { toast } = useToast();
   const isAr = language === "ar";
+  const [showCapitalDialog, setShowCapitalDialog] = useState(false);
+  const [capitalInput, setCapitalInput] = useState("");
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/oil/dashboard"],
@@ -39,8 +49,38 @@ export default function OilDashboard() {
     refetchInterval: 30000,
   });
 
+  const capitalMutation = useMutation({
+    mutationFn: (amount: number) => apiRequest("PATCH", "/api/oil/capital", { amount }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
+      toast({ title: isAr ? "تم تحديث رأس المال" : "Capital updated" });
+      setShowCapitalDialog(false);
+      setCapitalInput("");
+    },
+    onError: () => toast({ title: isAr ? "خطأ في التحديث" : "Update failed", variant: "destructive" }),
+  });
+
+  function openCapitalDialog() {
+    setCapitalInput(String(data?.capital ?? 0));
+    setShowCapitalDialog(true);
+  }
+
+  function saveCapital() {
+    const val = parseFloat(capitalInput);
+    if (isNaN(val) || val < 0) {
+      toast({ title: isAr ? "أدخل مبلغاً صحيحاً" : "Enter a valid amount", variant: "destructive" });
+      return;
+    }
+    capitalMutation.mutate(val);
+  }
+
   const netProfit = data?.netProfit ?? 0;
   const profitable = netProfit >= 0;
+  const capital = data?.capital ?? 0;
+  const capitalSpent = data?.capitalSpent ?? 0;
+  const capitalRemaining = data?.capitalRemaining ?? 0;
+  const capitalSet = capital > 0;
+  const capitalPct = capitalSet ? Math.min(100, Math.round((capitalSpent / capital) * 100)) : 0;
 
   const metrics = [
     {
@@ -148,6 +188,104 @@ export default function OilDashboard() {
       </div>
 
       <div className="px-5 py-6 space-y-6 max-w-7xl">
+
+        {/* ── رأس المال (Capital) Card ── */}
+        {isLoading ? (
+          <div className="h-36 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-2xl" />
+        ) : (
+          <div
+            data-testid="card-capital"
+            className="relative bg-gradient-to-br from-teal-600 via-teal-700 to-cyan-800 rounded-2xl p-5 shadow-lg overflow-hidden"
+          >
+            <div className="absolute inset-0 opacity-10"
+              style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #ffffff 0%, transparent 60%)" }} />
+            <div className="relative flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
+              {/* Left: Title + 3 stats */}
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+                    <PiggyBank className="h-4.5 w-4.5 text-white h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-base">{isAr ? "رأس المال" : "Capital"}</p>
+                    <p className="text-teal-200 text-xs">{isAr ? "متابعة رأس مال المصنع" : "Factory working capital tracker"}</p>
+                  </div>
+                  <button
+                    onClick={openCapitalDialog}
+                    className="ms-2 w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
+                    data-testid="button-edit-capital"
+                    title={isAr ? "تعديل رأس المال" : "Edit capital"}
+                  >
+                    <Edit2 className="h-3.5 w-3.5 text-white" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Total capital */}
+                  <div className="bg-white/10 rounded-xl px-3 py-2.5">
+                    <p className="text-teal-200 text-[10px] mb-0.5">{isAr ? "رأس المال" : "Total Capital"}</p>
+                    <p className="text-white font-extrabold text-lg leading-none" data-testid="capital-total">
+                      {capitalSet ? fmt(capital) : "—"}
+                    </p>
+                    <p className="text-teal-300 text-[10px] mt-0.5">IQD</p>
+                  </div>
+                  {/* Spent on purchases */}
+                  <div className="bg-white/10 rounded-xl px-3 py-2.5">
+                    <p className="text-teal-200 text-[10px] mb-0.5">{isAr ? "المصروف على الموردين" : "Spent (Purchases)"}</p>
+                    <p className="text-rose-300 font-extrabold text-lg leading-none" data-testid="capital-spent">
+                      -{fmt(capitalSpent)}
+                    </p>
+                    <p className="text-teal-300 text-[10px] mt-0.5">IQD</p>
+                  </div>
+                  {/* Remaining */}
+                  <div className="bg-white/10 rounded-xl px-3 py-2.5">
+                    <p className="text-teal-200 text-[10px] mb-0.5">{isAr ? "المتبقي" : "Remaining"}</p>
+                    <p className={`font-extrabold text-lg leading-none ${capitalRemaining >= 0 ? "text-emerald-300" : "text-red-300"}`} data-testid="capital-remaining">
+                      {capitalSet ? fmt(Math.abs(capitalRemaining)) : "—"}
+                    </p>
+                    <p className="text-teal-300 text-[10px] mt-0.5">IQD</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Progress bar */}
+              {capitalSet && (
+                <div className="sm:w-44 space-y-1.5">
+                  <div className="flex justify-between text-xs text-teal-200">
+                    <span>{isAr ? "نسبة الإنفاق" : "Spent"}</span>
+                    <span>{capitalPct}%</span>
+                  </div>
+                  <div className="h-3 bg-white/15 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${capitalPct >= 90 ? "bg-red-400" : capitalPct >= 70 ? "bg-amber-400" : "bg-emerald-400"}`}
+                      style={{ width: `${capitalPct}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-teal-300 text-end">
+                    {capitalPct >= 90
+                      ? (isAr ? "⚠ تجاوزت 90% من رأس المال" : "⚠ Over 90% spent")
+                      : capitalPct >= 70
+                      ? (isAr ? "تجاوزت 70% من رأس المال" : "70%+ spent")
+                      : (isAr ? "ضمن الحد الآمن" : "Within safe range")}
+                  </p>
+                </div>
+              )}
+
+              {/* No capital set */}
+              {!capitalSet && !isLoading && (
+                <button
+                  onClick={openCapitalDialog}
+                  className="sm:self-center flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-colors"
+                  data-testid="button-set-capital"
+                >
+                  <PiggyBank className="h-4 w-4" />
+                  {isAr ? "تعيين رأس المال" : "Set Capital"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Metric cards */}
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -333,6 +471,68 @@ export default function OilDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Capital Edit Dialog */}
+      <Dialog open={showCapitalDialog} onOpenChange={setShowCapitalDialog}>
+        <DialogContent className="max-w-sm" data-testid="dialog-capital">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PiggyBank className="h-5 w-5 text-teal-600" />
+              {isAr ? "تعيين رأس المال" : "Set Working Capital"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <p className="text-sm text-muted-foreground">
+              {isAr
+                ? "أدخل إجمالي رأس المال المتاح للمصنع. سيتم خصم قيمة المشتريات من الموردين تلقائياً."
+                : "Enter the total working capital available. Purchase amounts will be deducted automatically."}
+            </p>
+            <div>
+              <label className="text-sm font-medium mb-1 block">{isAr ? "رأس المال (IQD)" : "Capital Amount (IQD)"}</label>
+              <Input
+                type="number"
+                min={0}
+                value={capitalInput}
+                onChange={e => setCapitalInput(e.target.value)}
+                placeholder="0"
+                data-testid="input-capital"
+                className="text-lg font-bold"
+                onKeyDown={e => e.key === "Enter" && saveCapital()}
+              />
+            </div>
+            {capitalInput && parseFloat(capitalInput) > 0 && capitalSpent > 0 && (
+              <div className="rounded-xl bg-muted/50 p-3 space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "رأس المال" : "Capital"}</span>
+                  <span className="font-semibold">{fmtFull(parseFloat(capitalInput))} IQD</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "المصروف على الموردين" : "Spent on purchases"}</span>
+                  <span className="font-semibold text-rose-600">-{fmtFull(capitalSpent)} IQD</span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5 mt-1">
+                  <span className="font-medium">{isAr ? "المتبقي" : "Remaining"}</span>
+                  <span className={`font-bold ${parseFloat(capitalInput) - capitalSpent >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                    {fmtFull(Math.abs(parseFloat(capitalInput) - capitalSpent))} IQD
+                    {parseFloat(capitalInput) - capitalSpent < 0 && (isAr ? " (عجز)" : " (deficit)")}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end pt-1">
+              <Button variant="outline" onClick={() => setShowCapitalDialog(false)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+              <Button
+                onClick={saveCapital}
+                disabled={capitalMutation.isPending}
+                className="bg-teal-600 hover:bg-teal-700 text-white"
+                data-testid="button-save-capital"
+              >
+                {capitalMutation.isPending ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ" : "Save")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

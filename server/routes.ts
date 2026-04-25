@@ -1858,6 +1858,9 @@ export async function registerRoutes(
     const totalReceivable = debts.filter(d => d.direction === "owe_us" && d.status === "active").reduce((s, i) => s + parseFloat(i.remainingBalance), 0);
     const totalPayable = debts.filter(d => d.direction === "we_owe" && d.status === "active").reduce((s, i) => s + parseFloat(i.remainingBalance), 0);
     const lowStock = products.filter(p => parseFloat(p.currentStock) <= parseFloat(p.minStock) && parseFloat(p.minStock) > 0);
+    const capitalRaw = await storage.getSetting(`oil_capital_${storeId}`);
+    const capitalAmount = capitalRaw ? parseFloat(JSON.parse(capitalRaw).amount) : 0;
+    const capitalRemaining = capitalAmount - totalCOGS;
     res.json({
       totalRevenue,
       totalCOGS,
@@ -1869,7 +1872,28 @@ export async function registerRoutes(
       lowStockCount: lowStock.length,
       recentSales: sales.slice(0, 5),
       recentPurchases: purchases.slice(0, 5),
+      capital: capitalAmount,
+      capitalSpent: totalCOGS,
+      capitalRemaining,
     });
+  });
+
+  // ── Capital (رأس المال) ────────────────────────────
+  app.get("/api/oil/capital", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const raw = await storage.getSetting(`oil_capital_${storeId}`);
+    const capital = raw ? parseFloat(JSON.parse(raw).amount) : 0;
+    const purchases = await storage.getOilPurchases(storeId);
+    const totalCOGS = purchases.filter(p => p.status !== "cancelled").reduce((s, i) => s + parseFloat(i.totalAmount), 0);
+    res.json({ capital, capitalSpent: totalCOGS, capitalRemaining: capital - totalCOGS });
+  });
+
+  app.patch("/api/oil/capital", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const { amount } = req.body;
+    if (typeof amount !== "number" || amount < 0) return res.status(400).json({ error: "Invalid amount" });
+    await storage.setSetting(`oil_capital_${storeId}`, JSON.stringify({ amount }));
+    res.json({ success: true, amount });
   });
 
   // ── Batch Records (سجل المنتجات) ────────────────────────────
