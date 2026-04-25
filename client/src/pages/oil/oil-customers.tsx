@@ -65,7 +65,11 @@ export default function OilCustomers() {
       toast({ title: isAr ? "تم الحذف" : "Deleted" });
       setDeleteToConfirm(null);
     },
-    onError: () => toast({ title: isAr ? "فشل الحذف" : "Delete failed", variant: "destructive" }),
+    onError: (err: any) => {
+      let msg = isAr ? "فشل الحذف" : "Delete failed";
+      try { const p = JSON.parse(err.message.replace(/^\d+:\s*/, "")); if (p.message) msg = p.message; } catch {}
+      toast({ title: msg, variant: "destructive" });
+    },
   });
 
   const openEdit = (c: OilCustomer) => {

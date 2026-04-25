@@ -500,12 +500,24 @@ export class DatabaseStorage implements IStorage {
     await db.delete(oilSales).where(and(eq(oilSales.id, id), eq(oilSales.storeId, storeId)));
   }
   async deleteOilProduct(id: number, storeId: number): Promise<void> {
+    const [saleRef] = await db.select({ id: oilSaleItems.id }).from(oilSaleItems).where(eq(oilSaleItems.productId, id)).limit(1);
+    if (saleRef) throw new Error("Product is used in sales records and cannot be deleted.");
+    const [purchaseRef] = await db.select({ id: oilPurchaseItems.id }).from(oilPurchaseItems).where(eq(oilPurchaseItems.productId, id)).limit(1);
+    if (purchaseRef) throw new Error("Product is used in purchase records and cannot be deleted.");
+    const [batchRef] = await db.select({ id: oilProductionBatches.id }).from(oilProductionBatches).where(eq(oilProductionBatches.outputProductId, id)).limit(1);
+    if (batchRef) throw new Error("Product is used in production batches and cannot be deleted.");
+    const [inputRef] = await db.select({ id: oilProductionInputs.id }).from(oilProductionInputs).where(eq(oilProductionInputs.productId, id)).limit(1);
+    if (inputRef) throw new Error("Product is used as a production input and cannot be deleted.");
     await db.delete(oilProducts).where(and(eq(oilProducts.id, id), eq(oilProducts.storeId, storeId)));
   }
   async deleteOilCustomer(id: number, storeId: number): Promise<void> {
+    const [saleRef] = await db.select({ id: oilSales.id }).from(oilSales).where(eq(oilSales.customerId, id)).limit(1);
+    if (saleRef) throw new Error("Customer has sales records and cannot be deleted.");
     await db.delete(oilCustomers).where(and(eq(oilCustomers.id, id), eq(oilCustomers.storeId, storeId)));
   }
   async deleteOilSupplier(id: number, storeId: number): Promise<void> {
+    const [purchaseRef] = await db.select({ id: oilPurchases.id }).from(oilPurchases).where(eq(oilPurchases.supplierId, id)).limit(1);
+    if (purchaseRef) throw new Error("Supplier has purchase records and cannot be deleted.");
     await db.delete(oilSuppliers).where(and(eq(oilSuppliers.id, id), eq(oilSuppliers.storeId, storeId)));
   }
   async deleteOilPurchase(id: number, storeId: number): Promise<void> {
