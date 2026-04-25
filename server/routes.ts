@@ -1713,11 +1713,15 @@ export async function registerRoutes(
   });
 
   app.delete("/api/oil/sales/:id", requireOilAuth, async (req, res) => {
-    const storeId = req.user!.storeId!;
-    const sale = await storage.getOilSale(parseInt(req.params.id));
-    if (!sale || sale.storeId !== storeId) return res.status(404).json({ message: "Not found" });
-    await storage.deleteOilSale(parseInt(req.params.id), storeId);
-    res.json({ success: true });
+    try {
+      const storeId = req.user!.storeId!;
+      const saleId = parseInt(req.params.id);
+      await storage.deleteOilSale(saleId, storeId);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("DELETE /api/oil/sales error:", err);
+      res.status(500).json({ message: err?.message || "Server error" });
+    }
   });
 
   // Purchases
