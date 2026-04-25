@@ -236,6 +236,10 @@ export async function registerRoutes(
         const batchRecordIds = (await tx.select({ id: oilBatchRecords.id }).from(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId))).map(r => r.id);
         for (const bid of batchRecordIds) await tx.delete(oilBatchRecordItems).where(eq(oilBatchRecordItems.recordId, bid));
         await tx.delete(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId));
+        // delivery note items → delivery notes (references customers)
+        const noteIds = (await tx.select({ id: oilDeliveryNotes.id }).from(oilDeliveryNotes).where(eq(oilDeliveryNotes.storeId, storeId))).map(r => r.id);
+        for (const nid of noteIds) await tx.delete(oilDeliveryNoteItems).where(eq(oilDeliveryNoteItems.noteId, nid));
+        await tx.delete(oilDeliveryNotes).where(eq(oilDeliveryNotes.storeId, storeId));
         // now safe to delete products, customers, suppliers
         await tx.delete(oilProducts).where(eq(oilProducts.storeId, storeId));
         await tx.delete(oilCustomers).where(eq(oilCustomers.storeId, storeId));

@@ -70,6 +70,7 @@ import {
   Gem,
   Droplets,
   ShieldCheck,
+  RotateCcw,
 } from "lucide-react";
 import type { Store } from "@shared/schema";
 
@@ -126,6 +127,7 @@ export default function AdminStores() {
   const [newPassword, setNewPassword] = useState("");
   const [permissionsStore, setPermissionsStore] = useState<Store | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [clearDataTarget, setClearDataTarget] = useState<Store | null>(null);
 
   const { data: stores, isLoading } = useQuery<StoreWithUsername[]>({
     queryKey: ["/api/stores"],
@@ -269,6 +271,19 @@ export default function AdminStores() {
     },
     onError: (error: Error) => {
       toast({ title: "Failed to update permissions", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const clearDataMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("POST", `/api/admin/reset-oil-store/${id}`);
+    },
+    onSuccess: () => {
+      setClearDataTarget(null);
+      toast({ title: "Store data cleared successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to clear data", description: error.message, variant: "destructive" });
     },
   });
 
@@ -695,6 +710,18 @@ export default function AdminStores() {
                       <ShieldCheck className="h-4 w-4" />
                     </Button>
                   )}
+                  {store.posSystem === "oil" && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="flex-shrink-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/30 border-orange-200 dark:border-orange-800"
+                      onClick={() => setClearDataTarget(store)}
+                      data-testid={`button-clear-data-${store.id}`}
+                      title="Clear All Store Data"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="icon"
@@ -1002,6 +1029,35 @@ export default function AdminStores() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Clear Store Data Dialog (OilPOS only) ── */}
+      <AlertDialog open={!!clearDataTarget} onOpenChange={(v) => !v && setClearDataTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-orange-600" />
+              Clear All Data — {clearDataTarget?.name}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">This will permanently delete <strong>all</strong> data for this store:</span>
+              <span className="block text-sm">Products, inventory, sales, purchases, production batches, customers, suppliers, debts, batch records, and delivery notes.</span>
+              <span className="block font-semibold text-orange-600 dark:text-orange-400">The store account and settings will remain. This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-clear-data">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
+              onClick={() => clearDataTarget && clearDataMutation.mutate(clearDataTarget.id)}
+              disabled={clearDataMutation.isPending}
+              data-testid="button-confirm-clear-data"
+            >
+              {clearDataMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              Yes, Clear All Data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
