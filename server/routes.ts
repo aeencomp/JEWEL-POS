@@ -1896,6 +1896,39 @@ export async function registerRoutes(
     res.json({ success: true, amount });
   });
 
+  // ── Reports ────────────────────────────────────────────────
+  app.get("/api/oil/reports", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const { from, to } = req.query as { from?: string; to?: string };
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+    const [sales, purchases, expenses] = await Promise.all([
+      storage.getOilSales(storeId),
+      storage.getOilPurchases(storeId),
+      storage.getOilExpenses(storeId),
+    ]);
+    function inRange(d: Date) {
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    }
+    const filteredSales = sales.filter(s => s.status !== "cancelled" && inRange(new Date(s.createdAt)));
+    const filteredPurchases = purchases.filter(p => p.status !== "cancelled" && inRange(new Date(p.createdAt)));
+    const filteredExpenses = expenses.filter(e => inRange(new Date(e.createdAt)));
+    const totalRevenue = filteredSales.reduce((s, i) => s + parseFloat(i.totalAmount), 0);
+    const totalPurchases = filteredPurchases.reduce((s, i) => s + parseFloat(i.totalAmount), 0);
+    const totalExpenses = filteredExpenses.reduce((s, i) => s + parseFloat(i.amount), 0);
+    res.json({
+      totalRevenue,
+      totalPurchases,
+      totalExpenses,
+      netProfit: totalRevenue - totalPurchases - totalExpenses,
+      sales: filteredSales,
+      purchases: filteredPurchases,
+      expenses: filteredExpenses,
+    });
+  });
+
   // ── Batch Records (سجل المنتجات) ────────────────────────────
   app.get("/api/oil/batch-records", requireOilAuth, async (req, res) => {
     const storeId = req.user!.storeId!;

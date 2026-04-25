@@ -12,12 +12,13 @@ import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
   Droplets, ChevronRight, ScanLine, Palette, ClipboardList, BookOpen,
-  AlertTriangle, CalendarDays, RefreshCcw,
+  AlertTriangle, CalendarDays, RefreshCcw, FileText, Download, Smartphone,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 const ALL_NAV_ITEMS = [
   { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", featureKey: null, exact: true },
@@ -30,6 +31,7 @@ const ALL_NAV_ITEMS = [
   { path: "/oil/suppliers", icon: Building2, label: "Suppliers", labelAr: "الموردون", featureKey: "suppliers" },
   { path: "/oil/expenses", icon: Receipt, label: "Expenses", labelAr: "المصاريف", featureKey: "expenses" },
   { path: "/oil/debts", icon: HandCoins, label: "Debts", labelAr: "الديون", featureKey: "debts" },
+  { path: "/oil/reports", icon: FileText, label: "Reports", labelAr: "التقارير", featureKey: null },
   { path: "/oil/delivery", icon: ClipboardList, label: "Delivery Notes", labelAr: "وصولات التسليم", featureKey: "delivery" },
   { path: "/oil/batch", icon: BookOpen, label: "Product Records", labelAr: "سجل المنتجات", featureKey: "batch" },
   { path: "/oil/branding", icon: Palette, label: "Branding", labelAr: "العلامة التجارية", featureKey: null },
@@ -47,6 +49,7 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
   const isAr = language === "ar";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const { canShow: canInstall, install, dismiss: dismissInstall } = useInstallPrompt();
 
   const { data: storeInfo } = useQuery<{ name: string; features?: string | null }>({
     queryKey: ["/api/oil/store-info"],
@@ -406,6 +409,31 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
+
+        {/* PWA Install Banner */}
+        {canInstall && (
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-600 text-white text-sm flex-shrink-0">
+            <Smartphone className="h-4 w-4 flex-shrink-0" />
+            <span className="flex-1 font-medium">
+              {isAr ? "ثبّت التطبيق على جهازك للوصول السريع" : "Install the app on your device for quick access"}
+            </span>
+            <button
+              onClick={install}
+              className="flex items-center gap-1.5 bg-white text-blue-700 font-semibold text-xs rounded-lg px-3 py-1.5 hover:bg-blue-50 transition-colors flex-shrink-0"
+              data-testid="button-install-app"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {isAr ? "تثبيت" : "Install"}
+            </button>
+            <button
+              onClick={dismissInstall}
+              className="text-blue-200 hover:text-white transition-colors flex-shrink-0"
+              data-testid="button-dismiss-install"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">

@@ -1,0 +1,24 @@
+{
+  "name": "IQ-POS Factory ERP",
+  "short_name": "IQ-POS",
+  "description": "Factory ERP System – Oil Factory Management",
+  "start_url": "/oil",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

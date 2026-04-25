@@ -45,6 +45,7 @@ import OilExpenses from "@/pages/oil/oil-expenses";
 import OilDebts from "@/pages/oil/oil-debts";
 import OilDelivery from "@/pages/oil/oil-delivery";
 import OilBatch from "@/pages/oil/oil-batch";
+import OilReports from "@/pages/oil/oil-reports";
 import OilLogin from "@/pages/oil/oil-login";
 import { Loader2 } from "lucide-react";
 
@@ -97,6 +98,7 @@ function OilRouter() {
         <Route path="/oil/debts" component={OilDebts} />
         <Route path="/oil/delivery" component={OilDelivery} />
         <Route path="/oil/batch" component={OilBatch} />
+        <Route path="/oil/reports" component={OilReports} />
         <Route path="/oil/branding" component={StoreBranding} />
         <Route component={NotFound} />
       </Switch>
