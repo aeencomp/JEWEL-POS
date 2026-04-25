@@ -1896,6 +1896,68 @@ export async function registerRoutes(
     res.json({ success: true, amount });
   });
 
+  // ── Materials Summary (مخزون المشتريات + مواد خام) ───────────
+  app.get("/api/oil/materials-summary", requireOilAuth, async (req, res) => {
+    const storeId = req.user!.storeId!;
+    const [products, purchases, batches] = await Promise.all([
+      storage.getOilProducts(storeId),
+      storage.getOilPurchases(storeId),
+      storage.getOilBatches(storeId),
+    ]);
+    // Get all purchase items
+    const purchaseItems: any[] = [];
+    for (const p of purchases.filter(p => p.status !== "cancelled")) {
+      const items = await storage.getOilPurchaseItems(p.id);
+      purchaseItems.push(...items.map(i => ({ ...i, purchaseDate: p.createdAt })));
+    }
+    // Get all production inputs
+    const productionInputs: any[] = [];
+    for (const b of batches.filter(b => b.status !== "cancelled")) {
+      const inputs = await storage.getOilBatchInputs(b.id);
+      productionInputs.push(...inputs);
+    }
+    // Group purchase items by productId
+    const purchasedQtyMap: Record<number, { qty: number; value: number; entries: any[] }> = {};
+    for (const item of purchaseItems) {
+      const pid = item.productId;
+      if (!purchasedQtyMap[pid]) purchasedQtyMap[pid] = { qty: 0, value: 0, entries: [] };
+      purchasedQtyMap[pid].qty += parseFloat(item.quantity);
+      purchasedQtyMap[pid].value += parseFloat(item.total);
+      purchasedQtyMap[pid].entries.push(item);
+    }
+    // Group production inputs by productId
+    const usedQtyMap: Record<number, number> = {};
+    for (const input of productionInputs) {
+      usedQtyMap[input.productId] = (usedQtyMap[input.productId] || 0) + parseFloat(input.quantityUsed);
+    }
+    // Build summary: all products that were ever purchased OR are raw_material/packaging
+    const relevantProductIds = new Set([
+      ...products.filter(p => ["raw_material", "packaging", "spare_part", "other"].includes(p.category)).map(p => p.id),
+      ...Object.keys(purchasedQtyMap).map(Number),
+    ]);
+    const summary = Array.from(relevantProductIds).map(pid => {
+      const prod = products.find(p => p.id === pid);
+      if (!prod) return null;
+      const purchased = purchasedQtyMap[pid] || { qty: 0, value: 0, entries: [] };
+      const used = usedQtyMap[pid] || 0;
+      return {
+        productId: pid,
+        name: prod.name,
+        nameAr: prod.nameAr,
+        category: prod.category,
+        unit: prod.unit,
+        purchasePrice: prod.purchasePrice,
+        currentStock: prod.currentStock,
+        minStock: prod.minStock,
+        totalPurchasedQty: purchased.qty,
+        totalPurchasedValue: purchased.value,
+        totalUsedInProduction: used,
+        purchaseEntries: purchased.entries,
+      };
+    }).filter(Boolean);
+    res.json(summary);
+  });
+
   // ── Reports ────────────────────────────────────────────────
   app.get("/api/oil/reports", requireOilAuth, async (req, res) => {
     const storeId = req.user!.storeId!;

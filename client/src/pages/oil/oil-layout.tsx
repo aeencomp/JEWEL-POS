@@ -12,7 +12,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
   Droplets, ChevronRight, ScanLine, Palette, ClipboardList, BookOpen,
-  AlertTriangle, CalendarDays, RefreshCcw, FileText, Download, Smartphone,
+  AlertTriangle, CalendarDays, RefreshCcw, FileText, Download, Smartphone, Boxes,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -24,6 +24,7 @@ const ALL_NAV_ITEMS = [
   { path: "/oil", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", featureKey: null, exact: true },
   { path: "/oil/pos", icon: ScanLine, label: "POS", labelAr: "نقطة البيع", featureKey: "pos" },
   { path: "/oil/inventory", icon: Package, label: "Inventory", labelAr: "المخزون", featureKey: "inventory" },
+  { path: "/oil/materials", icon: Boxes, label: "Materials", labelAr: "مخزون المواد", featureKey: null },
   { path: "/oil/sales", icon: ShoppingCart, label: "Sales", labelAr: "المبيعات", featureKey: "sales" },
   { path: "/oil/purchases", icon: Truck, label: "Purchases", labelAr: "المشتريات", featureKey: "purchases" },
   { path: "/oil/production", icon: Factory, label: "Production", labelAr: "الإنتاج", featureKey: "production" },
