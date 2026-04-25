@@ -193,6 +193,34 @@ export function printOilPurchaseInvoice({ purchase, items, store, isAr = false }
       color: #94a3b8;
     }
 
+    /* ─── Watermark ─── */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      opacity: 0.07;
+      pointer-events: none;
+      z-index: 0;
+      text-align: center;
+      user-select: none;
+    }
+    .watermark img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 10px;
+    }
+    .watermark-name {
+      font-size: 54px;
+      font-weight: 900;
+      color: #0891b2;
+      white-space: nowrap;
+      letter-spacing: -1px;
+    }
+    .page { position: relative; z-index: 1; }
+
     /* Print button */
     .print-btn {
       position: fixed;
@@ -212,6 +240,12 @@ export function printOilPurchaseInvoice({ purchase, items, store, isAr = false }
   </style>
 </head>
 <body>
+  <!-- Watermark -->
+  <div class="watermark" aria-hidden="true">
+    ${store?.logoUrl ? `<img src="${store.logoUrl}" alt="" />` : ""}
+    <div class="watermark-name">${store?.name || "FactoryPOS"}</div>
+  </div>
+
   <button class="print-btn no-print" onclick="window.print()">${isAr ? "🖨️ طباعة" : "🖨️ Print"}</button>
 
   <div class="page">
