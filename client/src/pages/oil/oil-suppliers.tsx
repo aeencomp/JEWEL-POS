@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Phone, MapPin, Edit2, Search } from "lucide-react";
+import { Building2, Plus, Phone, MapPin, Edit2, Search, Trash2 } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1),
@@ -30,6 +30,7 @@ export default function OilSuppliers() {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<OilSupplier | null>(null);
   const [search, setSearch] = useState("");
+  const [deleteToConfirm, setDeleteToConfirm] = useState<OilSupplier | null>(null);
 
   const { data: suppliers = [], isLoading } = useQuery<OilSupplier[]>({
     queryKey: ["/api/oil/suppliers"],
@@ -45,6 +46,16 @@ export default function OilSuppliers() {
       toast({ title: editing ? (isAr ? "تم التحديث" : "Updated") : (isAr ? "تمت الإضافة" : "Added") });
       setShowDialog(false); setEditing(null); form.reset();
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/oil/suppliers/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/suppliers"] });
+      toast({ title: isAr ? "تم الحذف" : "Deleted" });
+      setDeleteToConfirm(null);
+    },
+    onError: () => toast({ title: isAr ? "فشل الحذف" : "Delete failed", variant: "destructive" }),
   });
 
   const openEdit = (s: OilSupplier) => {
@@ -92,7 +103,10 @@ export default function OilSuppliers() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold truncate">{s.name}</p>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => openEdit(s)} data-testid={`button-edit-supplier-${s.id}`}><Edit2 className="h-3.5 w-3.5" /></Button>
+                      <div className="flex gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => openEdit(s)} data-testid={`button-edit-supplier-${s.id}`}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => setDeleteToConfirm(s)} data-testid={`button-delete-supplier-${s.id}`}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
                     </div>
                     <div className="space-y-1.5 text-sm text-muted-foreground">
                       {s.phone && <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{s.phone}</p>}
@@ -106,6 +120,23 @@ export default function OilSuppliers() {
           )
         }
       </div>
+
+      <Dialog open={!!deleteToConfirm} onOpenChange={o => !o && setDeleteToConfirm(null)}>
+        <DialogContent className="max-w-sm" data-testid="dialog-delete-supplier">
+          <DialogHeader><DialogTitle className="text-red-600">{isAr ? "تأكيد الحذف" : "Confirm Delete"}</DialogTitle></DialogHeader>
+          {deleteToConfirm && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{isAr ? "هل أنت متأكد من حذف" : "Delete"} <span className="font-semibold text-foreground">"{deleteToConfirm.name}"</span>? {isAr ? "لا يمكن التراجع." : "This cannot be undone."}</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteToConfirm(null)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+                <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteToConfirm.id)} disabled={deleteMutation.isPending} data-testid="button-confirm-delete-supplier">
+                  {deleteMutation.isPending ? "..." : (isAr ? "حذف" : "Delete")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showDialog} onOpenChange={o => { if (!o) { setShowDialog(false); setEditing(null); } }}>
         <DialogContent className="max-w-md" data-testid="dialog-supplier">

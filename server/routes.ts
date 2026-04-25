@@ -1655,6 +1655,12 @@ export async function registerRoutes(
   app.patch("/api/oil/products/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilProduct(parseInt(req.params.id), req.body));
   });
+  app.delete("/api/oil/products/:id", requireOilAuth, async (req, res) => {
+    try {
+      await storage.deleteOilProduct(parseInt(req.params.id), req.user!.storeId!);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err?.message || "Error" }); }
+  });
 
   // Customers
   app.get("/api/oil/customers", requireOilAuth, async (req, res) => {
@@ -1666,6 +1672,12 @@ export async function registerRoutes(
   app.patch("/api/oil/customers/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilCustomer(parseInt(req.params.id), req.body));
   });
+  app.delete("/api/oil/customers/:id", requireOilAuth, async (req, res) => {
+    try {
+      await storage.deleteOilCustomer(parseInt(req.params.id), req.user!.storeId!);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err?.message || "Error" }); }
+  });
 
   // Suppliers
   app.get("/api/oil/suppliers", requireOilAuth, async (req, res) => {
@@ -1676,6 +1688,12 @@ export async function registerRoutes(
   });
   app.patch("/api/oil/suppliers/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilSupplier(parseInt(req.params.id), req.body));
+  });
+  app.delete("/api/oil/suppliers/:id", requireOilAuth, async (req, res) => {
+    try {
+      await storage.deleteOilSupplier(parseInt(req.params.id), req.user!.storeId!);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err?.message || "Error" }); }
   });
 
   // Sales
@@ -1760,6 +1778,12 @@ export async function registerRoutes(
   app.patch("/api/oil/purchases/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilPurchase(parseInt(req.params.id), req.body));
   });
+  app.delete("/api/oil/purchases/:id", requireOilAuth, async (req, res) => {
+    try {
+      await storage.deleteOilPurchase(parseInt(req.params.id), req.user!.storeId!);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err?.message || "Error" }); }
+  });
 
   // Production Batches
   app.get("/api/oil/production", requireOilAuth, async (req, res) => {
@@ -1798,6 +1822,12 @@ export async function registerRoutes(
   app.patch("/api/oil/production/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilBatch(parseInt(req.params.id), req.body));
   });
+  app.delete("/api/oil/production/:id", requireOilAuth, async (req, res) => {
+    try {
+      await storage.deleteOilProductionBatch(parseInt(req.params.id), req.user!.storeId!);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err?.message || "Error" }); }
+  });
 
   // Expenses
   app.get("/api/oil/expenses", requireOilAuth, async (req, res) => {
@@ -1831,6 +1861,12 @@ export async function registerRoutes(
   });
   app.patch("/api/oil/debts/:id", requireOilAuth, async (req, res) => {
     res.json(await storage.updateOilDebt(parseInt(req.params.id), req.body));
+  });
+  app.delete("/api/oil/debts/:id", requireOilAuth, async (req, res) => {
+    try {
+      await storage.deleteOilDebt(parseInt(req.params.id), req.user!.storeId!);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err?.message || "Error" }); }
   });
   app.get("/api/oil/debts/:id/payments", requireOilAuth, async (req, res) => {
     res.json(await storage.getOilDebtPayments(parseInt(req.params.id)));

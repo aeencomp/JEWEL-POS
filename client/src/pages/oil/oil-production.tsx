@@ -22,6 +22,7 @@ export default function OilProduction() {
   const isAr = language === "ar";
   const [showDialog, setShowDialog] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleteToConfirm, setDeleteToConfirm] = useState<OilProductionBatch | null>(null);
 
   const { data: batches = [], isLoading } = useQuery<OilProductionBatch[]>({
     queryKey: ["/api/oil/production"],
@@ -48,6 +49,17 @@ export default function OilProduction() {
       setFormOutputProductId(""); setFormOutputQty(0); setFormNotes("");
       setInputs([{ productId: 0, productName: "", quantityUsed: 0 }]);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/oil/production/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/production"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
+      toast({ title: isAr ? "تم الحذف" : "Deleted" });
+      setDeleteToConfirm(null);
+    },
+    onError: () => toast({ title: isAr ? "فشل الحذف" : "Delete failed", variant: "destructive" }),
   });
 
   function updateInput(idx: number, field: keyof InputItem, value: any) {
@@ -131,6 +143,11 @@ export default function OilProduction() {
                     <div className="border-t bg-muted/20 px-4 py-3">
                       <BatchInputsView batchId={batch.id} />
                       {batch.notes && <p className="text-xs text-muted-foreground mt-2 italic">{batch.notes}</p>}
+                      <div className="mt-3">
+                        <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => setDeleteToConfirm(batch)} data-testid={`button-delete-batch-${batch.id}`}>
+                          <Trash2 className="h-3.5 w-3.5 me-1" />{isAr ? "حذف الدفعة" : "Delete Batch"}
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -139,6 +156,23 @@ export default function OilProduction() {
           })
         }
       </div>
+
+      <Dialog open={!!deleteToConfirm} onOpenChange={o => !o && setDeleteToConfirm(null)}>
+        <DialogContent className="max-w-sm" data-testid="dialog-delete-batch">
+          <DialogHeader><DialogTitle className="text-red-600">{isAr ? "تأكيد الحذف" : "Confirm Delete"}</DialogTitle></DialogHeader>
+          {deleteToConfirm && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{isAr ? "هل أنت متأكد من حذف الدفعة" : "Delete batch"} <span className="font-semibold text-foreground">"{deleteToConfirm.batchNumber}"</span>? {isAr ? "لا يمكن التراجع." : "This cannot be undone."}</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteToConfirm(null)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+                <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteToConfirm.id)} disabled={deleteMutation.isPending} data-testid="button-confirm-delete-batch">
+                  {deleteMutation.isPending ? "..." : (isAr ? "حذف" : "Delete")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-new-batch">

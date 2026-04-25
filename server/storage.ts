@@ -499,6 +499,27 @@ export class DatabaseStorage implements IStorage {
     await db.delete(oilSaleItems).where(eq(oilSaleItems.saleId, id));
     await db.delete(oilSales).where(and(eq(oilSales.id, id), eq(oilSales.storeId, storeId)));
   }
+  async deleteOilProduct(id: number, storeId: number): Promise<void> {
+    await db.delete(oilProducts).where(and(eq(oilProducts.id, id), eq(oilProducts.storeId, storeId)));
+  }
+  async deleteOilCustomer(id: number, storeId: number): Promise<void> {
+    await db.delete(oilCustomers).where(and(eq(oilCustomers.id, id), eq(oilCustomers.storeId, storeId)));
+  }
+  async deleteOilSupplier(id: number, storeId: number): Promise<void> {
+    await db.delete(oilSuppliers).where(and(eq(oilSuppliers.id, id), eq(oilSuppliers.storeId, storeId)));
+  }
+  async deleteOilPurchase(id: number, storeId: number): Promise<void> {
+    await db.delete(oilPurchaseItems).where(eq(oilPurchaseItems.purchaseId, id));
+    await db.delete(oilPurchases).where(and(eq(oilPurchases.id, id), eq(oilPurchases.storeId, storeId)));
+  }
+  async deleteOilProductionBatch(id: number, storeId: number): Promise<void> {
+    await db.delete(oilProductionInputs).where(eq(oilProductionInputs.batchId, id));
+    await db.delete(oilProductionBatches).where(and(eq(oilProductionBatches.id, id), eq(oilProductionBatches.storeId, storeId)));
+  }
+  async deleteOilDebt(id: number, storeId: number): Promise<void> {
+    await db.delete(oilDebtPayments).where(eq(oilDebtPayments.debtId, id));
+    await db.delete(oilDebts).where(and(eq(oilDebts.id, id), eq(oilDebts.storeId, storeId)));
+  }
   async getOilSaleItems(saleId: number): Promise<OilSaleItem[]> {
     return db.select().from(oilSaleItems).where(eq(oilSaleItems.saleId, saleId));
   }

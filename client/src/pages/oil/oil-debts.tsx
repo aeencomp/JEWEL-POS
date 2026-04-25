@@ -56,6 +56,7 @@ export default function OilDebts() {
   const [payAmount, setPayAmount] = useState(0);
   const [statusFilter, setStatusFilter] = useState("active");
   const [dirFilter, setDirFilter] = useState("all");
+  const [deleteToConfirm, setDeleteToConfirm] = useState<OilDebt | null>(null);
 
   const { data: debts = [], isLoading } = useQuery<OilDebt[]>({
     queryKey: ["/api/oil/debts"],
@@ -91,6 +92,17 @@ export default function OilDebts() {
       toast({ title: isAr ? "تم تسجيل الدفعة" : "Payment recorded" });
       setPayingDebt(null);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/oil/debts/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/debts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
+      toast({ title: isAr ? "تم الحذف" : "Deleted" });
+      setDeleteToConfirm(null);
+    },
+    onError: () => toast({ title: isAr ? "فشل الحذف" : "Delete failed", variant: "destructive" }),
   });
 
   const filtered = debts.filter(d => {
@@ -193,6 +205,9 @@ export default function OilDebts() {
                           <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateMutation.mutate({ id: debt.id, data: { status: "cancelled" } })} disabled={updateMutation.isPending}><XCircle className="h-3.5 w-3.5 me-1" />Cancel</Button>
                         </div>
                       )}
+                      <div className="mt-2">
+                        <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => setDeleteToConfirm(debt)} data-testid={`button-delete-debt-${debt.id}`}><Trash2 className="h-3.5 w-3.5 me-1" />{isAr ? "حذف" : "Delete"}</Button>
+                      </div>
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><History className="h-3.5 w-3.5" />Payment History</p>
                         <DebtPaymentsView debtId={debt.id} />
@@ -205,6 +220,23 @@ export default function OilDebts() {
           })
         }
       </div>
+
+      <Dialog open={!!deleteToConfirm} onOpenChange={o => !o && setDeleteToConfirm(null)}>
+        <DialogContent className="max-w-sm" data-testid="dialog-delete-debt">
+          <DialogHeader><DialogTitle className="text-red-600">{isAr ? "تأكيد الحذف" : "Confirm Delete"}</DialogTitle></DialogHeader>
+          {deleteToConfirm && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{isAr ? "هل أنت متأكد من حذف دين" : "Delete debt for"} <span className="font-semibold text-foreground">"{deleteToConfirm.entityName}"</span>? {isAr ? "سيتم حذف سجل المدفوعات أيضاً." : "Payment history will also be deleted."}</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteToConfirm(null)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+                <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteToConfirm.id)} disabled={deleteMutation.isPending} data-testid="button-confirm-delete-debt">
+                  {deleteMutation.isPending ? "..." : (isAr ? "حذف" : "Delete")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="max-w-md" data-testid="dialog-add-debt">

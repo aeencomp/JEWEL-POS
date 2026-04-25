@@ -25,6 +25,7 @@ export default function OilPurchases() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [paymentPurchase, setPaymentPurchase] = useState<OilPurchase | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [deleteToConfirm, setDeleteToConfirm] = useState<OilPurchase | null>(null);
 
   const { data: purchases = [], isLoading } = useQuery<OilPurchase[]>({
     queryKey: ["/api/oil/purchases"],
@@ -73,6 +74,17 @@ export default function OilPurchases() {
       toast({ title: isAr ? "تم تسجيل الدفعة" : "Payment recorded" });
       setPaymentPurchase(null);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/oil/purchases/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
+      toast({ title: isAr ? "تم الحذف" : "Deleted" });
+      setDeleteToConfirm(null);
+    },
+    onError: () => toast({ title: isAr ? "فشل الحذف" : "Delete failed", variant: "destructive" }),
   });
 
   function resetForm() {
@@ -163,13 +175,16 @@ export default function OilPurchases() {
                   {expanded && (
                     <div className="border-t bg-muted/20 px-4 py-3">
                       <PurchaseItemsView purchaseId={purchase.id} />
-                      <div className="flex items-center gap-2 mt-3">
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
                         {purchase.paymentStatus !== "paid" && (
                           <Button size="sm" variant="outline" className="text-green-700 border-green-300" onClick={() => { setPaymentPurchase(purchase); setPaymentAmount(0); }} data-testid={`button-pay-purchase-${purchase.id}`}>
                             <Banknote className="h-3.5 w-3.5 me-1" />{isAr ? "تسجيل دفعة" : "Record Payment"}
                           </Button>
                         )}
                         <PrintButton purchase={purchase} storeInfo={storeInfo || null} isAr={isAr} />
+                        <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => setDeleteToConfirm(purchase)} data-testid={`button-delete-purchase-${purchase.id}`}>
+                          <Trash2 className="h-3.5 w-3.5 me-1" />{isAr ? "حذف" : "Delete"}
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -250,6 +265,23 @@ export default function OilPurchases() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteToConfirm} onOpenChange={o => !o && setDeleteToConfirm(null)}>
+        <DialogContent className="max-w-sm" data-testid="dialog-delete-purchase">
+          <DialogHeader><DialogTitle className="text-red-600">{isAr ? "تأكيد الحذف" : "Confirm Delete"}</DialogTitle></DialogHeader>
+          {deleteToConfirm && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{isAr ? "هل أنت متأكد من حذف الفاتورة" : "Delete purchase"} <span className="font-semibold text-foreground">"{deleteToConfirm.invoiceNumber || `PO-${deleteToConfirm.id}`}"</span>? {isAr ? "لا يمكن التراجع." : "This cannot be undone."}</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteToConfirm(null)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+                <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteToConfirm.id)} disabled={deleteMutation.isPending} data-testid="button-confirm-delete-purchase">
+                  {deleteMutation.isPending ? "..." : (isAr ? "حذف" : "Delete")}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

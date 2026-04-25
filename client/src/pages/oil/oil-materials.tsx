@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Boxes, Plus, AlertTriangle, Edit2, Search,
+  Boxes, Plus, AlertTriangle, Edit2, Search, Trash2,
   TrendingDown, ShoppingCart, FlaskConical, ChevronDown, ChevronUp,
   Package,
 } from "lucide-react";
@@ -64,6 +64,7 @@ export default function OilMaterials() {
   const [editing, setEditing] = useState<OilProduct | null>(null);
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleteToConfirm, setDeleteToConfirm] = useState<OilProduct | null>(null);
 
   const { data: products = [], isLoading: productsLoading } = useQuery<OilProduct[]>({
     queryKey: ["/api/oil/products"],
@@ -95,6 +96,18 @@ export default function OilMaterials() {
       toast({ title: editing ? (isAr ? "تم التحديث" : "Updated") : (isAr ? "تمت الإضافة" : "Added") });
       setShowDialog(false); setEditing(null); form.reset();
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/oil/products/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/materials-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
+      toast({ title: isAr ? "تم الحذف" : "Deleted" });
+      setDeleteToConfirm(null);
+    },
+    onError: () => toast({ title: isAr ? "فشل الحذف" : "Delete failed", variant: "destructive" }),
   });
 
   function openEdit(p: OilProduct) {
@@ -232,9 +245,14 @@ export default function OilMaterials() {
                           <p className="font-semibold">{p.name}</p>
                           {p.nameAr && <p className="text-xs text-muted-foreground">{p.nameAr}</p>}
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => openEdit(p)} data-testid={`button-edit-material-${p.id}`}>
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => openEdit(p)} data-testid={`button-edit-material-${p.id}`}>
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => setDeleteToConfirm(p)} data-testid={`button-delete-material-${p.id}`}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between text-sm">
@@ -423,6 +441,23 @@ export default function OilMaterials() {
           )}
         </div>
       )}
+
+      <Dialog open={!!deleteToConfirm} onOpenChange={o => !o && setDeleteToConfirm(null)}>
+        <DialogContent className="max-w-sm" data-testid="dialog-delete-material">
+          <DialogHeader><DialogTitle className="text-red-600">{isAr ? "تأكيد الحذف" : "Confirm Delete"}</DialogTitle></DialogHeader>
+          {deleteToConfirm && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{isAr ? "هل أنت متأكد من حذف" : "Delete"} <span className="font-semibold text-foreground">"{deleteToConfirm.name}"</span>? {isAr ? "لا يمكن التراجع." : "This cannot be undone."}</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteToConfirm(null)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+                <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteToConfirm.id)} disabled={deleteMutation.isPending} data-testid="button-confirm-delete-material">
+                  {deleteMutation.isPending ? "..." : (isAr ? "حذف" : "Delete")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Add / Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={o => { if (!o) { setShowDialog(false); setEditing(null); } }}>
