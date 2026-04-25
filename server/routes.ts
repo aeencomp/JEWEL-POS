@@ -1713,7 +1713,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/oil/sales/:id", requireOilAuth, async (req, res) => {
-    const storeId = (req as any).storeId as number;
+    const storeId = req.user!.storeId!;
     const sale = await storage.getOilSale(parseInt(req.params.id));
     if (!sale || sale.storeId !== storeId) return res.status(404).json({ message: "Not found" });
     await storage.deleteOilSale(parseInt(req.params.id), storeId);
