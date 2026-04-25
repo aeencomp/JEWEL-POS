@@ -78,6 +78,7 @@ export default function OilProduction() {
   }
 
   const finishedOilProducts = products.filter(p => p.category === "finished_oil");
+  const otherOutputProducts = products.filter(p => p.category !== "finished_oil");
   const rawMaterials = products.filter(p => ["raw_material", "other"].includes(p.category));
 
   return (
@@ -149,8 +150,20 @@ export default function OilProduction() {
                 <Select value={formOutputProductId} onValueChange={setFormOutputProductId}>
                   <SelectTrigger data-testid="select-output-product"><SelectValue placeholder={isAr ? "اختر منتج" : "Select product"} /></SelectTrigger>
                   <SelectContent>
-                    {finishedOilProducts.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                    {products.filter(p => !["raw_material"].includes(p.category)).filter(p => !finishedOilProducts.includes(p)).map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                    {products.length === 0 ? (
+                      <div className="px-3 py-4 text-xs text-center text-muted-foreground">
+                        {isAr ? "لا توجد منتجات. أضف منتجات من المخزون أولاً." : "No products found. Add products in Inventory first."}
+                      </div>
+                    ) : (
+                      <>
+                        {finishedOilProducts.length > 0 && finishedOilProducts.map(p => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                        {otherOutputProducts.map(p => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
