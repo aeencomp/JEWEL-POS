@@ -1683,7 +1683,10 @@ export async function registerRoutes(
 
   // ── OilPOS Routes ────────────────────────────────────────────────
   const requireOilAuth = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated() || !req.user?.storeId) return res.status(401).json({ message: "Unauthorized" });
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const effectiveStoreId = getEffectiveStoreId(req);
+    if (!effectiveStoreId) return res.status(401).json({ message: "Unauthorized" });
+    req.user.storeId = effectiveStoreId;
     next();
   };
 
