@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema, insertSignupRequestSchema, signupRequests } from "@shared/schema";
 import { db } from "./db";
-import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems, oilBatchRecords, oilBatchRecordItems } from "@shared/schema";
+import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems, oilBatchRecords, oilBatchRecordItems, oilProducts, oilCustomers, oilSuppliers, oilSales, oilSaleItems, oilPurchases, oilPurchaseItems, oilProductionBatches, oilProductionInputs, oilDebts, oilDebtPayments } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -176,6 +176,74 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Admin backup error:", error);
       res.status(500).json({ message: `Backup failed: ${error.message}` });
+    }
+  });
+
+  app.post("/api/internal/reset-store-data", async (req, res) => {
+    const { token, storeId: rawStoreId } = req.body;
+    if (token !== "RESET_OIL_STORE_2026_ONCE") return res.status(403).json({ message: "Forbidden" });
+    const storeId = parseInt(rawStoreId);
+    if (isNaN(storeId)) return res.status(400).json({ message: "Invalid storeId" });
+    try {
+      await db.transaction(async (tx) => {
+        const batchIds = (await tx.select({ id: oilProductionBatches.id }).from(oilProductionBatches).where(eq(oilProductionBatches.storeId, storeId))).map(r => r.id);
+        for (const bid of batchIds) await tx.delete(oilProductionInputs).where(eq(oilProductionInputs.batchId, bid));
+        await tx.delete(oilProductionBatches).where(eq(oilProductionBatches.storeId, storeId));
+        const saleIds = (await tx.select({ id: oilSales.id }).from(oilSales).where(eq(oilSales.storeId, storeId))).map(r => r.id);
+        for (const sid of saleIds) await tx.delete(oilSaleItems).where(eq(oilSaleItems.saleId, sid));
+        await tx.delete(oilSales).where(eq(oilSales.storeId, storeId));
+        const purchaseIds = (await tx.select({ id: oilPurchases.id }).from(oilPurchases).where(eq(oilPurchases.storeId, storeId))).map(r => r.id);
+        for (const pid of purchaseIds) await tx.delete(oilPurchaseItems).where(eq(oilPurchaseItems.purchaseId, pid));
+        await tx.delete(oilPurchases).where(eq(oilPurchases.storeId, storeId));
+        const debtIds = (await tx.select({ id: oilDebts.id }).from(oilDebts).where(eq(oilDebts.storeId, storeId))).map(r => r.id);
+        for (const did of debtIds) await tx.delete(oilDebtPayments).where(eq(oilDebtPayments.debtId, did));
+        await tx.delete(oilDebts).where(eq(oilDebts.storeId, storeId));
+        const batchRecordIds = (await tx.select({ id: oilBatchRecords.id }).from(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId))).map(r => r.id);
+        for (const bid of batchRecordIds) await tx.delete(oilBatchRecordItems).where(eq(oilBatchRecordItems.recordId, bid));
+        await tx.delete(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId));
+        await tx.delete(oilProducts).where(eq(oilProducts.storeId, storeId));
+        await tx.delete(oilCustomers).where(eq(oilCustomers.storeId, storeId));
+        await tx.delete(oilSuppliers).where(eq(oilSuppliers.storeId, storeId));
+      });
+      res.json({ message: `Store ${storeId} reset successfully.` });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/admin/reset-oil-store/:storeId", requireAdmin, async (req, res) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId)) return res.status(400).json({ message: "Invalid storeId" });
+    try {
+      await db.transaction(async (tx) => {
+        // production inputs → production batches
+        const batchIds = (await tx.select({ id: oilProductionBatches.id }).from(oilProductionBatches).where(eq(oilProductionBatches.storeId, storeId))).map(r => r.id);
+        for (const bid of batchIds) await tx.delete(oilProductionInputs).where(eq(oilProductionInputs.batchId, bid));
+        await tx.delete(oilProductionBatches).where(eq(oilProductionBatches.storeId, storeId));
+        // sale items → sales
+        const saleIds = (await tx.select({ id: oilSales.id }).from(oilSales).where(eq(oilSales.storeId, storeId))).map(r => r.id);
+        for (const sid of saleIds) await tx.delete(oilSaleItems).where(eq(oilSaleItems.saleId, sid));
+        await tx.delete(oilSales).where(eq(oilSales.storeId, storeId));
+        // purchase items → purchases
+        const purchaseIds = (await tx.select({ id: oilPurchases.id }).from(oilPurchases).where(eq(oilPurchases.storeId, storeId))).map(r => r.id);
+        for (const pid of purchaseIds) await tx.delete(oilPurchaseItems).where(eq(oilPurchaseItems.purchaseId, pid));
+        await tx.delete(oilPurchases).where(eq(oilPurchases.storeId, storeId));
+        // debt payments → debts
+        const debtIds = (await tx.select({ id: oilDebts.id }).from(oilDebts).where(eq(oilDebts.storeId, storeId))).map(r => r.id);
+        for (const did of debtIds) await tx.delete(oilDebtPayments).where(eq(oilDebtPayments.debtId, did));
+        await tx.delete(oilDebts).where(eq(oilDebts.storeId, storeId));
+        // batch record items → batch records (references customers)
+        const batchRecordIds = (await tx.select({ id: oilBatchRecords.id }).from(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId))).map(r => r.id);
+        for (const bid of batchRecordIds) await tx.delete(oilBatchRecordItems).where(eq(oilBatchRecordItems.recordId, bid));
+        await tx.delete(oilBatchRecords).where(eq(oilBatchRecords.storeId, storeId));
+        // now safe to delete products, customers, suppliers
+        await tx.delete(oilProducts).where(eq(oilProducts.storeId, storeId));
+        await tx.delete(oilCustomers).where(eq(oilCustomers.storeId, storeId));
+        await tx.delete(oilSuppliers).where(eq(oilSuppliers.storeId, storeId));
+      });
+      res.json({ message: `Store ${storeId} oil data reset successfully.` });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 
