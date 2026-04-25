@@ -495,6 +495,10 @@ export class DatabaseStorage implements IStorage {
     const [s] = await db.update(oilSales).set(data).where(eq(oilSales.id, id)).returning();
     return s || undefined;
   }
+  async deleteOilSale(id: number, storeId: number): Promise<void> {
+    await db.delete(oilSaleItems).where(eq(oilSaleItems.saleId, id));
+    await db.delete(oilSales).where(and(eq(oilSales.id, id), eq(oilSales.storeId, storeId)));
+  }
   async getOilSaleItems(saleId: number): Promise<OilSaleItem[]> {
     return db.select().from(oilSaleItems).where(eq(oilSaleItems.saleId, saleId));
   }

@@ -1712,6 +1712,14 @@ export async function registerRoutes(
     res.json(await storage.updateOilSale(parseInt(req.params.id), req.body));
   });
 
+  app.delete("/api/oil/sales/:id", requireOilAuth, async (req, res) => {
+    const storeId = (req as any).storeId as number;
+    const sale = await storage.getOilSale(parseInt(req.params.id));
+    if (!sale || sale.storeId !== storeId) return res.status(404).json({ message: "Not found" });
+    await storage.deleteOilSale(parseInt(req.params.id), storeId);
+    res.json({ success: true });
+  });
+
   // Purchases
   app.get("/api/oil/purchases", requireOilAuth, async (req, res) => {
     res.json(await storage.getOilPurchases(req.user!.storeId!));

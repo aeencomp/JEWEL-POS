@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { printOilSaleInvoice } from "@/components/oil-sale-invoice";
-import { ShoppingCart, Plus, Trash2, ChevronDown, Banknote, Printer } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, ChevronDown, Banknote, Printer, AlertTriangle } from "lucide-react";
 
 function fmt(n: string | number) { return parseFloat(String(n)).toLocaleString("en-US", { maximumFractionDigits: 0 }); }
 
@@ -25,6 +25,7 @@ export default function OilSales() {
   const [showDialog, setShowDialog] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [paymentSale, setPaymentSale] = useState<OilSale | null>(null);
+  const [deleteSale, setDeleteSale] = useState<OilSale | null>(null);
 
   const { data: sales = [], isLoading } = useQuery<OilSale[]>({
     queryKey: ["/api/oil/sales"],
@@ -72,6 +73,19 @@ export default function OilSales() {
       toast({ title: isAr ? "تم تسجيل الدفعة" : "Payment recorded" });
       setPaymentSale(null);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/oil/sales/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/sales"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/oil/products"] });
+      toast({ title: isAr ? "تم حذف الفاتورة" : "Invoice deleted" });
+      setDeleteSale(null);
+      setExpandedId(null);
+    },
+    onError: () => toast({ title: isAr ? "حدث خطأ" : "Error deleting invoice", variant: "destructive" }),
   });
 
   function resetForm() {
@@ -167,6 +181,15 @@ export default function OilSales() {
                           </Button>
                         )}
                         <SalePrintButton sale={sale} store={storeInfo} isAr={isAr} />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 ms-auto"
+                          onClick={e => { e.stopPropagation(); setDeleteSale(sale); }}
+                          data-testid={`button-delete-sale-${sale.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 me-1" />{isAr ? "حذف" : "Delete"}
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -252,6 +275,49 @@ export default function OilSales() {
               <Button onClick={handleSubmit} disabled={createMutation.isPending} data-testid="button-submit-sale">{isAr ? "حفظ الفاتورة" : "Save Invoice"}</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteSale} onOpenChange={o => !o && setDeleteSale(null)}>
+        <DialogContent className="max-w-sm" data-testid="dialog-delete-sale">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              {isAr ? "حذف الفاتورة" : "Delete Invoice"}
+            </DialogTitle>
+          </DialogHeader>
+          {deleteSale && (
+            <div className="space-y-4">
+              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl text-sm space-y-1">
+                <p className="font-semibold text-red-700 dark:text-red-400">{deleteSale.invoiceNumber}</p>
+                <p className="text-muted-foreground">
+                  {deleteSale.customerName || (isAr ? "عميل نقدي" : "Cash Customer")} · {fmt(deleteSale.totalAmount)} IQD
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {isAr
+                  ? "سيتم حذف هذه الفاتورة وجميع بنودها بشكل نهائي. هذا الإجراء لا يمكن التراجع عنه."
+                  : "This invoice and all its items will be permanently deleted. This action cannot be undone."}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteSale(null)}>
+                  {isAr ? "إلغاء" : "Cancel"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteMutation.mutate(deleteSale.id)}
+                  disabled={deleteMutation.isPending}
+                  data-testid="button-confirm-delete-sale"
+                >
+                  <Trash2 className="h-4 w-4 me-1" />
+                  {deleteMutation.isPending
+                    ? (isAr ? "جارٍ الحذف..." : "Deleting...")
+                    : (isAr ? "حذف نهائي" : "Delete")}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
