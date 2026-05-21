@@ -43,7 +43,7 @@ jobs:
           script_stop: true
           envs: APP_PATH,REPO_URL,DATABASE_URL,SESSION_SECRET,GITHUB_DEPLOY_TOKEN,RESEND_API_KEY,RESEND_FROM_EMAIL
           script: |
-            export APP_PATH="${APP_PATH:-/var/www/jewel-pos}"
+            export APP_PATH="${APP_PATH:-/home/deploy/jewel-pos}"
             SCRIPT=""
             for candidate in /tmp/remote-bootstrap.sh /tmp/deploy/remote-bootstrap.sh; do
               if [ -f "$candidate" ]; then

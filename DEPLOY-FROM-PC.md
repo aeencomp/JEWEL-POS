@@ -13,7 +13,7 @@ Click **New repository secret** for each:
 | `VPS_HOST` | VPS IP or hostname (e.g. from Hostkey panel) |
 | `VPS_USER` | `deploy` |
 | `VPS_SSH_KEY` | Private SSH key (full file) used to log into VPS |
-| `VPS_APP_PATH` | `/var/www/jewel-pos` |
+| `VPS_APP_PATH` | `/home/deploy/jewel-pos` (no sudo needed) |
 | `DATABASE_URL` | Your Neon connection string (with data) |
 | `SESSION_SECRET` | Long random string |
 | `GITHUB_DEPLOY_TOKEN` | GitHub PAT with `repo` scope (needed if repo is **private**) |

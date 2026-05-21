@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Runs on VPS via GitHub Actions (or SSH). Bootstraps /var/www/jewel-pos if missing.
+# Runs on VPS via GitHub Actions (or SSH). No sudo — runs as deploy user.
 set -euo pipefail
 
-APP_PATH="${APP_PATH:-/var/www/jewel-pos}"
+APP_PATH="${APP_PATH:-/home/deploy/jewel-pos}"
 REPO_URL="${REPO_URL:-https://github.com/aeencomp/JEWEL-POS.git}"
 BRANCH="${BRANCH:-main}"
 
@@ -12,8 +12,14 @@ else
   CLONE_URL="$REPO_URL"
 fi
 
-sudo mkdir -p /var/www
-sudo chown -R "$(whoami):$(whoami)" /var/www 2>/dev/null || true
+PARENT_DIR="$(dirname "$APP_PATH")"
+if ! mkdir -p "$PARENT_DIR" 2>/dev/null; then
+  echo "ERROR: Cannot create $PARENT_DIR (permission denied)."
+  echo "Either set VPS_APP_PATH to /home/deploy/jewel-pos in GitHub secrets,"
+  echo "or on VPS once: sudo mkdir -p /var/www && sudo chown deploy:deploy /var/www"
+  exit 1
+fi
+mkdir -p "$APP_PATH"
 
 if [[ ! -d "$APP_PATH/.git" ]]; then
   echo "==> Cloning repo into $APP_PATH"
@@ -50,15 +56,15 @@ EOF
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "ERROR: Node.js not installed on VPS. Run on VPS:"
+  echo "ERROR: Node.js not installed on VPS. SSH in and run:"
   echo "  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -"
-  echo "  sudo apt install -y nodejs && sudo npm install -g pm2"
+  echo "  sudo apt install -y nodejs"
   exit 1
 fi
 
 if ! command -v pm2 >/dev/null 2>&1; then
-  echo "==> Installing PM2"
-  sudo npm install -g pm2
+  echo "ERROR: pm2 not installed. SSH in and run: sudo npm install -g pm2"
+  exit 1
 fi
 
 bash deploy/deploy.sh
