@@ -53,7 +53,7 @@ if [[ ! -f .env ]]; then
   cat > .env <<EOF
 DATABASE_URL=${DATABASE_URL}
 SESSION_SECRET=${SESSION_SECRET}
-PORT=5000
+PORT=5001
 NODE_ENV=production
 EOF
   if [[ -n "${RESEND_API_KEY:-}" ]]; then
