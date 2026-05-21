@@ -6,11 +6,11 @@ APP_PATH="${APP_PATH:-/home/deploy/jewel-pos}"
 REPO_URL="${REPO_URL:-https://github.com/aeencomp/JEWEL-POS.git}"
 BRANCH="${BRANCH:-main}"
 
-if [[ -n "${GITHUB_DEPLOY_TOKEN:-}" ]]; then
-  CLONE_URL="https://x-access-token:${GITHUB_DEPLOY_TOKEN}@github.com/aeencomp/JEWEL-POS.git"
+if [[ -n "${REPO_CLONE_TOKEN:-}" ]]; then
+  CLONE_URL="https://x-access-token:${REPO_CLONE_TOKEN}@github.com/aeencomp/JEWEL-POS.git"
 else
   CLONE_URL="$REPO_URL"
-  echo "WARN: GITHUB_DEPLOY_TOKEN not set — clone works only if the repo is public."
+  echo "WARN: REPO_CLONE_TOKEN not set — clone works only if the repo is public."
 fi
 
 PARENT_DIR="$(dirname "$APP_PATH")"
@@ -27,7 +27,7 @@ if [[ ! -d "$APP_PATH/.git" ]]; then
   rm -rf "$APP_PATH"
   if ! git clone --branch "$BRANCH" "$CLONE_URL" "$APP_PATH"; then
     echo "ERROR: git clone failed."
-    echo "If the repo is private, add GitHub secret GITHUB_DEPLOY_TOKEN (PAT with repo read access)."
+    echo "If the repo is private, add GitHub secret REPO_CLONE_TOKEN (PAT with repo read access)."
     exit 1
   fi
 fi

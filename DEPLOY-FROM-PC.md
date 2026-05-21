@@ -16,7 +16,7 @@ Click **New repository secret** for each:
 | `VPS_APP_PATH` | `/home/deploy/jewel-pos` (no sudo needed) |
 | `DATABASE_URL` | Your Neon connection string (with data) |
 | `SESSION_SECRET` | Long random string |
-| `GITHUB_DEPLOY_TOKEN` | GitHub PAT with `repo` scope (needed if repo is **private**) |
+| `REPO_CLONE_TOKEN` | GitHub PAT with `repo` scope (needed if repo is **private**) |
 
 Optional: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 
@@ -92,7 +92,7 @@ Point Nginx to port 5000 (`deploy/nginx.example.conf`) for a public URL.
 
 | Error | Fix |
 |-------|-----|
-| Clone failed / not found | Add `GITHUB_DEPLOY_TOKEN` (PAT) for private repo |
+| Clone failed / not found | Add `REPO_CLONE_TOKEN` (PAT) for private repo |
 | Node not installed | Run Step 2 on VPS |
 | Missing .env | Add `DATABASE_URL` + `SESSION_SECRET` secrets |
 | Permission denied SSH | Fix `VPS_SSH_KEY` and `authorized_keys` on VPS |

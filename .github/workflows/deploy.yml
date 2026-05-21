@@ -1,6 +1,6 @@
 # Deploy to VPS from GitHub (push to main or manual Run workflow).
 # Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_APP_PATH, DATABASE_URL, SESSION_SECRET
-# Optional: GITHUB_DEPLOY_TOKEN, RESEND_API_KEY, RESEND_FROM_EMAIL
+# Optional: REPO_CLONE_TOKEN, RESEND_API_KEY, RESEND_FROM_EMAIL
 
 name: Deploy to VPS
 
@@ -32,7 +32,7 @@ jobs:
           REPO_URL: https://github.com/aeencomp/JEWEL-POS.git
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          GITHUB_DEPLOY_TOKEN: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
+          REPO_CLONE_TOKEN: ${{ secrets.REPO_CLONE_TOKEN }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
         uses: appleboy/ssh-action@v1.2.0
@@ -41,7 +41,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: true
-          envs: APP_PATH,REPO_URL,DATABASE_URL,SESSION_SECRET,GITHUB_DEPLOY_TOKEN,RESEND_API_KEY,RESEND_FROM_EMAIL
+          envs: APP_PATH,REPO_URL,DATABASE_URL,SESSION_SECRET,REPO_CLONE_TOKEN,RESEND_API_KEY,RESEND_FROM_EMAIL
           script: |
             export APP_PATH="${APP_PATH:-/home/deploy/jewel-pos}"
             SCRIPT=""
