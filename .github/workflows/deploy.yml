@@ -24,6 +24,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "deploy/remote-bootstrap.sh"
           target: "/tmp"
+          strip_components: 1
 
       - name: Run deploy on VPS
         env:
@@ -43,4 +44,16 @@ jobs:
           envs: APP_PATH,REPO_URL,DATABASE_URL,SESSION_SECRET,GITHUB_DEPLOY_TOKEN,RESEND_API_KEY,RESEND_FROM_EMAIL
           script: |
             export APP_PATH="${APP_PATH:-/var/www/jewel-pos}"
-            bash /tmp/remote-bootstrap.sh
+            SCRIPT=""
+            for candidate in /tmp/remote-bootstrap.sh /tmp/deploy/remote-bootstrap.sh; do
+              if [ -f "$candidate" ]; then
+                SCRIPT="$candidate"
+                break
+              fi
+            done
+            if [ -z "$SCRIPT" ]; then
+              echo "Bootstrap script not found in /tmp:"
+              ls -la /tmp/
+              exit 1
+            fi
+            bash "$SCRIPT"
