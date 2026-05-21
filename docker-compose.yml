@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: jewel-pos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jewel_pos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - jewel_pos_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jewel_pos"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  jewel_pos_pgdata:
