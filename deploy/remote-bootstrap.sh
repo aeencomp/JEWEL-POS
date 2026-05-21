@@ -2,7 +2,11 @@
 # Runs on VPS via GitHub Actions (or SSH). No sudo — runs as deploy user.
 set -euo pipefail
 
-APP_PATH="${APP_PATH:-/home/deploy/jewel-pos}"
+# Trim whitespace/newlines from GitHub secret VPS_APP_PATH
+APP_PATH="$(printf '%s' "${APP_PATH:-/home/deploy/jewel-pos}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+if [[ -z "$APP_PATH" ]]; then
+  APP_PATH="/home/deploy/jewel-pos"
+fi
 REPO_URL="${REPO_URL:-https://github.com/aeencomp/JEWEL-POS.git}"
 BRANCH="${BRANCH:-main}"
 
@@ -72,4 +76,5 @@ if ! command -v pm2 >/dev/null 2>&1; then
   exit 1
 fi
 
-bash deploy/deploy.sh
+cd "$APP_PATH"
+exec bash "$APP_PATH/deploy/deploy.sh"

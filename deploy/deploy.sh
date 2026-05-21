@@ -2,7 +2,14 @@
 # Run on the VPS after git pull (also used by GitHub Actions deploy workflow).
 set -euo pipefail
 
-APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+
+if [[ ! -d "$APP_DIR" ]]; then
+  echo "ERROR: App directory does not exist: $APP_DIR"
+  exit 1
+fi
+
 cd "$APP_DIR"
 
 echo "==> Deploying JewelPOS in $APP_DIR"
