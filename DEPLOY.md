@@ -29,11 +29,11 @@ git status
 
 git commit -m "Prepare JewelPOS for VPS deployment"
 git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/jewel-pos.git
+git remote set-url origin https://github.com/aeencomp/JEWEL-POS.git
 git push -u origin main
 ```
 
-Replace `YOUR_USERNAME/jewel-pos` with your repo URL.
+Repo: **https://github.com/aeencomp/JEWEL-POS**
 
 **Never commit `.env`** — secrets stay only on the VPS.
 
@@ -65,9 +65,14 @@ sudo npm install -g pm2
 sudo mkdir -p /var/www
 sudo chown $USER:$USER /var/www
 cd /var/www
-git clone https://github.com/YOUR_USERNAME/jewel-pos.git jewel-pos
+git clone https://github.com/aeencomp/JEWEL-POS.git jewel-pos
 cd jewel-pos
+chmod +x deploy/first-install.sh deploy/deploy.sh
 ```
+
+**Private repo?** Use either:
+- `git clone https://YOUR_GITHUB_TOKEN@github.com/aeencomp/JEWEL-POS.git jewel-pos`
+- Or add an SSH deploy key on the VPS (Settings → Deploy keys on GitHub)
 
 ### Create production `.env` on the VPS
 
@@ -94,21 +99,15 @@ Use the Neon URL that **has your tables and data** (not an empty database).
 ### Install, build, and start
 
 ```bash
-chmod +x deploy/deploy.sh
-npm ci
-npm run build
+bash deploy/first-install.sh
 
-# If this is a brand-new empty Neon DB only:
-# npm run db:push
-
-pm2 start ecosystem.config.cjs --env production
-pm2 save
 pm2 startup
-# Run the command PM2 prints, then:
-pm2 save
+# Run the command PM2 prints, then: pm2 save
 ```
 
 App listens on **port 5000** locally.
+
+If Neon has no tables yet (empty DB): `npm run db:push` before `first-install.sh`.
 
 ### Nginx reverse proxy (public URL)
 
