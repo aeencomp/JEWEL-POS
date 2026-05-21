@@ -1,24 +1,49 @@
-# Deploy to VPS on every push to main.
-# Required GitHub repo secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_APP_PATH
+# Deploy to VPS from GitHub (triggered by git push from your PC, or manual Run).
+#
+# Required secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_APP_PATH,
+#                   DATABASE_URL, SESSION_SECRET
+# Optional: GITHUB_DEPLOY_TOKEN (PAT with repo read — for private repo clone on VPS)
+# Optional: RESEND_API_KEY, RESEND_FROM_EMAIL
 
 name: Deploy to VPS
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload deploy script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy/remote-bootstrap.sh"
+          target: "/tmp"
+
+      - name: Run deploy on VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script_stop: true
+          envs: APP_PATH,REPO_URL,DATABASE_URL,SESSION_SECRET,GITHUB_DEPLOY_TOKEN,RESEND_API_KEY,RESEND_FROM_EMAIL
+          env:
+            APP_PATH: ${{ secrets.VPS_APP_PATH }}
+            REPO_URL: https://github.com/aeencomp/JEWEL-POS.git
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+            GITHUB_DEPLOY_TOKEN: ${{ secrets.GITHUB_DEPLOY_TOKEN }}
+            RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+            RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           script: |
-            set -e
-            cd "${{ secrets.VPS_APP_PATH }}"
-            bash deploy/deploy.sh
+            export APP_PATH="${APP_PATH:-/var/www/jewel-pos}"
+            bash /tmp/remote-bootstrap.sh
