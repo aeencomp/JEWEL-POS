@@ -53,6 +53,65 @@ function getEffectiveStoreId(req: any): number | null {
   return req.user.storeId;
 }
 
+function defaultStoreUsername(storeName: string, storeId: number): string {
+  const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 32);
+  return slug || `store${storeId}`;
+}
+
+/** Set or create the store portal login password. Returns the login username. */
+async function setStoreLoginPassword(
+  storeId: number,
+  password: string,
+  preferredUsername?: string,
+): Promise<string> {
+  if (password.length < 6) {
+    throw Object.assign(new Error("Password must be at least 6 characters"), { status: 400 });
+  }
+
+  const store = await storage.getStore(storeId);
+  if (!store) {
+    throw Object.assign(new Error("Store not found"), { status: 404 });
+  }
+
+  const hashedPassword = await hashPassword(password);
+  const storeUsers = await storage.getUsersByStoreId(storeId);
+
+  if (storeUsers.length > 0) {
+    for (const u of storeUsers) {
+      await storage.updateUserPassword(u.id, hashedPassword);
+    }
+    return storeUsers[0].username;
+  }
+
+  const username =
+    (typeof preferredUsername === "string" && preferredUsername.trim()) ||
+    defaultStoreUsername(store.name, storeId);
+
+  const existing = await storage.getUserByUsername(username);
+  if (existing) {
+    if (existing.storeId != null && existing.storeId !== storeId) {
+      throw Object.assign(
+        new Error(`Username "${username}" is already used by another store.`),
+        { status: 400 },
+      );
+    }
+    if (existing.storeId !== storeId) {
+      await storage.updateUserStoreId(existing.id, storeId);
+    }
+    await storage.updateUserPassword(existing.id, hashedPassword);
+    return username;
+  }
+
+  await storage.createUser({
+    username,
+    password: hashedPassword,
+    email: store.email || null,
+    role: "store",
+    storeId,
+  });
+  return username;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -509,30 +568,72 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/stores/:id/reset-password", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const password = String(req.body?.password ?? "");
+      const username = await setStoreLoginPassword(id, password, req.body?.username);
+      const store = await storage.getStore(id);
+      if (!store) return res.status(404).json({ message: "Store not found" });
+      res.json({ ...store, storeUsername: username });
+    } catch (err: any) {
+      const status = err?.status || 500;
+      if (status >= 500) console.error("[POST /api/stores/:id/reset-password]", err);
+      res.status(status).json({ message: err?.message || "Failed to reset password" });
+    }
+  });
+
   app.patch("/api/stores/:id", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const { password, ...storeData } = req.body;
+    try {
+      const id = parseInt(req.params.id);
+      const { password, username: newUsername, ...rest } = req.body;
 
-    const storeUsers = await storage.getUsersByStoreId(id);
+      const store = await storage.getStore(id);
+      if (!store) return res.status(404).json({ message: "Store not found" });
 
-    if (password && password.length > 0) {
-      if (storeUsers.length > 0) {
-        const hashedPassword = await hashPassword(password);
+      let storeUsers = await storage.getUsersByStoreId(id);
+
+      if (password && String(password).length > 0) {
+        await setStoreLoginPassword(id, String(password), newUsername);
+        storeUsers = await storage.getUsersByStoreId(id);
+      }
+
+      if (rest.email) {
         for (const u of storeUsers) {
-          await storage.updateUserPassword(u.id, hashedPassword);
+          await storage.updateUserEmail(u.id, rest.email);
         }
       }
-    }
 
-    if (storeData.email) {
-      for (const u of storeUsers) {
-        await storage.updateUserEmail(u.id, storeData.email);
+      const storePatch: Record<string, unknown> = {};
+      for (const key of [
+        "name",
+        "ownerName",
+        "phone",
+        "email",
+        "address",
+        "isActive",
+        "brandColor",
+        "logoUrl",
+        "receiptHeader",
+        "receiptFooter",
+        "posSystem",
+        "features",
+      ] as const) {
+        if (rest[key] !== undefined) storePatch[key] = rest[key];
       }
-    }
 
-    const updated = await storage.updateStore(id, storeData);
-    if (!updated) return res.status(404).json({ message: "Store not found" });
-    res.json(updated);
+      if (Object.keys(storePatch).length > 0) {
+        const updated = await storage.updateStore(id, storePatch as any);
+        if (!updated) return res.status(404).json({ message: "Store not found" });
+        return res.json(updated);
+      }
+
+      res.json(store);
+    } catch (err: any) {
+      const status = err?.status || 500;
+      if (status >= 500) console.error("[PATCH /api/stores/:id]", err);
+      res.status(status).json({ message: err?.message || "Failed to update store" });
+    }
   });
 
   app.delete("/api/stores/:id", requireAdmin, async (req, res) => {

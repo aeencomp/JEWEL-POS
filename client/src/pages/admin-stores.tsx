@@ -244,7 +244,7 @@ export default function AdminStores() {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ id, password }: { id: number; password: string }) => {
-      const res = await apiRequest("PATCH", `/api/stores/${id}`, { password });
+      const res = await apiRequest("POST", `/api/stores/${id}/reset-password`, { password });
       return res.json();
     },
     onSuccess: () => {

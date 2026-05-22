@@ -108,6 +108,7 @@ export interface IStorage {
   getValidVerificationCode(userId: number, code: string): Promise<boolean>;
   deleteVerificationCodes(userId: number): Promise<void>;
   updateUserEmail(userId: number, email: string): Promise<void>;
+  updateUserStoreId(userId: number, storeId: number): Promise<void>;
 
   getPosTerminals(storeId: number): Promise<PosTerminal[]>;
   getPosTerminal(id: number): Promise<PosTerminal | undefined>;
@@ -164,8 +165,18 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async updateUserStoreId(userId: number, storeId: number): Promise<void> {
+    await db.update(users).set({ storeId }).where(eq(users.id, userId));
+  }
+
   async updateStore(id: number, data: Partial<InsertStore>): Promise<Store | undefined> {
-    const [updated] = await db.update(stores).set(data).where(eq(stores.id, id)).returning();
+    const patch = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    ) as Partial<InsertStore>;
+    if (Object.keys(patch).length === 0) {
+      return this.getStore(id);
+    }
+    const [updated] = await db.update(stores).set(patch).where(eq(stores.id, id)).returning();
     return updated || undefined;
   }
 
