@@ -5,6 +5,7 @@ module.exports = {
       name: "jewel-pos",
       script: "dist/index.cjs",
       cwd: __dirname,
+      exec_mode: "fork",
       instances: 1,
       autorestart: true,
       max_memory_restart: "512M",

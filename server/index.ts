@@ -64,8 +64,15 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  const { seedDatabase } = await import("./seed");
-  await seedDatabase();
+  try {
+    const { seedDatabase } = await import("./seed");
+    await seedDatabase();
+  } catch (seedErr) {
+    console.error(
+      "Seed failed — check DATABASE_URL in .env and run: npm run db:push",
+    );
+    console.error(seedErr);
+  }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -94,4 +101,7 @@ app.use((req, res, next) => {
   httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
-})();
+})().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});
