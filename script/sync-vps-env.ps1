@@ -49,4 +49,5 @@ curl -s -o /dev/null -w 'HTTP %{http_code} on port 5001\n' http://127.0.0.1:5001
 Write-Host ""
 Write-Host "Done. Also update GitHub secret DATABASE_URL to match local .env:" -ForegroundColor Green
 Write-Host "  https://github.com/aeencomp/JEWEL-POS/settings/secrets/actions" -ForegroundColor Green
-Write-Host "Login: https://iq-pos.com/store-portal  user: alnoor  (if using seed DB)" -ForegroundColor Green
+Write-Host "Verify: npx tsx script/db-diagnose.ts" -ForegroundColor Green
+Write-Host "Login: https://iq-pos.com/store-portal (store user from db-diagnose)" -ForegroundColor Green
