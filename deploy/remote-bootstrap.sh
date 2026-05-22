@@ -38,9 +38,13 @@ fi
 
 cd "$APP_PATH"
 git remote set-url origin "$REPO_URL" 2>/dev/null || true
-git fetch origin
+git fetch origin "$BRANCH"
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+# Discard local edits to tracked files (e.g. manual deploy.sh tweaks) so deploy never blocks on pull.
+if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+  echo "==> Resetting local changes before sync with origin/$BRANCH"
+fi
+git reset --hard "origin/$BRANCH"
 
 chmod +x deploy/deploy.sh deploy/first-install.sh 2>/dev/null || true
 

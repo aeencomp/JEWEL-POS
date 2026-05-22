@@ -19,7 +19,7 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-git pull origin main
+# Code is already synced by remote-bootstrap.sh (git reset --hard origin/main).
 
 npm ci
 npm run db:push || echo "WARN: db:push failed — run manually on VPS if 2FA/login DB errors persist"
