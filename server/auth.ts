@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual, randomInt } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import { isResendConfigured, sendVerificationEmail } from "./resend";
+import { isResendConfigured, isStore2FAEnabled, sendVerificationEmail } from "./resend";
 
 declare module "express-session" {
   interface SessionData {
@@ -113,11 +113,11 @@ export function setupAuth(app: Express) {
       }
 
       if (portal === "store" && user.role === "store") {
-        const skip2FA = !user.email || !isResendConfigured();
+        const skip2FA = !user.email || !isStore2FAEnabled();
         if (skip2FA) {
-          if (user.email && !isResendConfigured()) {
+          if (user.email && !isStore2FAEnabled()) {
             console.warn(
-              `[2FA] RESEND_API_KEY not set — logging in ${user.username} without email verification`,
+              `[2FA] Email OTP disabled — logging in ${user.username} (set STORE_REQUIRE_2FA=true + RESEND to enable)`,
             );
           }
           req.login(user, (loginErr) => {

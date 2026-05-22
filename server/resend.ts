@@ -7,6 +7,11 @@ export function isResendConfigured(): boolean {
   return key.startsWith("re_") && key.length > 20;
 }
 
+/** Store email OTP is off unless explicitly enabled (safe default for VPS deploy). */
+export function isStore2FAEnabled(): boolean {
+  return process.env.STORE_REQUIRE_2FA === "true" && isResendConfigured();
+}
+
 async function getCredentials() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (apiKey) {
