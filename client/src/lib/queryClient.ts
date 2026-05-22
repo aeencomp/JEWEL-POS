@@ -1,5 +1,19 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+/** Turn `500: {"message":"..."}` from apiRequest into a readable string. */
+export function parseApiErrorMessage(error: Error): string {
+  const match = error.message.match(/^\d+:\s*([\s\S]*)$/);
+  if (!match) return error.message;
+  const body = match[1].trim();
+  try {
+    const json = JSON.parse(body);
+    if (typeof json.message === "string") return json.message;
+  } catch {
+    /* not JSON */
+  }
+  return body.replace(/^\{?"?message"?:\s*"?/i, "").replace(/["}]+$/, "").trim() || error.message;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     if (res.status === 403) {

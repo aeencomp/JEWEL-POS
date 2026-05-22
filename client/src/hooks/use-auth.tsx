@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { getQueryFn, apiRequest, parseApiErrorMessage, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type UserWithImpersonation = SelectUser & {
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: parseApiErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Verification failed",
-        description: error.message,
+        description: parseApiErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Failed to resend code",
-        description: error.message,
+        description: parseApiErrorMessage(error),
         variant: "destructive",
       });
     },

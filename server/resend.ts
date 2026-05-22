@@ -3,7 +3,8 @@ import { Resend } from 'resend';
 let connectionSettings: any;
 
 export function isResendConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY?.trim());
+  const key = process.env.RESEND_API_KEY?.trim() ?? "";
+  return key.startsWith("re_") && key.length > 20;
 }
 
 async function getCredentials() {

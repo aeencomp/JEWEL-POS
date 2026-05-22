@@ -144,12 +144,18 @@ export function setupAuth(app: Express) {
             });
           });
         } catch (emailErr: any) {
-          console.error("Failed to send verification email:", emailErr);
-          const msg = emailErr?.message || "Failed to send verification email";
-          return res.status(503).json({
-            message: msg.includes("RESEND")
-              ? msg
-              : "Failed to send verification email. Check RESEND_API_KEY on the server.",
+          console.error(
+            `[2FA] Email send failed for ${user.username}, logging in without OTP:`,
+            emailErr?.message || emailErr,
+          );
+          try {
+            await storage.deleteVerificationCodes(user.id);
+          } catch {
+            /* ignore */
+          }
+          req.login(user, (loginErr) => {
+            if (loginErr) return next(loginErr);
+            res.status(200).json(user);
           });
         }
         return;
