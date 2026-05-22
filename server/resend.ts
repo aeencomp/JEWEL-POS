@@ -2,8 +2,12 @@ import { Resend } from 'resend';
 
 let connectionSettings: any;
 
+export function isResendConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY?.trim());
+}
+
 async function getCredentials() {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (apiKey) {
     return {
       apiKey,
@@ -19,7 +23,9 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
-    throw new Error('X-Replit-Token not found for repl/depl');
+    throw new Error(
+      'RESEND_API_KEY is not configured. Add RESEND_API_KEY and RESEND_FROM_EMAIL to .env on the server.',
+    );
   }
 
   connectionSettings = await fetch(
@@ -49,7 +55,7 @@ export async function getUncachableResendClient() {
 export async function sendVerificationEmail(toEmail: string, code: string) {
   const { client, fromEmail } = await getUncachableResendClient();
 
-  await client.emails.send({
+  const result = await client.emails.send({
     from: fromEmail || 'JewelPOS <noreply@resend.dev>',
     to: toEmail,
     subject: 'JewelPOS - Your Verification Code',
@@ -72,4 +78,8 @@ export async function sendVerificationEmail(toEmail: string, code: string) {
       </div>
     `,
   });
+
+  if (result.error) {
+    throw new Error(result.error.message || "Resend rejected the email");
+  }
 }

@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual, randomInt } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import { sendVerificationEmail } from "./resend";
+import { isResendConfigured, sendVerificationEmail } from "./resend";
 
 declare module "express-session" {
   interface SessionData {
@@ -113,7 +113,13 @@ export function setupAuth(app: Express) {
       }
 
       if (portal === "store" && user.role === "store") {
-        if (!user.email) {
+        const skip2FA = !user.email || !isResendConfigured();
+        if (skip2FA) {
+          if (user.email && !isResendConfigured()) {
+            console.warn(
+              `[2FA] RESEND_API_KEY not set — logging in ${user.username} without email verification`,
+            );
+          }
           req.login(user, (loginErr) => {
             if (loginErr) return next(loginErr);
             res.status(200).json(user);
@@ -139,7 +145,12 @@ export function setupAuth(app: Express) {
           });
         } catch (emailErr: any) {
           console.error("Failed to send verification email:", emailErr);
-          return res.status(500).json({ message: "Failed to send verification email. Please try again." });
+          const msg = emailErr?.message || "Failed to send verification email";
+          return res.status(503).json({
+            message: msg.includes("RESEND")
+              ? msg
+              : "Failed to send verification email. Check RESEND_API_KEY on the server.",
+          });
         }
         return;
       }
@@ -152,63 +163,83 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/verify-2fa", async (req, res, next) => {
-    const { code } = req.body;
-    const pendingUserId = req.session.pendingUserId;
+    try {
+      const code = String(req.body?.code ?? "").trim().replace(/\s+/g, "");
+      const pendingUserId = req.session.pendingUserId;
 
-    if (!pendingUserId) {
-      return res.status(400).json({ message: "No pending verification. Please log in again." });
-    }
-
-    if (!code || typeof code !== "string") {
-      return res.status(400).json({ message: "Verification code is required." });
-    }
-
-    const now = Date.now();
-    const attempts = verifyAttempts.get(pendingUserId);
-    if (attempts && (now - attempts.lastAttempt) < ATTEMPT_WINDOW_MS && attempts.count >= MAX_VERIFY_ATTEMPTS) {
-      await storage.deleteVerificationCodes(pendingUserId);
-      delete req.session.pendingUserId;
-      return res.status(429).json({ message: "Too many attempts. Please log in again." });
-    }
-
-    const isValid = await storage.getValidVerificationCode(pendingUserId, code);
-    if (!isValid) {
-      const current = verifyAttempts.get(pendingUserId);
-      if (current && (now - current.lastAttempt) < ATTEMPT_WINDOW_MS) {
-        verifyAttempts.set(pendingUserId, { count: current.count + 1, lastAttempt: now });
-      } else {
-        verifyAttempts.set(pendingUserId, { count: 1, lastAttempt: now });
+      if (!pendingUserId) {
+        return res.status(400).json({ message: "No pending verification. Please log in again." });
       }
-      return res.status(401).json({ message: "Invalid or expired verification code." });
-    }
 
-    verifyAttempts.delete(pendingUserId);
-    await storage.deleteVerificationCodes(pendingUserId);
-    const user = await storage.getUser(pendingUserId);
-    if (!user) {
-      return res.status(400).json({ message: "User not found." });
-    }
+      if (!/^\d{6}$/.test(code)) {
+        return res.status(400).json({ message: "Enter the 6-digit verification code." });
+      }
 
-    delete req.session.pendingUserId;
-    req.login(user, (loginErr) => {
-      if (loginErr) return next(loginErr);
-      res.status(200).json(user);
-    });
+      const now = Date.now();
+      const attempts = verifyAttempts.get(pendingUserId);
+      if (attempts && (now - attempts.lastAttempt) < ATTEMPT_WINDOW_MS && attempts.count >= MAX_VERIFY_ATTEMPTS) {
+        await storage.deleteVerificationCodes(pendingUserId);
+        delete req.session.pendingUserId;
+        return res.status(429).json({ message: "Too many attempts. Please log in again." });
+      }
+
+      const isValid = await storage.getValidVerificationCode(pendingUserId, code);
+      if (!isValid) {
+        const current = verifyAttempts.get(pendingUserId);
+        if (current && (now - current.lastAttempt) < ATTEMPT_WINDOW_MS) {
+          verifyAttempts.set(pendingUserId, { count: current.count + 1, lastAttempt: now });
+        } else {
+          verifyAttempts.set(pendingUserId, { count: 1, lastAttempt: now });
+        }
+        return res.status(401).json({ message: "Invalid or expired verification code." });
+      }
+
+      verifyAttempts.delete(pendingUserId);
+      await storage.deleteVerificationCodes(pendingUserId);
+      const user = await storage.getUser(pendingUserId);
+      if (!user) {
+        return res.status(400).json({ message: "User not found." });
+      }
+
+      delete req.session.pendingUserId;
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[verify-2fa] req.login failed:", loginErr);
+          return res.status(500).json({ message: "Login session failed. Please try again." });
+        }
+        res.status(200).json(user);
+      });
+    } catch (err: any) {
+      console.error("[verify-2fa]", err);
+      const msg = err?.message || "Verification failed";
+      if (err?.code === "42P01" || /verification_codes/i.test(msg)) {
+        return res.status(503).json({
+          message: "Database table verification_codes is missing. On the VPS run: npm run db:push",
+        });
+      }
+      res.status(500).json({ message: msg });
+    }
   });
 
   app.post("/api/resend-2fa", async (req, res, next) => {
-    const pendingUserId = req.session.pendingUserId;
-
-    if (!pendingUserId) {
-      return res.status(400).json({ message: "No pending verification. Please log in again." });
-    }
-
-    const user = await storage.getUser(pendingUserId);
-    if (!user || !user.email) {
-      return res.status(400).json({ message: "User not found or email not configured." });
-    }
-
     try {
+      const pendingUserId = req.session.pendingUserId;
+
+      if (!pendingUserId) {
+        return res.status(400).json({ message: "No pending verification. Please log in again." });
+      }
+
+      if (!isResendConfigured()) {
+        return res.status(503).json({
+          message: "RESEND_API_KEY is not configured on the server. Contact the administrator.",
+        });
+      }
+
+      const user = await storage.getUser(pendingUserId);
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "User not found or email not configured." });
+      }
+
       const code = generateVerificationCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
       await storage.createVerificationCode(user.id, code, expiresAt);
@@ -216,7 +247,9 @@ export function setupAuth(app: Express) {
       res.status(200).json({ message: "Verification code resent." });
     } catch (emailErr: any) {
       console.error("Failed to resend verification email:", emailErr);
-      return res.status(500).json({ message: "Failed to send verification email. Please try again." });
+      return res.status(503).json({
+        message: emailErr?.message || "Failed to send verification email.",
+      });
     }
   });
 

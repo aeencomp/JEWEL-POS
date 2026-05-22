@@ -22,6 +22,7 @@ fi
 git pull origin main
 
 npm ci
+npm run db:push || echo "WARN: db:push failed — run manually on VPS if 2FA/login DB errors persist"
 npm run build
 
 mkdir -p uploads
