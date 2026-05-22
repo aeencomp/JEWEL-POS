@@ -66,6 +66,15 @@ EOF
   if [[ -n "${RESEND_FROM_EMAIL:-}" ]]; then
     echo "RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}" >> .env
   fi
+  if [[ -n "${STORE_REQUIRE_2FA:-}" ]]; then
+    echo "STORE_REQUIRE_2FA=${STORE_REQUIRE_2FA}" >> .env
+  fi
+fi
+
+# Patch existing .env when GitHub secrets are set (does not remove other keys).
+if [[ -f .env ]]; then
+  export STORE_REQUIRE_2FA RESEND_API_KEY RESEND_FROM_EMAIL
+  bash "$APP_PATH/deploy/patch-env.sh" "$APP_PATH/.env" 2>/dev/null || true
 fi
 
 if ! command -v node >/dev/null 2>&1; then

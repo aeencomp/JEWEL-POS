@@ -144,18 +144,16 @@ export function setupAuth(app: Express) {
             });
           });
         } catch (emailErr: any) {
-          console.error(
-            `[2FA] Email send failed for ${user.username}, logging in without OTP:`,
-            emailErr?.message || emailErr,
-          );
+          console.error("[2FA] Email send failed:", emailErr?.message || emailErr);
           try {
             await storage.deleteVerificationCodes(user.id);
           } catch {
             /* ignore */
           }
-          req.login(user, (loginErr) => {
-            if (loginErr) return next(loginErr);
-            res.status(200).json(user);
+          return res.status(503).json({
+            message:
+              emailErr?.message ||
+              "Failed to send verification email. Check RESEND_API_KEY and RESEND_FROM_EMAIL on the server.",
           });
         }
         return;
