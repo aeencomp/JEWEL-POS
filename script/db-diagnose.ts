@@ -1,7 +1,59 @@
 import "dotenv/config";
+import fs from "fs";
+import path from "path";
 import pg from "pg";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+function hostFromUrl(url: string | undefined): string {
+  return url?.match(/@([^/?]+)/)?.[1] ?? "unknown";
+}
+
+function maskUrl(url: string | undefined): string {
+  if (!url) return "(not set)";
+  return url.replace(/:([^:@/]+)@/, ":****@");
+}
+
+function readDatabaseUrlFromEnvFile(): string | undefined {
+  const envPath = path.join(process.cwd(), ".env");
+  if (!fs.existsSync(envPath)) return undefined;
+  let last: string | undefined;
+  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    if (trimmed.startsWith("DATABASE_URL=")) {
+      last = trimmed.slice("DATABASE_URL=".length).trim().replace(/^["']|["']$/g, "");
+    }
+  }
+  return last;
+}
+
+const envFileUrl = readDatabaseUrlFromEnvFile();
+const activeUrl = process.env.DATABASE_URL;
+
+if (!activeUrl) {
+  console.error("ERROR: DATABASE_URL is not set.");
+  console.error("Add it to .env in the project root, then run: npm run db:diagnose");
+  process.exit(1);
+}
+
+console.log("\n=== DATABASE CONNECTION ===");
+console.log("Host in use:", hostFromUrl(activeUrl));
+console.log("URL (masked):", maskUrl(activeUrl));
+
+if (envFileUrl) {
+  console.log(".env file host:", hostFromUrl(envFileUrl));
+  if (hostFromUrl(envFileUrl) !== hostFromUrl(activeUrl)) {
+    console.warn("\n*** MISMATCH ***");
+    console.warn("Your .env points to a different Neon host than what Node is using.");
+    console.warn("Often caused by DATABASE_URL set in Windows PowerShell / system environment.");
+    console.warn("Fix in PowerShell before running diagnose:");
+    console.warn('  Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue');
+    console.warn("Then confirm .env has only ONE DATABASE_URL= line with your imported Neon URL.");
+  }
+} else {
+  console.warn("No .env file found in project root — using process.env only.");
+}
+
+const pool = new pg.Pool({ connectionString: activeUrl });
 
 async function main() {
   const stores = await pool.query(
