@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, parseApiErrorMessage, queryClient } from "@/lib/queryClient";
 import type { Debt, DebtPayment } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,9 @@ export default function DebtsPage() {
       resetForm();
       toast({ title: t("debts.debtCreated") });
     },
+    onError: (err: Error) => {
+      toast({ title: parseApiErrorMessage(err), variant: "destructive" });
+    },
   });
 
   const payMutation = useMutation({
@@ -108,6 +111,9 @@ export default function DebtsPage() {
       setPaymentAmount("");
       setPaymentNotes("");
       toast({ title: t("debts.paymentSuccess") });
+    },
+    onError: (err: Error) => {
+      toast({ title: parseApiErrorMessage(err), variant: "destructive" });
     },
   });
 
@@ -132,7 +138,7 @@ export default function DebtsPage() {
       toast({ title: t("debts.debtUpdated") });
     },
     onError: (err: Error) => {
-      toast({ title: err.message, variant: "destructive" });
+      toast({ title: parseApiErrorMessage(err), variant: "destructive" });
     },
   });
 

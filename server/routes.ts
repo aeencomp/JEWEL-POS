@@ -1,5 +1,6 @@
-import type { Express } from "express";
+import type { Express, Response } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { storage } from "./storage";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, updateBrandingSchema, insertPurchaseSchema, insertDebtSchema, insertDebtPaymentSchema, insertSignupRequestSchema, signupRequests } from "@shared/schema";
@@ -51,6 +52,27 @@ function getEffectiveStoreId(req: any): number | null {
     return req.session.impersonatingStoreId;
   }
   return req.user.storeId;
+}
+
+const debtCreateBodySchema = z.object({
+  personName: z.string().trim().min(1, "Person name is required"),
+  personPhone: z.string().nullable().optional(),
+  type: z.enum(["money", "gold"]),
+  direction: z.enum(["lent", "borrowed"]).optional().default("lent"),
+  totalAmount: z.coerce.string().min(1, "Amount is required"),
+  description: z.string().nullable().optional(),
+});
+
+const debtPaymentBodySchema = z.object({
+  amount: z.coerce.string().min(1, "Amount is required"),
+  paymentMethod: z.enum(["cash", "card", "transfer"]).optional().default("cash"),
+  notes: z.string().nullable().optional(),
+});
+
+function sendValidationError(res: Response, error: z.ZodError) {
+  const first = error.errors[0];
+  const message = first ? `${first.path.join(".") || "field"}: ${first.message}` : "Invalid data";
+  return res.status(400).json({ message, errors: error.errors });
 }
 
 function defaultStoreUsername(storeName: string, storeId: number): string {
@@ -1213,6 +1235,13 @@ export async function registerRoutes(
     if (body.purity === "") body.purity = null;
     if (body.gemstone === "") body.gemstone = null;
     if (body.imageUrl === "") body.imageUrl = null;
+    if (body.quantity !== undefined) {
+      const qty = Number(body.quantity);
+      if (!Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {
+        return res.status(400).json({ message: "Quantity must be a whole number 0 or greater" });
+      }
+      body.quantity = qty;
+    }
     const updated = await storage.updateInventoryItem(id, body);
     res.json(updated);
   });
@@ -1620,17 +1649,9 @@ export async function registerRoutes(
   app.post("/api/debts", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
-    const bodySchema = insertDebtSchema.pick({
-      personName: true,
-      personPhone: true,
-      type: true,
-      direction: true,
-      totalAmount: true,
-      description: true,
-    });
-    const parsed = bodySchema.safeParse(req.body);
+    const parsed = debtCreateBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return sendValidationError(res, parsed.error);
     }
     const total = parseFloat(parsed.data.totalAmount);
     if (!total || total <= 0) {
@@ -1713,14 +1734,9 @@ export async function registerRoutes(
     if (debt.status !== "active") {
       return res.status(400).json({ message: "Debt is not active" });
     }
-    const paymentSchema = insertDebtPaymentSchema.pick({
-      amount: true,
-      paymentMethod: true,
-      notes: true,
-    });
-    const parsed = paymentSchema.safeParse(req.body);
+    const parsed = debtPaymentBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      return sendValidationError(res, parsed.error);
     }
     const amount = parseFloat(parsed.data.amount);
     if (!amount || amount <= 0) {
