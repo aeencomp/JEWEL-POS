@@ -28,6 +28,81 @@ function genOrderNumber() {
   return `RST-${Date.now().toString(36).toUpperCase()}`;
 }
 
+type SerializedOrderItem = {
+  id: number;
+  menuItemId: number | null;
+  name: string;
+  quantity: number;
+  price: string;
+  notes: string | null;
+};
+
+function serializeOrderItem(row: typeof restaurantOrderItems.$inferSelect): SerializedOrderItem {
+  return {
+    id: row.id,
+    menuItemId: row.menuItemId,
+    name: row.name,
+    quantity: row.quantity,
+    price: String(row.price),
+    notes: row.notes,
+  };
+}
+
+async function enrichOrders(rows: (typeof restaurantOrders.$inferSelect)[]) {
+  if (rows.length === 0) return [];
+
+  const orderIds = rows.map((o) => o.id);
+  const tableIds = [...new Set(rows.map((o) => o.tableId).filter((id): id is number => id != null))];
+
+  const itemRows = await db.select().from(restaurantOrderItems).where(inArray(restaurantOrderItems.orderId, orderIds));
+  const itemsByOrderId = new Map<number, SerializedOrderItem[]>();
+  for (const item of itemRows) {
+    const list = itemsByOrderId.get(item.orderId) ?? [];
+    list.push(serializeOrderItem(item));
+    itemsByOrderId.set(item.orderId, list);
+  }
+
+  const tablesById = new Map<number, typeof restaurantTables.$inferSelect>();
+  if (tableIds.length > 0) {
+    const tableRows = await db.select().from(restaurantTables).where(inArray(restaurantTables.id, tableIds));
+    for (const t of tableRows) tablesById.set(t.id, t);
+  }
+
+  return rows.map((o) => ({
+    ...o,
+    subtotal: String(o.subtotal),
+    total: String(o.total),
+    items: itemsByOrderId.get(o.id) ?? [],
+    table: o.tableId ? tablesById.get(o.tableId) ?? null : null,
+  }));
+}
+
+async function createOrderWithItems(
+  orderValues: typeof restaurantOrders.$inferInsert,
+  lineItems: { menuItemId: number; name: string; price: string; quantity: number; notes?: string | null }[],
+  occupyTableId?: number | null,
+) {
+  return db.transaction(async (tx) => {
+    const [order] = await tx.insert(restaurantOrders).values(orderValues).returning();
+    const items: SerializedOrderItem[] = [];
+    for (const li of lineItems) {
+      const [row] = await tx.insert(restaurantOrderItems).values({
+        orderId: order.id,
+        menuItemId: li.menuItemId,
+        name: li.name,
+        price: li.price,
+        quantity: li.quantity,
+        notes: li.notes || null,
+      }).returning();
+      items.push(serializeOrderItem(row));
+    }
+    if (occupyTableId) {
+      await tx.update(restaurantTables).set({ status: "occupied" }).where(eq(restaurantTables.id, occupyTableId));
+    }
+    return { order, items };
+  });
+}
+
 const publicOrderSchema = z.object({
   tableId: z.number().int().positive().optional(),
   tableNumber: z.number().int().positive().optional(),
@@ -130,38 +205,27 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
       });
     }
 
-    const [order] = await db.insert(restaurantOrders).values({
-      storeId,
-      orderNumber: genOrderNumber(),
+    const { order, items } = await createOrderWithItems(
+      {
+        storeId,
+        orderNumber: genOrderNumber(),
+        tableId,
+        orderType: parsed.data.orderType,
+        status: "pending",
+        source: "qr",
+        customerName: parsed.data.customerName,
+        customerPhone: parsed.data.customerPhone || null,
+        notes: parsed.data.notes || null,
+        subtotal: subtotal.toFixed(2),
+        total: subtotal.toFixed(2),
+        paymentStatus: "unpaid",
+      },
+      lineItems,
       tableId,
-      orderType: parsed.data.orderType,
-      status: "pending",
-      source: "qr",
-      customerName: parsed.data.customerName,
-      customerPhone: parsed.data.customerPhone || null,
-      notes: parsed.data.notes || null,
-      subtotal: subtotal.toFixed(2),
-      total: subtotal.toFixed(2),
-      paymentStatus: "unpaid",
-    }).returning();
+    );
 
-    for (const li of lineItems) {
-      await db.insert(restaurantOrderItems).values({
-        orderId: order.id,
-        menuItemId: li.menuItemId,
-        name: li.name,
-        price: li.price,
-        quantity: li.quantity,
-        notes: li.notes || null,
-      });
-    }
-
-    if (tableId) {
-      await db.update(restaurantTables).set({ status: "occupied" }).where(eq(restaurantTables.id, tableId));
-    }
-
-    const items = await db.select().from(restaurantOrderItems).where(eq(restaurantOrderItems.orderId, order.id));
-    res.status(201).json({ ...order, items });
+    const [enriched] = await enrichOrders([order]);
+    res.status(201).json({ ...enriched, items });
   });
 
   // ── Staff: dashboard stats ──────────────────────────────────
@@ -333,16 +397,7 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
       .where(eq(restaurantOrders.storeId, storeId))
       .orderBy(desc(restaurantOrders.createdAt));
     if (status) rows = rows.filter((o) => o.status === status);
-    const withItems = await Promise.all(rows.map(async (o) => {
-      const items = await db.select().from(restaurantOrderItems).where(eq(restaurantOrderItems.orderId, o.id));
-      let table = null;
-      if (o.tableId) {
-        const [t] = await db.select().from(restaurantTables).where(eq(restaurantTables.id, o.tableId));
-        table = t || null;
-      }
-      return { ...o, items, table };
-    }));
-    res.json(withItems);
+    res.json(await enrichOrders(rows));
   });
 
   app.post("/api/restaurant/orders", requireAuth, async (req, res) => {
@@ -364,38 +419,27 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
       lineItems.push({ menuItemId: menu.id, name: menu.name, price: menu.price, quantity: item.quantity, notes: item.notes });
     }
 
-    const [order] = await db.insert(restaurantOrders).values({
-      storeId,
-      orderNumber: genOrderNumber(),
-      tableId: parsed.data.tableId ?? null,
-      orderType: parsed.data.orderType,
-      status: "accepted",
-      source: parsed.data.source,
-      customerName: parsed.data.customerName || null,
-      customerPhone: parsed.data.customerPhone || null,
-      notes: parsed.data.notes || null,
-      subtotal: subtotal.toFixed(2),
-      total: subtotal.toFixed(2),
-      paymentStatus: "unpaid",
-    }).returning();
+    const { order, items } = await createOrderWithItems(
+      {
+        storeId,
+        orderNumber: genOrderNumber(),
+        tableId: parsed.data.tableId ?? null,
+        orderType: parsed.data.orderType,
+        status: "accepted",
+        source: parsed.data.source,
+        customerName: parsed.data.customerName || null,
+        customerPhone: parsed.data.customerPhone || null,
+        notes: parsed.data.notes || null,
+        subtotal: subtotal.toFixed(2),
+        total: subtotal.toFixed(2),
+        paymentStatus: "unpaid",
+      },
+      lineItems,
+      parsed.data.tableId ?? null,
+    );
 
-    for (const li of lineItems) {
-      await db.insert(restaurantOrderItems).values({
-        orderId: order.id,
-        menuItemId: li.menuItemId,
-        name: li.name,
-        price: li.price,
-        quantity: li.quantity,
-        notes: li.notes || null,
-      });
-    }
-
-    if (parsed.data.tableId) {
-      await db.update(restaurantTables).set({ status: "occupied" }).where(eq(restaurantTables.id, parsed.data.tableId));
-    }
-
-    const items = await db.select().from(restaurantOrderItems).where(eq(restaurantOrderItems.orderId, order.id));
-    res.status(201).json({ ...order, items });
+    const [enriched] = await enrichOrders([order]);
+    res.status(201).json({ ...enriched, items });
   });
 
   app.patch("/api/restaurant/orders/:id/status", requireAuth, async (req, res) => {
@@ -426,7 +470,8 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
       }
     }
 
-    res.json(updated);
+    const [enriched] = await enrichOrders([updated]);
+    res.json(enriched);
   });
 
   // QR link helper
