@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp, ChefHat, UtensilsCrossed, BookOpen, QrCode, ArrowRight,
-  Clock, Smartphone, Users,
+  Clock, Smartphone, Users, Bike,
 } from "lucide-react";
 import { RestoPageHeader, RestoStatCard, OrderStatusBadge, ElapsedTimer } from "./restaurant-shared";
 
@@ -21,6 +21,7 @@ type Stats = {
   todayOrders: number; todaySales: number; pendingOrders: number;
   occupiedTables: number; totalTables: number; menuItems: number;
   avgTicket: number; qrOrdersToday: number; staffOrdersToday: number;
+  deliveryOrdersToday?: number; activeDeliveries?: number;
   popularItems: { name: string; quantity: number }[];
   recentOrders: OrderPreview[];
   tables: { id: number; tableNumber: number; status: string; section: string | null }[];
@@ -42,6 +43,15 @@ export default function RestaurantDashboard() {
         isAr={isAr}
         action={
           <div className="flex gap-2">
+            <Link href="/restaurant/delivery">
+              <Button variant="outline" className="gap-2">
+                <Bike className="h-4 w-4" />
+                {isAr ? "توصيل IQ" : "IQ Order"}
+                {(stats?.activeDeliveries ?? 0) > 0 && (
+                  <Badge className="bg-violet-600">{stats?.activeDeliveries}</Badge>
+                )}
+              </Button>
+            </Link>
             <Link href="/restaurant/kitchen">
               <Button variant="outline" className="gap-2">
                 <ChefHat className="h-4 w-4" />

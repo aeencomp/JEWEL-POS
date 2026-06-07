@@ -1,7 +1,7 @@
 {
   "name": "IQ-POS Platform",
   "short_name": "IQ-POS",
-  "description": "IQ-POS — Multi-store POS platform for jewelry, fashion, restaurants, oil factories, and more.",
+  "description": "IQ-POS Platform & IQ Order — food delivery and multi-store POS for jewelry, fashion, restaurants, and more.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

@@ -67,6 +67,8 @@ const STATUS_STYLES: Record<string, { en: string; ar: string; className: string 
   preparing: { en: "Preparing", ar: "تحضير", className: "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300" },
   ready: { en: "Ready", ar: "جاهز", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" },
   served: { en: "Served", ar: "مقدّم", className: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300" },
+  out_for_delivery: { en: "On the Way", ar: "في الطريق", className: "bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300" },
+  delivered: { en: "Delivered", ar: "تم التوصيل", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" },
   completed: { en: "Done", ar: "مكتمل", className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
   cancelled: { en: "Cancelled", ar: "ملغي", className: "bg-slate-100 text-slate-500" },
 };

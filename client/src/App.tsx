@@ -63,7 +63,11 @@ import RestaurantMenu from "@/pages/restaurant/restaurant-menu";
 import RestaurantOrders from "@/pages/restaurant/restaurant-orders";
 import RestaurantQr from "@/pages/restaurant/restaurant-qr";
 import RestaurantReports from "@/pages/restaurant/restaurant-reports";
+import RestaurantDelivery from "@/pages/restaurant/restaurant-delivery";
 import PublicOrderPage from "@/pages/public-order";
+import IqOrderHome from "@/pages/iq-order/iq-order-home";
+import IqOrderStore from "@/pages/iq-order/iq-order-store";
+import IqOrderTrack from "@/pages/iq-order/iq-order-track";
 import { Loader2 } from "lucide-react";
 import { resolveUserPosSystem } from "@/lib/pos-system";
 
@@ -120,12 +124,24 @@ function FashionRouter() {
   );
 }
 
+function IqOrderRouter() {
+  return (
+    <Switch>
+      <Route path="/app" component={IqOrderHome} />
+      <Route path="/app/store/:storeId" component={IqOrderStore} />
+      <Route path="/app/track/:token" component={IqOrderTrack} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function RestaurantRouter() {
   return (
     <Switch>
       <Route path="/restaurant" component={RestaurantDashboard} />
       <Route path="/restaurant/pos" component={RestaurantPos} />
       <Route path="/restaurant/kitchen" component={RestaurantKitchen} />
+      <Route path="/restaurant/delivery" component={RestaurantDelivery} />
       <Route path="/restaurant/menu" component={RestaurantMenu} />
       <Route path="/restaurant/orders" component={RestaurantOrders} />
       <Route path="/restaurant/reports" component={RestaurantReports} />
@@ -246,6 +262,9 @@ function AppContent() {
   }
 
   if (!user) {
+    if (location.startsWith("/app")) {
+      return <IqOrderRouter />;
+    }
     if (location.startsWith("/order/")) {
       return <PublicOrderPage />;
     }
@@ -287,6 +306,9 @@ function AppContent() {
   }
   if (location === "/restaurant-login") {
     return <Redirect to={posSystem === "restaurant" ? "/restaurant" : home} />;
+  }
+  if (location.startsWith("/app")) {
+    return <IqOrderRouter />;
   }
   if (location.startsWith("/order/")) {
     return <PublicOrderPage />;

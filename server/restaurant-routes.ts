@@ -2,6 +2,7 @@ import type { Express, Response } from "express";
 import { z } from "zod";
 import { db } from "./db";
 import { storage } from "./storage";
+import { getDeliverySettings, deliverySettingsKey, type DeliverySettings } from "./iq-order-routes";
 import {
   restaurantTables,
   menuCategories,
@@ -284,6 +285,8 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
         : 0,
       qrOrdersToday: todayOrders.filter((o) => o.source === "qr").length,
       staffOrdersToday: todayOrders.filter((o) => o.source === "staff").length,
+      deliveryOrdersToday: todayOrders.filter((o) => o.orderType === "delivery").length,
+      activeDeliveries: allOrders.filter((o) => o.orderType === "delivery" && ["pending", "accepted", "preparing", "ready", "out_for_delivery"].includes(o.status)).length,
       popularItems,
       recentOrders,
       hourlySales,
@@ -493,7 +496,7 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
     const id = parseInt(req.params.id);
     const status = req.body.status;
     const paymentStatus = req.body.paymentStatus;
-    const validStatuses = ["pending", "accepted", "preparing", "ready", "served", "completed", "cancelled"];
+    const validStatuses = ["pending", "accepted", "preparing", "ready", "served", "out_for_delivery", "delivered", "completed", "cancelled"];
     if (!validStatuses.includes(status) && !paymentStatus) {
       return res.status(400).json({ message: "Invalid status" });
     }
@@ -517,6 +520,46 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
 
     const [enriched] = await enrichOrders([updated]);
     res.json(enriched);
+  });
+
+  // ── IQ Order delivery settings ──────────────────────────────
+  app.get("/api/restaurant/delivery/settings", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const settings = await getDeliverySettings(storeId);
+    const base = `${req.protocol}://${req.get("host")}`;
+    res.json({ ...settings, appUrl: `${base}/app`, storeUrl: `${base}/app/store/${storeId}` });
+  });
+
+  app.patch("/api/restaurant/delivery/settings", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const schema = z.object({
+      deliveryEnabled: z.boolean().optional(),
+      deliveryFee: z.number().min(0).optional(),
+      minOrder: z.number().min(0).optional(),
+      estMinutes: z.number().min(5).max(180).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return sendValidationError(res, parsed.error);
+    const current = await getDeliverySettings(storeId);
+    const next: DeliverySettings = { ...current, ...parsed.data };
+    await storage.setSetting(deliverySettingsKey(storeId), JSON.stringify(next));
+    res.json(next);
+  });
+
+  app.get("/api/restaurant/delivery/orders", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    let rows = await db.select().from(restaurantOrders)
+      .where(eq(restaurantOrders.storeId, storeId))
+      .orderBy(desc(restaurantOrders.createdAt));
+    rows = rows.filter((o) => o.orderType === "delivery");
+    const status = req.query.status as string | undefined;
+    if (status === "active") {
+      rows = rows.filter((o) => !["completed", "cancelled", "delivered"].includes(o.status));
+    }
+    res.json(await enrichOrders(rows));
   });
 
   // QR link helper

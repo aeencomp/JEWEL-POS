@@ -43,6 +43,7 @@ import {
   Phone,
   Mail,
   Loader2,
+  Bike,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -125,14 +126,14 @@ const products: Product[] = [
     id: "restaurant",
     name: "RestoPOS",
     nameAr: "نقطة بيع المطاعم",
-    description: "Restaurant & café POS with table management, kitchen display, orders and menu control.",
-    descriptionAr: "نقطة بيع للمطاعم والمقاهي مع إدارة الطاولات، شاشة المطبخ والقوائم.",
+    description: "Restaurant POS + IQ Order delivery app — tables, kitchen, QR ordering & Toters-style food delivery.",
+    descriptionAr: "نقطة بيع مطاعم + تطبيق طلب IQ للتوصيل — طاولات، مطبخ، QR وتوصيل طعام.",
     icon: Utensils,
     gradient: "from-orange-500 to-red-500",
     available: true,
     href: "/restaurant-login",
-    tags: ["Restaurant", "Tables", "Kitchen"],
-    tagsAr: ["مطعم", "طاولات", "مطبخ"],
+    tags: ["Restaurant", "IQ Order", "Delivery"],
+    tagsAr: ["مطعم", "طلب IQ", "توصيل"],
   },
   {
     id: "fashion",
@@ -506,6 +507,15 @@ export default function LandingPage() {
               onClick={() => document.getElementById("industries")?.scrollIntoView({ behavior: "smooth" })}
             >
               {isAr ? "الأنظمة" : "Systems"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50"
+              onClick={() => { window.location.href = "/app"; }}
+            >
+              <Bike className="h-3.5 w-3.5" />
+              {isAr ? "طلب IQ" : "IQ Order"}
             </Button>
             <Button
               size="sm"

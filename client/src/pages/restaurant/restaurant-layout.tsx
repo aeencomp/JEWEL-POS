@@ -12,7 +12,7 @@ import { posSystemLabel } from "@/lib/pos-system";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, UtensilsCrossed, ChefHat, ClipboardList, QrCode,
-  LogOut, Menu, X, ArrowLeft, BookOpen, BarChart3, Bell,
+  LogOut, Menu, X, ArrowLeft, BookOpen, BarChart3, Bell, Bike,
 } from "lucide-react";
 
 type BrandingData = { brandColor: string | null; logoUrl: string | null; name: string };
@@ -22,6 +22,7 @@ const navItems = [
   { path: "/restaurant", icon: LayoutDashboard, label: "Dashboard", labelAr: "لوحة التحكم", exact: true },
   { path: "/restaurant/pos", icon: UtensilsCrossed, label: "POS & Tables", labelAr: "نقطة البيع والطاولات" },
   { path: "/restaurant/kitchen", icon: ChefHat, label: "Kitchen (KDS)", labelAr: "شاشة المطبخ" },
+  { path: "/restaurant/delivery", icon: Bike, label: "IQ Order Delivery", labelAr: "توصيل IQ Order" },
   { path: "/restaurant/menu", icon: BookOpen, label: "Menu", labelAr: "القائمة" },
   { path: "/restaurant/orders", icon: ClipboardList, label: "Orders", labelAr: "الطلبات" },
   { path: "/restaurant/reports", icon: BarChart3, label: "Reports", labelAr: "التقارير" },
