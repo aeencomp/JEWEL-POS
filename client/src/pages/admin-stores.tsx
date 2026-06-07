@@ -70,6 +70,7 @@ import {
   Gem,
   Droplets,
   Shirt,
+  Utensils,
   ShieldCheck,
   RotateCcw,
 } from "lucide-react";
@@ -79,6 +80,7 @@ const POS_TYPE_OPTIONS = [
   { value: "jewel" as const, label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
   { value: "fashion" as const, label: "FashionPOS", sub: "Clothing store", Icon: Shirt, color: "#db2777" },
   { value: "oil" as const, label: "FactoryPOS", sub: "Oil factory ERP", Icon: Droplets, color: "#06b6d4" },
+  { value: "restaurant" as const, label: "RestoPOS", sub: "Restaurant & café", Icon: Utensils, color: "#ea580c" },
 ];
 
 function storePosMeta(posSystem: string) {
@@ -109,7 +111,7 @@ const createStoreSchema = z.object({
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
   plan: z.enum(["basic", "standard", "premium"]),
-  posSystem: z.enum(["jewel", "oil", "fashion"]),
+  posSystem: z.enum(["jewel", "oil", "fashion", "restaurant"]),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -122,7 +124,7 @@ const editStoreSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
-  posSystem: z.enum(["jewel", "oil", "fashion"]).optional(),
+  posSystem: z.enum(["jewel", "oil", "fashion", "restaurant"]).optional(),
   password: z.string().min(6, "Password must be at least 6 characters").or(z.literal("")).optional(),
 });
 

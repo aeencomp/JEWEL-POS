@@ -54,6 +54,15 @@ import OilBatch from "@/pages/oil/oil-batch";
 import OilReports from "@/pages/oil/oil-reports";
 import OilMaterials from "@/pages/oil/oil-materials";
 import OilLogin from "@/pages/oil/oil-login";
+import RestaurantLogin from "@/pages/restaurant/restaurant-login";
+import RestaurantLayout from "@/pages/restaurant/restaurant-layout";
+import RestaurantDashboard from "@/pages/restaurant/restaurant-dashboard";
+import RestaurantPos from "@/pages/restaurant/restaurant-pos";
+import RestaurantKitchen from "@/pages/restaurant/restaurant-kitchen";
+import RestaurantMenu from "@/pages/restaurant/restaurant-menu";
+import RestaurantOrders from "@/pages/restaurant/restaurant-orders";
+import RestaurantQr from "@/pages/restaurant/restaurant-qr";
+import PublicOrderPage from "@/pages/public-order";
 import { Loader2 } from "lucide-react";
 
 function AdminRouter() {
@@ -104,6 +113,20 @@ function FashionRouter() {
       <Route path="/fashion/debts" component={DebtsPage} />
       <Route path="/fashion/branding" component={StoreBranding} />
       <Route path="/fashion/backup" component={StoreBackup} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function RestaurantRouter() {
+  return (
+    <Switch>
+      <Route path="/restaurant" component={RestaurantDashboard} />
+      <Route path="/restaurant/pos" component={RestaurantPos} />
+      <Route path="/restaurant/kitchen" component={RestaurantKitchen} />
+      <Route path="/restaurant/menu" component={RestaurantMenu} />
+      <Route path="/restaurant/orders" component={RestaurantOrders} />
+      <Route path="/restaurant/qr" component={RestaurantQr} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -187,9 +210,23 @@ function FashionStoreLayout() {
   );
 }
 
+function RestaurantStoreLayout() {
+  const { isImpersonating, impersonatingStoreName, stopImpersonateMutation } = useAuth();
+  return (
+    <RestaurantLayout
+      isImpersonating={isImpersonating}
+      impersonatingStoreName={impersonatingStoreName}
+      onStopImpersonate={() => stopImpersonateMutation.mutate()}
+    >
+      <RestaurantRouter />
+    </RestaurantLayout>
+  );
+}
+
 function storeHomePath(posSystem?: string): string {
   if (posSystem === "oil") return "/oil";
   if (posSystem === "fashion") return "/fashion";
+  if (posSystem === "restaurant") return "/restaurant";
   return "/";
 }
 
@@ -206,6 +243,9 @@ function AppContent() {
   }
 
   if (!user) {
+    if (location.startsWith("/order/")) {
+      return <PublicOrderPage />;
+    }
     if (location === "/auth") {
       return <AuthPage />;
     }
@@ -218,11 +258,17 @@ function AppContent() {
     if (location === "/oil-login") {
       return <OilLogin />;
     }
+    if (location === "/restaurant-login") {
+      return <RestaurantLogin />;
+    }
     if (location === "/oil" || location.startsWith("/oil/")) {
       return <Redirect to="/oil-login" />;
     }
     if (location === "/fashion" || location.startsWith("/fashion/")) {
       return <Redirect to="/fashion-login" />;
+    }
+    if (location === "/restaurant" || location.startsWith("/restaurant/")) {
+      return <Redirect to="/restaurant-login" />;
     }
     return <LandingPage />;
   }
@@ -235,6 +281,12 @@ function AppContent() {
   }
   if (location === "/fashion-login") {
     return <Redirect to={posSystem === "fashion" ? "/fashion" : home} />;
+  }
+  if (location === "/restaurant-login") {
+    return <Redirect to={posSystem === "restaurant" ? "/restaurant" : home} />;
+  }
+  if (location.startsWith("/order/")) {
+    return <PublicOrderPage />;
   }
 
   if (location === "/auth" || location === "/store-portal") {
@@ -255,7 +307,13 @@ function AppContent() {
       }
       return <FashionStoreLayout />;
     }
-    if (location.startsWith("/fashion") || location.startsWith("/oil")) {
+    if (posSystem === "restaurant") {
+      if (!location.startsWith("/restaurant")) {
+        return <Redirect to="/restaurant" />;
+      }
+      return <RestaurantStoreLayout />;
+    }
+    if (location.startsWith("/fashion") || location.startsWith("/oil") || location.startsWith("/restaurant")) {
       return <Redirect to="/" />;
     }
   }

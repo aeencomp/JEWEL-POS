@@ -8,6 +8,8 @@ import { db } from "./db";
 import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems, oilBatchRecords, oilBatchRecordItems, oilProducts, oilCustomers, oilSuppliers, oilSales, oilSaleItems, oilPurchases, oilPurchaseItems, oilProductionBatches, oilProductionInputs, oilDebts, oilDebtPayments } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { calcLoyaltyEarned } from "@shared/loyalty";
+import { registerRestaurantRoutes } from "./restaurant-routes";
+import { menuCategories, restaurantTables } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -566,13 +568,17 @@ export async function registerRoutes(
             ? "oil"
             : storeData.posSystem === "fashion"
               ? "fashion"
-              : "jewel",
+              : storeData.posSystem === "restaurant"
+                ? "restaurant"
+                : "jewel",
         brandColor:
           storeData.posSystem === "fashion"
             ? "#db2777"
             : storeData.posSystem === "oil"
               ? "#2563eb"
-              : "#d4a574",
+              : storeData.posSystem === "restaurant"
+                ? "#ea580c"
+                : "#d4a574",
       });
 
       const planPrices: Record<string, string> = {
@@ -606,6 +612,21 @@ export async function registerRoutes(
         const fashionCategories = ["Men", "Women", "Kids", "Accessories"];
         for (let i = 0; i < fashionCategories.length; i++) {
           await storage.createCategory({ storeId: store.id, name: fashionCategories[i], sortOrder: i });
+        }
+      }
+
+      if (store.posSystem === "restaurant") {
+        const menuCats = [
+          { name: "Appetizers", nameAr: "المقبلات" },
+          { name: "Main Dishes", nameAr: "الأطباق الرئيسية" },
+          { name: "Drinks", nameAr: "المشروبات" },
+          { name: "Desserts", nameAr: "الحلويات" },
+        ];
+        for (let i = 0; i < menuCats.length; i++) {
+          await db.insert(menuCategories).values({ storeId: store.id, name: menuCats[i].name, nameAr: menuCats[i].nameAr, sortOrder: i });
+        }
+        for (let n = 1; n <= 8; n++) {
+          await db.insert(restaurantTables).values({ storeId: store.id, tableNumber: n, name: `Table ${n}`, section: "main", status: "free" });
         }
       }
 
@@ -2741,6 +2762,8 @@ export async function registerRoutes(
     await db.delete(signupRequests).where(eq(signupRequests.id, id));
     res.sendStatus(204);
   });
+
+  registerRestaurantRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
 
   return httpServer;
 }

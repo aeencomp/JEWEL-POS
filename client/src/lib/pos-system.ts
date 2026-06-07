@@ -1,28 +1,35 @@
-export type PosSystem = "jewel" | "oil" | "fashion";
+export type PosSystem = "jewel" | "oil" | "fashion" | "restaurant";
 
-export const POS_SYSTEMS: PosSystem[] = ["jewel", "oil", "fashion"];
+export const POS_SYSTEMS: PosSystem[] = ["jewel", "oil", "fashion", "restaurant"];
 
 export function normalizePosSystem(value: unknown): PosSystem {
-  if (value === "oil" || value === "fashion") return value;
+  if (value === "oil" || value === "fashion" || value === "restaurant") return value;
   return "jewel";
 }
 
 export function posSystemLabel(system: PosSystem, isAr: boolean): string {
   if (system === "oil") return isAr ? "FactoryPOS" : "FactoryPOS";
   if (system === "fashion") return isAr ? "FashionPOS" : "FashionPOS";
+  if (system === "restaurant") return isAr ? "RestoPOS" : "RestoPOS";
   return isAr ? "JewelPOS" : "JewelPOS";
 }
 
 export function posSystemSubtitle(system: PosSystem, isAr: boolean): string {
   if (system === "oil") return isAr ? "نظام إدارة المصنع" : "Factory Management";
   if (system === "fashion") return isAr ? "نظام إدارة الملابس" : "Fashion & Apparel";
+  if (system === "restaurant") return isAr ? "نظام المطاعم والمقاهي" : "Restaurant & Café";
   return isAr ? "نظام إدارة المجوهرات" : "Jewelry Management";
 }
 
 export function defaultBrandColor(system: PosSystem): string {
   if (system === "oil") return "#2563eb";
   if (system === "fashion") return "#db2777";
+  if (system === "restaurant") return "#ea580c";
   return "#d4a574";
+}
+
+export function isRestaurantStore(posSystem: unknown): boolean {
+  return posSystem === "restaurant";
 }
 
 /** Jewel-only menu paths hidden for fashion stores */
@@ -38,5 +45,5 @@ export function isFashionStore(posSystem: unknown): boolean {
 }
 
 export function isJewelStore(posSystem: unknown): boolean {
-  return posSystem !== "oil" && posSystem !== "fashion";
+  return posSystem !== "oil" && posSystem !== "fashion" && posSystem !== "restaurant";
 }

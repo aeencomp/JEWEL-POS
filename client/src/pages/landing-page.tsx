@@ -129,7 +129,8 @@ const products: Product[] = [
     descriptionAr: "نقطة بيع للمطاعم والمقاهي مع إدارة الطاولات، شاشة المطبخ والقوائم.",
     icon: Utensils,
     gradient: "from-orange-500 to-red-500",
-    available: false,
+    available: true,
+    href: "/restaurant-login",
     tags: ["Restaurant", "Tables", "Kitchen"],
     tagsAr: ["مطعم", "طاولات", "مطبخ"],
   },
@@ -172,7 +173,7 @@ type SignupForm = {
   businessName: string;
   phone: string;
   email: string;
-  posSystem: "jewel" | "oil" | "fashion";
+  posSystem: "jewel" | "oil" | "fashion" | "restaurant";
   notes: string;
 };
 
@@ -181,7 +182,7 @@ type Pricing = { monthly: number };
 const DEFAULT_PRICING: Pricing = { monthly: 45000 };
 
 type PosPricingPlan = {
-  id: "jewel" | "fashion" | "oil";
+  id: "jewel" | "fashion" | "oil" | "restaurant";
   name: string;
   nameAr: string;
   subtitle: string;
@@ -318,6 +319,40 @@ const POS_PRICING_PLANS: PosPricingPlan[] = [
       "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
     ],
   },
+  {
+    id: "restaurant",
+    name: "RestoPOS",
+    nameAr: "نقطة بيع المطاعم",
+    subtitle: "Restaurants & Cafés",
+    subtitleAr: "المطاعم والمقاهي",
+    icon: Utensils,
+    gradient: "from-orange-500 to-red-500",
+    accent: "text-orange-500",
+    features: [
+      "Table management & floor plan",
+      "Staff POS — take orders at the table",
+      "QR ordering — guests order from their phone",
+      "Kitchen display system (KDS)",
+      "Menu categories & item management",
+      "Order status flow (new → preparing → ready → served)",
+      "Order history & payment tracking",
+      "QR code links per table",
+      "Custom store branding (logo & colors)",
+      "Bilingual interface (English / Arabic + RTL)",
+    ],
+    featuresAr: [
+      "إدارة الطاولات ومخطط الصالة",
+      "نقطة بيع للموظفين — أخذ الطلبات من الطاولة",
+      "طلب عبر QR — الضيوف يطلبون من هواتفهم",
+      "شاشة عرض المطبخ (KDS)",
+      "إدارة فئات القائمة والأطباق",
+      "تدفق حالة الطلب (جديد → تحضير → جاهز → تقديم)",
+      "سجل الطلبات ومتابعة الدفع",
+      "روابط QR لكل طاولة",
+      "علامة تجارية مخصصة (شعار وألوان)",
+      "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
+    ],
+  },
 ];
 
 const PLATFORM_INCLUDES = {
@@ -375,6 +410,17 @@ const SIGNUP_POS_OPTIONS = [
     activeBg: "bg-blue-50 dark:bg-blue-950/30",
     hoverBorder: "hover:border-blue-300",
   },
+  {
+    id: "restaurant" as const,
+    label: "RestoPOS",
+    subEn: "Restaurant",
+    subAr: "مطعم",
+    icon: Utensils,
+    gradient: "from-orange-500 to-red-500",
+    activeBorder: "border-orange-500",
+    activeBg: "bg-orange-50 dark:bg-orange-950/30",
+    hoverBorder: "hover:border-orange-300",
+  },
 ];
 
 export default function LandingPage() {
@@ -390,7 +436,7 @@ export default function LandingPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil">("jewel");
+  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant">("jewel");
   const [form, setForm] = useState<SignupForm>({
     name: "",
     businessName: "",
@@ -437,7 +483,7 @@ export default function LandingPage() {
     mutation.mutate(form);
   }
 
-  function handleOpen(preselect?: "jewel" | "oil" | "fashion") {
+  function handleOpen(preselect?: "jewel" | "oil" | "fashion" | "restaurant") {
     setSubmitted(false);
     setErrors({});
     setForm({ name: "", businessName: "", phone: "", email: "", posSystem: preselect ?? "jewel", notes: "" });
@@ -697,7 +743,7 @@ export default function LandingPage() {
                       <Button
                         variant="outline"
                         className="w-full text-sm"
-                        onClick={() => handleOpen(product.id as "jewel" | "oil" | "fashion")}
+                        onClick={() => handleOpen(product.id as "jewel" | "oil" | "fashion" | "restaurant")}
                         data-testid={`button-request-${product.id}`}
                       >
                         <UserPlus className="h-4 w-4 me-2" />

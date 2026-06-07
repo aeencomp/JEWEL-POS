@@ -40,7 +40,7 @@ export const stores = pgTable("stores", {
   logoUrl: text("logo_url"),
   receiptHeader: text("receipt_header"),
   receiptFooter: text("receipt_footer"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant"] }).notNull().default("jewel"),
   features: text("features"),
 });
 
@@ -350,7 +350,7 @@ export const signupRequests = pgTable("signup_requests", {
   businessName: text("business_name").notNull(),
   phone: text("phone").notNull(),
   email: text("email"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant"] }).notNull().default("jewel"),
   notes: text("notes"),
   status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -710,6 +710,81 @@ export const insertOilProductionInputSchema = createInsertSchema(oilProductionIn
 export const insertOilExpenseSchema = createInsertSchema(oilExpenses).omit({ id: true, createdAt: true });
 export const insertOilDebtSchema = createInsertSchema(oilDebts).omit({ id: true, createdAt: true });
 export const insertOilDebtPaymentSchema = createInsertSchema(oilDebtPayments).omit({ id: true, createdAt: true });
+
+// ── Restaurant / RestoPOS ─────────────────────────────────────
+export const restaurantTables = pgTable("restaurant_tables", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  tableNumber: integer("table_number").notNull(),
+  name: text("name"),
+  section: text("section").default("main"),
+  status: text("status", { enum: ["free", "occupied", "reserved"] }).notNull().default("free"),
+});
+
+export const menuCategories = pgTable("menu_categories", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  nameAr: text("name_ar"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+export const menuItems = pgTable("menu_items", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  categoryId: integer("category_id").notNull().references(() => menuCategories.id),
+  name: text("name").notNull(),
+  nameAr: text("name_ar"),
+  description: text("description"),
+  descriptionAr: text("description_ar"),
+  price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+  imageUrl: text("image_url"),
+  isAvailable: boolean("is_available").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+export const restaurantOrders = pgTable("restaurant_orders", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  orderNumber: text("order_number").notNull(),
+  tableId: integer("table_id").references(() => restaurantTables.id),
+  orderType: text("order_type", { enum: ["dine_in", "pickup", "delivery", "qr"] }).notNull().default("dine_in"),
+  status: text("status", {
+    enum: ["pending", "accepted", "preparing", "ready", "served", "completed", "cancelled"],
+  }).notNull().default("pending"),
+  source: text("source", { enum: ["staff", "qr", "online"] }).notNull().default("staff"),
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
+  notes: text("notes"),
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+  paymentStatus: text("payment_status", { enum: ["unpaid", "paid"] }).notNull().default("unpaid"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const restaurantOrderItems = pgTable("restaurant_order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => restaurantOrders.id),
+  menuItemId: integer("menu_item_id").references(() => menuItems.id),
+  name: text("name").notNull(),
+  price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  notes: text("notes"),
+});
+
+export const insertRestaurantTableSchema = createInsertSchema(restaurantTables).omit({ id: true });
+export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit({ id: true });
+export const insertMenuItemSchema = createInsertSchema(menuItems).omit({ id: true });
+export const insertRestaurantOrderSchema = createInsertSchema(restaurantOrders).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRestaurantOrderItemSchema = createInsertSchema(restaurantOrderItems).omit({ id: true });
+
+export type RestaurantTable = typeof restaurantTables.$inferSelect;
+export type MenuCategory = typeof menuCategories.$inferSelect;
+export type MenuItem = typeof menuItems.$inferSelect;
+export type RestaurantOrder = typeof restaurantOrders.$inferSelect;
+export type RestaurantOrderItem = typeof restaurantOrderItems.$inferSelect;
 
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
