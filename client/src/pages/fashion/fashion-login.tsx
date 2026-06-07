@@ -47,10 +47,12 @@ export default function FashionLogin() {
         return;
       }
       if (data.posSystem !== "fashion") {
+        const kind = data.posSystem === "oil" ? (isAr ? "مصنع" : "factory") : (isAr ? "مجوهرات" : "jewelry");
+        const portal = data.posSystem === "oil" ? "FactoryPOS" : "JewelPOS";
         setError(
           isAr
-            ? "هذا الحساب ليس لمحل أزياء. استخدم بوابة JewelPOS أو FactoryPOS."
-            : "This account is not a fashion store. Use JewelPOS or FactoryPOS login."
+            ? `هذا الحساب لمحل ${kind} وليس أزياء. غيّر نوع المتجر إلى FashionPOS من لوحة الإدارة (/auth)، أو سجّل الدخول عبر ${portal}.`
+            : `This is a ${kind} store, not fashion. Set store type to FashionPOS in admin (/auth), or use ${portal} login.`
         );
         await apiRequest("POST", "/api/logout");
         queryClient.setQueryData(["/api/user"], null);

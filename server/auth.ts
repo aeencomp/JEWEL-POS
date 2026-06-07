@@ -45,6 +45,16 @@ const verifyAttempts = new Map<number, { count: number; lastAttempt: number }>()
 const MAX_VERIFY_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 
+/** Attach store posSystem so portal logins (Jewel / Fashion / Oil) can route correctly */
+async function enrichUserResponse(user: SelectUser): Promise<Record<string, unknown>> {
+  const userData: Record<string, unknown> = { ...user };
+  if (user.storeId) {
+    const store = await storage.getStore(user.storeId);
+    if (store) userData.posSystem = store.posSystem;
+  }
+  return userData;
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -120,9 +130,9 @@ export function setupAuth(app: Express) {
               `[2FA] Email OTP disabled — logging in ${user.username} (set STORE_REQUIRE_2FA=true + RESEND to enable)`,
             );
           }
-          req.login(user, (loginErr) => {
+          req.login(user, async (loginErr) => {
             if (loginErr) return next(loginErr);
-            res.status(200).json(user);
+            res.status(200).json(await enrichUserResponse(user));
           });
           return;
         }
@@ -159,9 +169,9 @@ export function setupAuth(app: Express) {
         return;
       }
 
-      req.login(user, (loginErr) => {
+      req.login(user, async (loginErr) => {
         if (loginErr) return next(loginErr);
-        res.status(200).json(user);
+        res.status(200).json(await enrichUserResponse(user));
       });
     })(req, res, next);
   });
@@ -206,12 +216,12 @@ export function setupAuth(app: Express) {
       }
 
       delete req.session.pendingUserId;
-      req.login(user, (loginErr) => {
+      req.login(user, async (loginErr) => {
         if (loginErr) {
           console.error("[verify-2fa] req.login failed:", loginErr);
           return res.status(500).json({ message: "Login session failed. Please try again." });
         }
-        res.status(200).json(user);
+        res.status(200).json(await enrichUserResponse(user));
       });
     } catch (err: any) {
       console.error("[verify-2fa]", err);
