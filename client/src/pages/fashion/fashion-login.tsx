@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import {
-  Shirt, User, Lock, Loader2, ArrowRight, Tag, RotateCcw, Heart, Barcode,
+  Shirt, User, Lock, Loader2, ArrowRight, ArrowLeft, Tag, RotateCcw, Heart, Barcode,
+  Mail, Shield,
 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -28,47 +30,49 @@ const features = [
 
 export default function FashionLogin() {
   const [, navigate] = useLocation();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const isAr = language === "ar";
   const [error, setError] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const { user, loginMutation, verify2FAMutation, resend2FAMutation, pending2FA, clearPending2FA } = useAuth();
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { username: "", password: "" },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: (data: LoginForm) =>
-      apiRequest("POST", "/api/login", { ...data, portal: "store" }),
-    onSuccess: async (res: Response) => {
-      const data = await res.json();
-      if (data.requires2FA) {
-        setError(isAr ? "هذا الحساب يتطلب التحقق بالبريد الإلكتروني" : "This account requires email verification.");
-        return;
-      }
-      if (data.posSystem !== "fashion") {
-        const kind = data.posSystem === "oil" ? (isAr ? "مصنع" : "factory") : (isAr ? "مجوهرات" : "jewelry");
-        const portal = data.posSystem === "oil" ? "FactoryPOS" : "JewelPOS";
-        setError(
-          isAr
-            ? `هذا الحساب لمحل ${kind} وليس أزياء. غيّر نوع المتجر إلى FashionPOS من لوحة الإدارة (/auth)، أو سجّل الدخول عبر ${portal}.`
-            : `This is a ${kind} store, not fashion. Set store type to FashionPOS in admin (/auth), or use ${portal} login.`
-        );
-        await apiRequest("POST", "/api/logout");
+  useEffect(() => {
+    if (!user || pending2FA) return;
+    const ps = (user as { posSystem?: string }).posSystem;
+    if (ps !== "fashion") {
+      const kind = ps === "oil" ? (isAr ? "مصنع" : "factory") : (isAr ? "مجوهرات" : "jewelry");
+      const portal = ps === "oil" ? "FactoryPOS" : "JewelPOS";
+      setError(
+        isAr
+          ? `هذا الحساب لمحل ${kind} وليس أزياء. غيّر نوع المتجر إلى FashionPOS من لوحة الإدارة (/auth)، أو سجّل الدخول عبر ${portal}.`
+          : `This is a ${kind} store, not fashion. Set store type to FashionPOS in admin (/auth), or use ${portal} login.`,
+      );
+      void apiRequest("POST", "/api/logout").then(() => {
         queryClient.setQueryData(["/api/user"], null);
-        return;
-      }
-      queryClient.setQueryData(["/api/user"], data);
-      navigate("/fashion");
-    },
-    onError: () => {
-      setError(isAr ? "اسم المستخدم أو كلمة المرور غير صحيحة" : "Invalid username or password.");
-    },
-  });
+      });
+    }
+  }, [user, pending2FA, isAr]);
 
   function onSubmit(values: LoginForm) {
     setError("");
-    loginMutation.mutate(values);
+    loginMutation.mutate({ ...values, portal: "store" });
+  }
+
+  function onVerify() {
+    if (verificationCode.length === 6) {
+      verify2FAMutation.mutate(verificationCode);
+    }
+  }
+
+  function onBack() {
+    clearPending2FA();
+    setVerificationCode("");
+    setError("");
   }
 
   return (
@@ -138,61 +142,148 @@ export default function FashionLogin() {
 
         <div className="flex-1 flex items-center justify-center px-6 py-10">
           <div className="w-full max-w-sm space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1">
-                {isAr ? "تسجيل الدخول" : "Sign In"}
-              </h2>
-              <p className="text-slate-400 text-sm">
-                {isAr ? "أدخل بيانات حساب محل الأزياء" : "Enter your FashionPOS store credentials"}
-              </p>
-            </div>
-
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">{isAr ? "اسم المستخدم" : "Username"}</label>
-                <div className="relative">
-                  <User className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                  <input
-                    {...form.register("username")}
-                    className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-xl ps-10 pe-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    autoComplete="username"
-                    data-testid="input-fashion-username"
-                  />
+            {!pending2FA ? (
+              <>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">
+                    {isAr ? "تسجيل الدخول" : "Sign In"}
+                  </h2>
+                  <p className="text-slate-400 text-sm">
+                    {isAr ? "أدخل بيانات حساب محل الأزياء" : "Enter your FashionPOS store credentials"}
+                  </p>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">{isAr ? "كلمة المرور" : "Password"}</label>
-                <div className="relative">
-                  <Lock className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                  <input
-                    {...form.register("password")}
-                    type="password"
-                    className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-xl ps-10 pe-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    autoComplete="current-password"
-                    data-testid="input-fashion-password"
-                  />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-300">{isAr ? "اسم المستخدم" : "Username"}</label>
+                    <div className="relative">
+                      <User className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <input
+                        {...form.register("username")}
+                        className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-xl ps-10 pe-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        autoComplete="username"
+                        data-testid="input-fashion-username"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-300">{isAr ? "كلمة المرور" : "Password"}</label>
+                    <div className="relative">
+                      <Lock className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <input
+                        {...form.register("password")}
+                        type="password"
+                        className="w-full bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-xl ps-10 pe-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        autoComplete="current-password"
+                        data-testid="input-fashion-password"
+                      />
+                    </div>
+                  </div>
+
+                  {(error || loginMutation.isError) && (
+                    <p className="text-sm text-red-400" data-testid="text-fashion-login-error">
+                      {error || (isAr ? "اسم المستخدم أو كلمة المرور غير صحيحة" : "Invalid username or password.")}
+                    </p>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={loginMutation.isPending}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl py-6 font-semibold"
+                    data-testid="button-fashion-login"
+                  >
+                    {loginMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        {isAr ? "دخول" : "Sign In"}
+                        <ArrowRight className="h-4 w-4 ms-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1" data-testid="text-fashion-2fa-title">
+                    {t("auth.verifyTitle")}
+                  </h2>
+                  <p className="text-slate-400 text-sm">{t("auth.verifySubtitle")}</p>
                 </div>
-              </div>
 
-              {error && <p className="text-sm text-red-400" data-testid="text-fashion-login-error">{error}</p>}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 p-4 bg-pink-500/10 rounded-xl border border-pink-500/25">
+                    <Mail className="h-5 w-5 text-pink-400 flex-shrink-0" />
+                    <p className="text-sm text-slate-300" data-testid="text-fashion-2fa-email">
+                      {t("auth.codeSentTo")}{" "}
+                      <span className="font-medium text-white">{pending2FA.maskedEmail}</span>
+                    </p>
+                  </div>
 
-              <Button
-                type="submit"
-                disabled={loginMutation.isPending}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl py-6 font-semibold"
-                data-testid="button-fashion-login"
-              >
-                {loginMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    {isAr ? "دخول" : "Sign In"}
-                    <ArrowRight className="h-4 w-4 ms-2" />
-                  </>
-                )}
-              </Button>
-            </form>
+                  <div className="flex flex-col items-center gap-4">
+                    <InputOTP
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={setVerificationCode}
+                      data-testid="input-fashion-verification-code"
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                    <p className="text-xs text-slate-500">{t("auth.codeExpiry")}</p>
+                  </div>
+
+                  <Button
+                    onClick={onVerify}
+                    disabled={verificationCode.length !== 6 || verify2FAMutation.isPending}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl py-6 font-semibold"
+                    data-testid="button-fashion-verify-code"
+                  >
+                    {verify2FAMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Shield className="h-4 w-4 me-2" />
+                        {t("auth.verifyButton")}
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={onBack}
+                      className="text-sm text-slate-500 hover:text-pink-400 transition-colors flex items-center gap-1"
+                      data-testid="button-fashion-back-to-login"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      {t("auth.backToLogin")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resend2FAMutation.mutate()}
+                      disabled={resend2FAMutation.isPending}
+                      className="text-sm text-pink-400 hover:text-pink-300 transition-colors"
+                      data-testid="button-fashion-resend-code"
+                    >
+                      {resend2FAMutation.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        t("auth.resendCode")
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               type="button"
