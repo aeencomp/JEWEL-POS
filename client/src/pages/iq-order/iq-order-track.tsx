@@ -2,7 +2,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, MapPin, Phone, RefreshCw } from "lucide-react";
+import { Loader2, ArrowLeft, MapPin, Phone, RefreshCw, Bike } from "lucide-react";
 import { IqOrderShell, TrackingTimeline, IQ_ORDER_BRAND } from "./iq-order-shared";
 
 type TrackData = {
@@ -22,6 +22,7 @@ type TrackData = {
   timeline: { key: string; en: string; ar: string; done: boolean }[];
   items: { id: number; name: string; quantity: number; price: string }[];
   store: { name: string; brandColor: string | null; phone: string } | null;
+  driver?: { id: number; name: string; phone: string; vehicleType: string } | null;
 };
 
 export default function IqOrderTrack() {
@@ -102,6 +103,19 @@ export default function IqOrderTrack() {
                 <div className="flex justify-between font-bold"><span>{isAr ? "الإجمالي" : "Total"}</span><span className="tabular-nums" style={{ color: brandColor }}>{parseFloat(data.total).toLocaleString()} {isAr ? "د.ع" : "IQD"}</span></div>
               </div>
             </div>
+
+            {data.driver && (
+              <div className="rounded-2xl border border-sky-200 bg-sky-50/50 dark:bg-sky-950/20 p-4 space-y-1">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-sky-800 dark:text-sky-300">
+                  <Bike className="h-4 w-4" />{isAr ? "السائق" : "Your Driver"}
+                </h3>
+                <p className="font-medium">{data.driver.name}</p>
+                <p className="text-sm text-muted-foreground capitalize">{data.driver.vehicleType}</p>
+                <a href={`tel:${data.driver.phone}`} className="text-sm text-sky-600 flex items-center gap-1" dir="ltr">
+                  <Phone className="h-3.5 w-3.5" />{data.driver.phone}
+                </a>
+              </div>
+            )}
 
             <div className="rounded-2xl border bg-card p-4 space-y-2 text-sm">
               <h3 className="font-semibold">{isAr ? "عنوان التوصيل" : "Delivery Address"}</h3>

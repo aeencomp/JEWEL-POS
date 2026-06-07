@@ -9,6 +9,7 @@ import {
   menuItems,
   restaurantOrders,
   restaurantOrderItems,
+  deliveryDrivers,
   stores,
 } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
@@ -69,12 +70,21 @@ async function enrichOrders(rows: (typeof restaurantOrders.$inferSelect)[]) {
     for (const t of tableRows) tablesById.set(t.id, t);
   }
 
+  const driverIds = [...new Set(rows.map((o) => o.driverId).filter((id): id is number => id != null))];
+  const driversById = new Map<number, { id: number; name: string; phone: string; vehicleType: string }>();
+  if (driverIds.length > 0) {
+    const driverRows = await db.select().from(deliveryDrivers).where(inArray(deliveryDrivers.id, driverIds));
+    for (const d of driverRows) driversById.set(d.id, { id: d.id, name: d.name, phone: d.phone, vehicleType: d.vehicleType });
+  }
+
   return rows.map((o) => ({
     ...o,
     subtotal: String(o.subtotal),
     total: String(o.total),
+    deliveryFee: o.deliveryFee ? String(o.deliveryFee) : "0",
     items: itemsByOrderId.get(o.id) ?? [],
     table: o.tableId ? tablesById.get(o.tableId) ?? null : null,
+    driver: o.driverId ? driversById.get(o.driverId) ?? null : null,
   }));
 }
 

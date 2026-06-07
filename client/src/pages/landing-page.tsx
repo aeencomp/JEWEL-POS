@@ -518,6 +518,14 @@ export default function LandingPage() {
               {isAr ? "طلب IQ" : "IQ Order"}
             </Button>
             <Button
+              variant="ghost"
+              size="sm"
+              className="hidden md:inline-flex gap-1.5 text-sky-600"
+              onClick={() => { window.location.href = "/driver-login"; }}
+            >
+              {isAr ? "تطبيق السائق" : "Driver App"}
+            </Button>
+            <Button
               size="sm"
               className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 hidden sm:inline-flex"
               onClick={() => handleOpen()}

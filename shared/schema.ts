@@ -761,6 +761,10 @@ export const restaurantOrders = pgTable("restaurant_orders", {
   deliveryArea: text("delivery_area"),
   deliveryFee: decimal("delivery_fee", { precision: 12, scale: 2 }).default("0"),
   trackingToken: text("tracking_token"),
+  driverId: integer("driver_id"),
+  driverAcceptedAt: timestamp("driver_accepted_at"),
+  pickedUpAt: timestamp("picked_up_at"),
+  deliveredAt: timestamp("delivered_at"),
   paymentMethod: text("payment_method", { enum: ["cash", "card"] }).default("cash"),
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
   total: decimal("total", { precision: 12, scale: 2 }).notNull(),
@@ -790,6 +794,21 @@ export type MenuCategory = typeof menuCategories.$inferSelect;
 export type MenuItem = typeof menuItems.$inferSelect;
 export type RestaurantOrder = typeof restaurantOrders.$inferSelect;
 export type RestaurantOrderItem = typeof restaurantOrderItems.$inferSelect;
+
+export const deliveryDrivers = pgTable("delivery_drivers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().unique(),
+  pinHash: text("pin_hash").notNull(),
+  vehicleType: text("vehicle_type", { enum: ["motorcycle", "car", "bicycle"] }).notNull().default("motorcycle"),
+  isActive: boolean("is_active").notNull().default(true),
+  status: text("status", { enum: ["offline", "online", "busy"] }).notNull().default("offline"),
+  storeId: integer("store_id").references(() => stores.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertDeliveryDriverSchema = createInsertSchema(deliveryDrivers).omit({ id: true, createdAt: true });
+export type DeliveryDriver = typeof deliveryDrivers.$inferSelect;
 
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),

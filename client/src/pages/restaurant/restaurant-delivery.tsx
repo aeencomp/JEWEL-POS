@@ -17,7 +17,8 @@ type DeliveryOrder = {
   id: number; orderNumber: string; status: string; source: string; total: string;
   customerName: string | null; customerPhone: string | null; createdAt: string;
   deliveryAddress: string | null; deliveryArea: string | null; deliveryFee: string | null;
-  trackingToken: string | null; notes: string | null; items?: OrderItem[];
+  trackingToken: string | null; driverId: number | null; notes: string | null; items?: OrderItem[];
+  driver?: { id: number; name: string; phone: string; vehicleType: string } | null;
 };
 
 type DeliverySettings = {
@@ -29,20 +30,29 @@ type DeliverySettings = {
   storeUrl: string;
 };
 
+function columnForOrder(o: DeliveryOrder) {
+  if (["pending", "accepted"].includes(o.status)) return "new";
+  if (o.status === "preparing") return "prep";
+  if (o.status === "ready" && !o.driverId) return "waiting";
+  if (o.status === "ready" && o.driverId) return "assigned";
+  if (o.status === "out_for_delivery") return "delivery";
+  return "done";
+}
+
 const COLUMNS = [
-  { key: "new", statuses: ["pending", "accepted"], en: "New", ar: "جديد" },
-  { key: "prep", statuses: ["preparing", "ready"], en: "Kitchen", ar: "المطبخ" },
-  { key: "delivery", statuses: ["out_for_delivery"], en: "On the Way", ar: "في الطريق" },
-  { key: "done", statuses: ["delivered", "completed"], en: "Delivered", ar: "تم التوصيل" },
+  { key: "new", en: "New", ar: "جديد" },
+  { key: "prep", en: "Kitchen", ar: "المطبخ" },
+  { key: "waiting", en: "Awaiting Driver", ar: "بانتظار سائق" },
+  { key: "assigned", en: "Driver Assigned", ar: "سائق معيّن" },
+  { key: "delivery", en: "On the Way", ar: "في الطريق" },
+  { key: "done", en: "Delivered", ar: "تم التوصيل" },
 ] as const;
 
-function nextDeliveryAction(status: string, isAr: boolean) {
-  if (status === "pending") return { status: "accepted", label: isAr ? "قبول" : "Accept" };
-  if (status === "accepted") return { status: "preparing", label: isAr ? "تحضير" : "Prepare" };
-  if (status === "preparing") return { status: "ready", label: isAr ? "جاهز" : "Ready" };
-  if (status === "ready") return { status: "out_for_delivery", label: isAr ? "إرسال للتوصيل" : "Out for Delivery" };
-  if (status === "out_for_delivery") return { status: "delivered", label: isAr ? "تم التوصيل" : "Delivered" };
-  if (status === "delivered") return { status: "completed", label: isAr ? "إنهاء" : "Complete" };
+function nextDeliveryAction(order: DeliveryOrder, isAr: boolean) {
+  if (order.status === "pending") return { status: "accepted", label: isAr ? "قبول" : "Accept" };
+  if (order.status === "accepted") return { status: "preparing", label: isAr ? "تحضير" : "Prepare" };
+  if (order.status === "preparing") return { status: "ready", label: isAr ? "جاهز — أرسل للسائقين" : "Ready — Send to Drivers" };
+  if (order.status === "delivered") return { status: "completed", label: isAr ? "إنهاء" : "Complete" };
   return null;
 }
 
@@ -145,9 +155,9 @@ export default function RestaurantDelivery() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-3 overflow-x-auto">
         {COLUMNS.map((col) => {
-          const colOrders = orders.filter((o) => (col.statuses as readonly string[]).includes(o.status));
+          const colOrders = orders.filter((o) => columnForOrder(o) === col.key);
           return (
             <div key={col.key} className="rounded-2xl border bg-card flex flex-col min-h-0 overflow-hidden">
               <div className="px-4 py-3 border-b flex items-center justify-between shrink-0">
@@ -156,7 +166,7 @@ export default function RestaurantDelivery() {
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
                 {colOrders.map((order) => {
-                  const action = nextDeliveryAction(order.status, isAr);
+                  const action = nextDeliveryAction(order, isAr);
                   const mapsUrl = order.deliveryAddress
                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryAddress)}`
                     : null;
@@ -171,6 +181,15 @@ export default function RestaurantDelivery() {
                         <ElapsedTimer since={order.createdAt} isAr={isAr} />
                       </div>
 
+                      {order.driver && (
+                        <div className="rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 p-2 text-xs">
+                          <p className="font-semibold text-sky-800 dark:text-sky-300 flex items-center gap-1"><Bike className="h-3 w-3" />{order.driver.name}</p>
+                          <p dir="ltr" className="text-muted-foreground">{order.driver.phone} · {order.driver.vehicleType}</p>
+                        </div>
+                      )}
+                      {col.key === "waiting" && (
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">{isAr ? "في انتظار قبول سائق..." : "Waiting for driver to accept..."}</p>
+                      )}
                       <div className="text-xs space-y-1 text-muted-foreground">
                         {order.customerPhone && (
                           <p className="flex items-center gap-1"><Phone className="h-3 w-3" /><span dir="ltr">{order.customerPhone}</span></p>

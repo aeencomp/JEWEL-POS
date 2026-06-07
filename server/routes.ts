@@ -10,6 +10,7 @@ import { eq, desc } from "drizzle-orm";
 import { calcLoyaltyEarned } from "@shared/loyalty";
 import { registerRestaurantRoutes } from "./restaurant-routes";
 import { registerIqOrderRoutes } from "./iq-order-routes";
+import { registerDriverRoutes, ensureDemoDriver } from "./driver-routes";
 import { getEffectiveStoreId, isDemoUser, resolveDemoStoreId, type DemoPosSystem } from "./demo";
 import { menuCategories, restaurantTables } from "@shared/schema";
 import multer from "multer";
@@ -2765,6 +2766,8 @@ export async function registerRoutes(
 
   registerRestaurantRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
   registerIqOrderRoutes(app, { sendValidationError });
+  registerDriverRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
+  void ensureDemoDriver();
 
   return httpServer;
 }

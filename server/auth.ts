@@ -22,6 +22,7 @@ declare module "express-session" {
     pendingUserId?: number;
     demoStoreId?: number;
     demoPosSystem?: DemoPosSystem;
+    driverId?: number;
   }
 }
 

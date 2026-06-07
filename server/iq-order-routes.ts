@@ -9,6 +9,7 @@ import {
   menuItems,
   restaurantOrders,
   restaurantOrderItems,
+  deliveryDrivers,
 } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
 
@@ -77,6 +78,11 @@ function serializeOrderItem(row: typeof restaurantOrderItems.$inferSelect): Seri
 async function enrichOrder(row: typeof restaurantOrders.$inferSelect) {
   const itemRows = await db.select().from(restaurantOrderItems).where(eq(restaurantOrderItems.orderId, row.id));
   const store = await storage.getStore(row.storeId);
+  let driver = null;
+  if (row.driverId) {
+    const [d] = await db.select().from(deliveryDrivers).where(eq(deliveryDrivers.id, row.driverId));
+    if (d) driver = { id: d.id, name: d.name, phone: d.phone, vehicleType: d.vehicleType };
+  }
   return {
     ...row,
     subtotal: String(row.subtotal),
@@ -84,6 +90,7 @@ async function enrichOrder(row: typeof restaurantOrders.$inferSelect) {
     deliveryFee: row.deliveryFee ? String(row.deliveryFee) : "0",
     items: itemRows.map(serializeOrderItem),
     store: store ? { id: store.id, name: store.name, brandColor: store.brandColor, logoUrl: store.logoUrl, phone: store.phone } : null,
+    driver,
   };
 }
 
@@ -262,11 +269,13 @@ export function registerIqOrderRoutes(app: Express, helpers: { sendValidationErr
 
     const enriched = await enrichOrder(order);
     const stepIndex = TRACK_STEPS.indexOf(order.status as typeof TRACK_STEPS[number]);
+    const hasDriver = !!order.driverId;
     const timeline = [
       { key: "placed", en: "Order Placed", ar: "تم الطلب", done: true },
       { key: "confirmed", en: "Confirmed", ar: "تم التأكيد", done: stepIndex >= TRACK_STEPS.indexOf("accepted") },
       { key: "preparing", en: "Preparing", ar: "قيد التحضير", done: stepIndex >= TRACK_STEPS.indexOf("preparing") },
-      { key: "ready", en: "Ready", ar: "جاهز", done: stepIndex >= TRACK_STEPS.indexOf("ready") },
+      { key: "ready", en: "Ready for Pickup", ar: "جاهز للاستلام", done: stepIndex >= TRACK_STEPS.indexOf("ready") },
+      { key: "driver", en: "Driver Assigned", ar: "تم تعيين السائق", done: hasDriver },
       { key: "delivery", en: "On the Way", ar: "في الطريق", done: stepIndex >= TRACK_STEPS.indexOf("out_for_delivery") },
       { key: "delivered", en: "Delivered", ar: "تم التوصيل", done: stepIndex >= TRACK_STEPS.indexOf("delivered") || order.status === "completed" },
     ];

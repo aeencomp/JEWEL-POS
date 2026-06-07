@@ -64,10 +64,13 @@ import RestaurantOrders from "@/pages/restaurant/restaurant-orders";
 import RestaurantQr from "@/pages/restaurant/restaurant-qr";
 import RestaurantReports from "@/pages/restaurant/restaurant-reports";
 import RestaurantDelivery from "@/pages/restaurant/restaurant-delivery";
+import RestaurantDrivers from "@/pages/restaurant/restaurant-drivers";
 import PublicOrderPage from "@/pages/public-order";
 import IqOrderHome from "@/pages/iq-order/iq-order-home";
 import IqOrderStore from "@/pages/iq-order/iq-order-store";
 import IqOrderTrack from "@/pages/iq-order/iq-order-track";
+import DriverLogin from "@/pages/driver/driver-login";
+import DriverApp from "@/pages/driver/driver-app";
 import { Loader2 } from "lucide-react";
 import { resolveUserPosSystem } from "@/lib/pos-system";
 
@@ -142,6 +145,7 @@ function RestaurantRouter() {
       <Route path="/restaurant/pos" component={RestaurantPos} />
       <Route path="/restaurant/kitchen" component={RestaurantKitchen} />
       <Route path="/restaurant/delivery" component={RestaurantDelivery} />
+      <Route path="/restaurant/drivers" component={RestaurantDrivers} />
       <Route path="/restaurant/menu" component={RestaurantMenu} />
       <Route path="/restaurant/orders" component={RestaurantOrders} />
       <Route path="/restaurant/reports" component={RestaurantReports} />
@@ -262,6 +266,8 @@ function AppContent() {
   }
 
   if (!user) {
+    if (location === "/driver-login") return <DriverLogin />;
+    if (location === "/driver" || location.startsWith("/driver/")) return <DriverApp />;
     if (location.startsWith("/app")) {
       return <IqOrderRouter />;
     }
@@ -307,6 +313,8 @@ function AppContent() {
   if (location === "/restaurant-login") {
     return <Redirect to={posSystem === "restaurant" ? "/restaurant" : home} />;
   }
+  if (location === "/driver-login") return <DriverLogin />;
+  if (location === "/driver" || location.startsWith("/driver/")) return <DriverApp />;
   if (location.startsWith("/app")) {
     return <IqOrderRouter />;
   }
