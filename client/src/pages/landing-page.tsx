@@ -162,7 +162,7 @@ const products: Product[] = [
 
 const features = [
   { icon: Globe, label: "Bilingual (EN/AR) + RTL", labelAr: "ثنائي اللغة + RTL" },
-  { icon: Zap, label: "Fast & Offline-ready", labelAr: "سريع وجاهز بدون إنترنت" },
+  { icon: Zap, label: "Fast cloud performance", labelAr: "أداء سريع عبر الإنترنت" },
   { icon: Shield, label: "Secure & Cloud-backed", labelAr: "آمن ومدعوم بالسحابة" },
   { icon: BarChart3, label: "Built-in Analytics", labelAr: "تحليلات مدمجة" },
 ];
