@@ -6,8 +6,8 @@ import type { Order, InventoryItem, Customer } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  ShoppingCart, Package, RotateCcw, Heart, TrendingUp, AlertTriangle,
-  ArrowRight, Shirt, Tag,
+  ShoppingCart, Package, RotateCcw, Heart,   TrendingUp, AlertTriangle,
+  ArrowRight, Shirt, Tag, FileText,
 } from "lucide-react";
 
 export default function FashionDashboard() {
@@ -44,6 +44,7 @@ export default function FashionDashboard() {
 
   const quickActions = [
     { href: "/fashion/pos", icon: ShoppingCart, label: isAr ? "نقطة البيع" : "Open POS", color: "#db2777" },
+    { href: "/fashion/reports", icon: FileText, label: isAr ? "تقرير اليوم" : "Daily Report", color: "#7c3aed" },
     { href: "/fashion/inventory", icon: Tag, label: isAr ? "إضافة منتجات" : "Manage Inventory", color: "#9333ea" },
     { href: "/fashion/returns", icon: RotateCcw, label: isAr ? "معالجة مرتجع" : "Process Return", color: "#e11d48" },
   ];
@@ -88,7 +89,7 @@ export default function FashionDashboard() {
         })}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (

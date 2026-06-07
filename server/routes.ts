@@ -1620,6 +1620,145 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/fashion/reports", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const store = await storage.getStore(storeId);
+    if (!store || store.posSystem !== "fashion") {
+      return res.status(400).json({ message: "Reports are for fashion stores only" });
+    }
+
+    const { from, to } = req.query as { from?: string; to?: string };
+    const fromDate = from ? new Date(from) : undefined;
+    let toDate = to ? new Date(to) : undefined;
+    if (toDate) toDate.setHours(23, 59, 59, 999);
+
+    function inRange(d: Date) {
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    }
+
+    const [allOrders, items, categories] = await Promise.all([
+      storage.getOrders(storeId),
+      storage.getInventoryItems(storeId),
+      storage.getCategories(storeId),
+    ]);
+
+    const filteredOrders = allOrders.filter((o) => inRange(new Date(o.createdAt)));
+    const completedOrders = filteredOrders.filter((o) => o.status === "completed");
+    const refundedOrders = filteredOrders.filter((o) => o.status === "refunded");
+    const cancelledOrders = filteredOrders.filter((o) => o.status === "cancelled");
+
+    const grossSales = completedOrders.reduce((s, o) => s + parseFloat(o.total), 0);
+    const totalDiscount = completedOrders.reduce((s, o) => s + parseFloat(o.discount || "0"), 0);
+    const returnsTotal = refundedOrders.reduce((s, o) => s + parseFloat(o.total), 0);
+    const netSales = grossSales - returnsTotal;
+    const loyaltyEarned = completedOrders.reduce((s, o) => s + (o.loyaltyPointsEarned || 0), 0);
+    const loyaltyRedeemed = completedOrders.reduce((s, o) => s + (o.loyaltyPointsRedeemed || 0), 0);
+
+    const orderItemArrays = await Promise.all(
+      completedOrders.map((ord) => storage.getOrderItems(ord.id)),
+    );
+    const allOrderItems = orderItemArrays.flat();
+    const itemsSold = allOrderItems.reduce((s, oi) => s + oi.quantity, 0);
+
+    const paymentBreakdown: Record<string, { count: number; total: number }> = {};
+    for (const o of completedOrders) {
+      const method = o.paymentMethod || "cash";
+      if (!paymentBreakdown[method]) paymentBreakdown[method] = { count: 0, total: 0 };
+      paymentBreakdown[method].count += 1;
+      paymentBreakdown[method].total += parseFloat(o.total);
+    }
+
+    const itemSalesMap: Record<number, { name: string; sku: string; qty: number; revenue: number }> = {};
+    for (const oi of allOrderItems) {
+      if (!itemSalesMap[oi.inventoryItemId]) {
+        const inv = items.find((i) => i.id === oi.inventoryItemId);
+        itemSalesMap[oi.inventoryItemId] = {
+          name: oi.name,
+          sku: oi.sku || inv?.sku || "",
+          qty: 0,
+          revenue: 0,
+        };
+      }
+      itemSalesMap[oi.inventoryItemId].qty += oi.quantity;
+      itemSalesMap[oi.inventoryItemId].revenue += parseFloat(oi.price) * oi.quantity;
+    }
+    const topProducts = Object.values(itemSalesMap)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    const categorySales: Record<number, { name: string; qty: number; revenue: number }> = {};
+    for (const oi of allOrderItems) {
+      const inv = items.find((i) => i.id === oi.inventoryItemId);
+      if (!inv) continue;
+      const catId = inv.categoryId;
+      if (!categorySales[catId]) {
+        categorySales[catId] = {
+          name: categories.find((c) => c.id === catId)?.name || "Other",
+          qty: 0,
+          revenue: 0,
+        };
+      }
+      categorySales[catId].qty += oi.quantity;
+      categorySales[catId].revenue += parseFloat(oi.price) * oi.quantity;
+    }
+    const topCategories = Object.values(categorySales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 8);
+
+    const dailyMap: Record<string, { date: string; sales: number; orders: number; returns: number }> = {};
+    for (const o of filteredOrders) {
+      const key = new Date(o.createdAt).toISOString().slice(0, 10);
+      if (!dailyMap[key]) dailyMap[key] = { date: key, sales: 0, orders: 0, returns: 0 };
+      if (o.status === "completed") {
+        dailyMap[key].sales += parseFloat(o.total);
+        dailyMap[key].orders += 1;
+      }
+      if (o.status === "refunded") {
+        dailyMap[key].returns += parseFloat(o.total);
+      }
+    }
+    const dailyBreakdown = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({
+      grossSales,
+      totalDiscount,
+      returnsTotal,
+      netSales,
+      orderCount: completedOrders.length,
+      itemsSold,
+      avgOrderValue: completedOrders.length > 0 ? grossSales / completedOrders.length : 0,
+      refundedCount: refundedOrders.length,
+      cancelledCount: cancelledOrders.length,
+      loyaltyEarned,
+      loyaltyRedeemed,
+      paymentBreakdown,
+      topProducts,
+      topCategories,
+      dailyBreakdown,
+      orders: completedOrders.map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        customerName: o.customerName,
+        total: o.total,
+        discount: o.discount,
+        paymentMethod: o.paymentMethod,
+        loyaltyPointsEarned: o.loyaltyPointsEarned,
+        loyaltyPointsRedeemed: o.loyaltyPointsRedeemed,
+        createdAt: o.createdAt,
+      })),
+      refundedOrders: refundedOrders.map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        customerName: o.customerName,
+        total: o.total,
+        createdAt: o.createdAt,
+      })),
+    });
+  });
+
   app.patch("/api/orders/:id/items", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
     const storeId = getEffectiveStoreId(req);

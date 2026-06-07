@@ -10,7 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { posSystemLabel, posSystemSubtitle } from "@/lib/pos-system";
 import {
   LayoutDashboard, ShoppingCart, Package, Users, ClipboardList, RotateCcw,
-  ClipboardCheck, HandCoins, Palette, HardDrive, LogOut, Menu, X, Shirt,
+  ClipboardCheck, HandCoins, Palette, HardDrive, LogOut, Menu, X, Shirt, FileText,
   ChevronRight, ArrowLeft,
 } from "lucide-react";
 
@@ -27,6 +27,7 @@ const navItems = [
   { path: "/fashion/customers", icon: Users, label: "Customers", labelAr: "العملاء" },
   { path: "/fashion/orders", icon: ClipboardList, label: "Sales", labelAr: "المبيعات" },
   { path: "/fashion/returns", icon: RotateCcw, label: "Returns", labelAr: "المرتجعات" },
+  { path: "/fashion/reports", icon: FileText, label: "Reports", labelAr: "التقارير" },
   { path: "/fashion/stock-audit", icon: ClipboardCheck, label: "Stock Audit", labelAr: "جرد المخزون" },
   { path: "/fashion/debts", icon: HandCoins, label: "Credit Sales", labelAr: "مبيعات آجلة" },
   { path: "/fashion/branding", icon: Palette, label: "Branding", labelAr: "العلامة التجارية" },

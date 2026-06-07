@@ -24,6 +24,7 @@ import FashionLogin from "@/pages/fashion/fashion-login";
 import FashionLayout from "@/pages/fashion/fashion-layout";
 import FashionDashboard from "@/pages/fashion/fashion-dashboard";
 import FashionPos from "@/pages/fashion/fashion-pos";
+import FashionReports from "@/pages/fashion/fashion-reports";
 import CustomersPage from "@/pages/customers-page";
 import OrdersHistory from "@/pages/orders-history";
 import RepairOrders from "@/pages/repair-orders";
@@ -97,6 +98,7 @@ function FashionRouter() {
       <Route path="/fashion/customers" component={CustomersPage} />
       <Route path="/fashion/orders" component={OrdersHistory} />
       <Route path="/fashion/returns" component={FashionReturns} />
+      <Route path="/fashion/reports" component={FashionReports} />
       <Route path="/fashion/stock-audit" component={StockAudit} />
       <Route path="/fashion/debts" component={DebtsPage} />
       <Route path="/fashion/branding" component={StoreBranding} />
