@@ -762,16 +762,40 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t py-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <IqPosLogo size={22} />
-          <span className="font-semibold text-sm">IQ-POS</span>
+      <footer className="border-t bg-muted/30">
+        <div className="max-w-6xl mx-auto px-4 py-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <IqPosLogo size={36} />
+              <div className="text-start">
+                <p className="font-bold text-base tracking-tight">IQ-POS</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr ? "منصة نقاط البيع العراقية" : "Iraqi Point of Sale Platform"}
+                </p>
+              </div>
+            </div>
+
+            <a
+              href="https://www.iq-pos.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-colors w-fit"
+            >
+              <Globe className="h-4 w-4" />
+              <span dir="ltr">www.iq-pos.com</span>
+            </a>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground">
+            <p>
+              {isAr ? "© 2026 IQ-POS. جميع الحقوق محفوظة." : "© 2026 IQ-POS Platform. All rights reserved."}
+            </p>
+            <p className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5 opacity-60" />
+              {isAr ? "آمن · سحابي · ثنائي اللغة" : "Secure · Cloud · Bilingual"}
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {isAr ? "جميع الحقوق محفوظة © 2026 IQ-POS" : "© 2026 IQ-POS Platform. All rights reserved."}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">www.IQ-pos.com</p>
-        <p className="text-xs text-muted-foreground mt-0.5" dir="ltr">+964 781 624 4402</p>
       </footer>
 
       {/* Sign-up Request Dialog */}
