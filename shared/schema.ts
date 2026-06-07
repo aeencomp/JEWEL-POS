@@ -40,7 +40,7 @@ export const stores = pgTable("stores", {
   logoUrl: text("logo_url"),
   receiptHeader: text("receipt_header"),
   receiptFooter: text("receipt_footer"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion"] }).notNull().default("jewel"),
   features: text("features"),
 });
 
@@ -108,6 +108,9 @@ export const inventoryItems = pgTable("inventory_items", {
   quantity: integer("quantity").notNull().default(1),
   isAvailable: boolean("is_available").notNull().default(true),
   imageUrl: text("image_url"),
+  size: text("size"),
+  color: text("color"),
+  brand: text("brand"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -341,7 +344,7 @@ export const signupRequests = pgTable("signup_requests", {
   businessName: text("business_name").notNull(),
   phone: text("phone").notNull(),
   email: text("email"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion"] }).notNull().default("jewel"),
   notes: text("notes"),
   status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

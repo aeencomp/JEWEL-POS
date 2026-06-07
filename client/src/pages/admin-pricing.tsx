@@ -8,14 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
-import { Gem, Droplets, Loader2, Save, Tag } from "lucide-react";
+import { Gem, Droplets, Shirt, Loader2, Save, Tag } from "lucide-react";
 
 type PricingPlan = { basic: number; standard: number; premium: number };
-type Pricing = { jewel: PricingPlan; oil: PricingPlan };
+type Pricing = { jewel: PricingPlan; oil: PricingPlan; fashion: PricingPlan };
 
 const DEFAULT: Pricing = {
   jewel: { basic: 35000, standard: 55000, premium: 85000 },
-  oil:   { basic: 50000, standard: 75000, premium: 110000 },
+  oil: { basic: 50000, standard: 75000, premium: 110000 },
+  fashion: { basic: 30000, standard: 45000, premium: 65000 },
 };
 
 function fmt(n: number) {
@@ -35,7 +36,7 @@ export default function AdminPricing() {
   const [draft, setDraft] = useState<Pricing>(DEFAULT);
 
   useEffect(() => {
-    if (pricing) setDraft(pricing);
+    if (pricing) setDraft({ ...DEFAULT, ...pricing, fashion: { ...DEFAULT.fashion, ...pricing.fashion } });
   }, [pricing]);
 
   const saveMutation = useMutation({
@@ -59,7 +60,7 @@ export default function AdminPricing() {
     },
   });
 
-  function handleChange(system: "jewel" | "oil", plan: keyof PricingPlan, raw: string) {
+  function handleChange(system: keyof Pricing, plan: keyof PricingPlan, raw: string) {
     const val = parseInt(raw.replace(/,/g, ""), 10);
     if (!isNaN(val)) {
       setDraft(prev => ({ ...prev, [system]: { ...prev[system], [plan]: val } }));
@@ -155,6 +156,49 @@ export default function AdminPricing() {
                 <p className="text-xs text-muted-foreground">
                   {isAr ? "العرض:" : "Preview:"} <span className="font-mono font-semibold">{fmt(draft.jewel[plan])}</span>
                 </p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* FashionPOS */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+              <Shirt className="h-4 w-4 text-white" />
+            </div>
+            FashionPOS
+            <span className="text-sm text-muted-foreground font-normal">
+              {isAr ? "— لمحلات الملابس" : "— Clothing Stores"}
+            </span>
+          </CardTitle>
+          <CardDescription>
+            {isAr ? "أسعار الخطط الشهرية لنظام محلات الأزياء والملابس" : "Monthly plan prices for apparel and fashion stores"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {(["basic", "standard", "premium"] as const).map((plan) => (
+              <div key={plan} className="space-y-2">
+                <Label htmlFor={`fashion-${plan}`} className="text-sm font-semibold capitalize">
+                  {planLabels[plan]}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id={`fashion-${plan}`}
+                    data-testid={`input-price-fashion-${plan}`}
+                    type="number"
+                    value={draft.fashion[plan]}
+                    onChange={(e) => handleChange("fashion", plan, e.target.value)}
+                    className="pe-16"
+                    min={0}
+                  />
+                  <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                    {isAr ? "د.ع/شهر" : "IQD/mo"}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

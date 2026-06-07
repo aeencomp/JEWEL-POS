@@ -131,7 +131,8 @@ const products: Product[] = [
     descriptionAr: "إدارة محلات الملابس والأزياء مع متغيرات الحجم واللون والإرجاع وبرامج الولاء.",
     icon: Shirt,
     gradient: "from-pink-500 to-purple-600",
-    available: false,
+    available: true,
+    href: "/store-portal",
     tags: ["Fashion", "Variants", "Loyalty"],
     tagsAr: ["أزياء", "متغيرات", "ولاء"],
   },
@@ -161,7 +162,7 @@ type SignupForm = {
   businessName: string;
   phone: string;
   email: string;
-  posSystem: "jewel" | "oil";
+  posSystem: "jewel" | "oil" | "fashion";
   notes: string;
 };
 
@@ -573,7 +574,7 @@ export default function LandingPage() {
                 {/* POS System selector */}
                 <div className="space-y-1.5">
                   <Label>{isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setForm(f => ({ ...f, posSystem: "jewel" }))}
@@ -592,6 +593,22 @@ export default function LandingPage() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setForm(f => ({ ...f, posSystem: "fashion" }))}
+                      data-testid="pos-select-fashion"
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                        form.posSystem === "fashion"
+                          ? "border-pink-500 bg-pink-50 dark:bg-pink-950/30"
+                          : "border-border hover:border-pink-300 bg-card"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                        <Shirt className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold">FashionPOS</span>
+                      <span className="text-[10px] text-muted-foreground">{isAr ? "ملابس" : "Clothing"}</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setForm(f => ({ ...f, posSystem: "oil" }))}
                       data-testid="pos-select-oil"
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
@@ -604,7 +621,7 @@ export default function LandingPage() {
                         <Droplets className="h-5 w-5 text-white" />
                       </div>
                       <span className="text-sm font-semibold">FactoryPOS</span>
-                      <span className="text-[10px] text-muted-foreground">{isAr ? "زيوت / مصنع" : "Oil / Factory"}</span>
+                      <span className="text-[10px] text-muted-foreground">{isAr ? "زيوت" : "Factory"}</span>
                     </button>
                   </div>
                 </div>

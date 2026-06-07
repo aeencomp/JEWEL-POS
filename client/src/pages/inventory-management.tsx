@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
+import { isFashionStore } from "@/lib/pos-system";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category } from "@shared/schema";
@@ -80,6 +82,9 @@ const inventoryFormSchema = z.object({
   sellingPrice: z.string().min(1, "Selling price is required"),
   quantity: z.coerce.number().min(0),
   imageUrl: z.string().optional(),
+  size: z.string().optional(),
+  color: z.string().optional(),
+  brand: z.string().optional(),
 });
 
 type InventoryFormValues = z.infer<typeof inventoryFormSchema>;
@@ -115,6 +120,8 @@ function getStockStatus(qty: number, isAvailable: boolean): { label: string; cla
 export default function InventoryManagement() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -161,6 +168,9 @@ export default function InventoryManagement() {
       sellingPrice: "",
       quantity: 1,
       imageUrl: "",
+      size: "",
+      color: "",
+      brand: "",
     },
   });
 
@@ -344,6 +354,9 @@ export default function InventoryManagement() {
       sellingPrice: "",
       quantity: 1,
       imageUrl: "",
+      size: "",
+      color: "",
+      brand: "",
     });
     setItemDialogOpen(true);
   }
@@ -364,6 +377,9 @@ export default function InventoryManagement() {
       sellingPrice: item.sellingPrice,
       quantity: item.quantity,
       imageUrl: item.imageUrl || "",
+      size: (item as InventoryItem & { size?: string }).size || "",
+      color: (item as InventoryItem & { color?: string }).color || "",
+      brand: (item as InventoryItem & { brand?: string }).brand || "",
     });
     setItemDialogOpen(true);
   }
@@ -796,53 +812,81 @@ export default function InventoryManagement() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={itemForm.control} name="metalType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("inventory.metalType")}</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-item-metal"><SelectValue /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="gold">{t("inventory.gold")}</SelectItem>
-                        <SelectItem value="silver">{t("inventory.silver")}</SelectItem>
-                        <SelectItem value="platinum">{t("inventory.platinum")}</SelectItem>
-                        <SelectItem value="white_gold">{t("inventory.whiteGold")}</SelectItem>
-                        <SelectItem value="rose_gold">{t("inventory.roseGold")}</SelectItem>
-                        <SelectItem value="other">{t("inventory.other")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={itemForm.control} name="purity" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("inventory.purity")}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-item-purity" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={itemForm.control} name="weightGrams" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("inventory.weight")}</FormLabel>
-                    <FormControl><Input {...field} type="number" step="0.001" data-testid="input-item-weight" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={itemForm.control} name="gemstone" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("inventory.gemstone")}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-item-gemstone" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={itemForm.control} name="caratWeight" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("inventory.caratWeight")}</FormLabel>
-                    <FormControl><Input {...field} type="number" step="0.01" data-testid="input-item-carat" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                {isFashion ? (
+                  <>
+                    <FormField control={itemForm.control} name="brand" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.brand")}</FormLabel>
+                        <FormControl><Input {...field} placeholder="Nike, Zara..." data-testid="input-item-brand" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={itemForm.control} name="size" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.size")}</FormLabel>
+                        <FormControl><Input {...field} placeholder="S, M, L, 42..." data-testid="input-item-size" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={itemForm.control} name="color" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.color")}</FormLabel>
+                        <FormControl><Input {...field} placeholder="Black, Blue..." data-testid="input-item-color" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </>
+                ) : (
+                  <>
+                    <FormField control={itemForm.control} name="metalType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.metalType")}</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-item-metal"><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="gold">{t("inventory.gold")}</SelectItem>
+                            <SelectItem value="silver">{t("inventory.silver")}</SelectItem>
+                            <SelectItem value="platinum">{t("inventory.platinum")}</SelectItem>
+                            <SelectItem value="white_gold">{t("inventory.whiteGold")}</SelectItem>
+                            <SelectItem value="rose_gold">{t("inventory.roseGold")}</SelectItem>
+                            <SelectItem value="other">{t("inventory.other")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={itemForm.control} name="purity" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.purity")}</FormLabel>
+                        <FormControl><Input {...field} data-testid="input-item-purity" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={itemForm.control} name="weightGrams" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.weight")}</FormLabel>
+                        <FormControl><Input {...field} type="number" step="0.001" data-testid="input-item-weight" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={itemForm.control} name="gemstone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.gemstone")}</FormLabel>
+                        <FormControl><Input {...field} data-testid="input-item-gemstone" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={itemForm.control} name="caratWeight" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("inventory.caratWeight")}</FormLabel>
+                        <FormControl><Input {...field} type="number" step="0.01" data-testid="input-item-carat" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </>
+                )}
                 <FormField control={itemForm.control} name="costPrice" render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("inventory.costPrice")}</FormLabel>

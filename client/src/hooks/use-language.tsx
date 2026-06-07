@@ -125,6 +125,9 @@ type TranslationKeys = {
   "inventory.weight": string;
   "inventory.gemstone": string;
   "inventory.caratWeight": string;
+  "inventory.brand": string;
+  "inventory.size": string;
+  "inventory.color": string;
   "inventory.costPrice": string;
   "inventory.sellingPrice": string;
   "inventory.quantity": string;
@@ -560,6 +563,9 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.weight": "Weight (g)",
     "inventory.gemstone": "Gemstone",
     "inventory.caratWeight": "Carat Weight",
+    "inventory.brand": "Brand",
+    "inventory.size": "Size",
+    "inventory.color": "Color",
     "inventory.costPrice": "Cost Price",
     "inventory.sellingPrice": "Selling Price",
     "inventory.quantity": "Quantity",
@@ -990,6 +996,9 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.weight": "الوزن (جرام)",
     "inventory.gemstone": "الحجر الكريم",
     "inventory.caratWeight": "وزن القيراط",
+    "inventory.brand": "العلامة",
+    "inventory.size": "المقاس",
+    "inventory.color": "اللون",
     "inventory.costPrice": "سعر التكلفة",
     "inventory.sellingPrice": "سعر البيع",
     "inventory.quantity": "الكمية",

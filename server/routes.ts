@@ -554,7 +554,18 @@ export async function registerRoutes(
         email: storeData.email || null,
         address: storeData.address || null,
         isActive: true,
-        posSystem: storeData.posSystem === "oil" ? "oil" : "jewel",
+        posSystem:
+          storeData.posSystem === "oil"
+            ? "oil"
+            : storeData.posSystem === "fashion"
+              ? "fashion"
+              : "jewel",
+        brandColor:
+          storeData.posSystem === "fashion"
+            ? "#db2777"
+            : storeData.posSystem === "oil"
+              ? "#2563eb"
+              : "#d4a574",
       });
 
       const planPrices: Record<string, string> = {
@@ -668,7 +679,8 @@ export async function registerRoutes(
 
   const DEFAULT_PRICING = {
     jewel: { basic: 35000, standard: 55000, premium: 85000 },
-    oil:   { basic: 50000, standard: 75000, premium: 110000 },
+    oil: { basic: 50000, standard: 75000, premium: 110000 },
+    fashion: { basic: 30000, standard: 45000, premium: 65000 },
   };
 
   app.get("/api/pricing", async (_req, res) => {
@@ -1212,6 +1224,9 @@ export async function registerRoutes(
     if (body.purity === "") body.purity = null;
     if (body.gemstone === "") body.gemstone = null;
     if (body.imageUrl === "") body.imageUrl = null;
+    if (body.size === "") body.size = null;
+    if (body.color === "") body.color = null;
+    if (body.brand === "") body.brand = null;
     if (!body.barcode) {
       body.barcode = `JWL${storeId}${Date.now().toString(36).toUpperCase()}`;
     }
@@ -1235,6 +1250,9 @@ export async function registerRoutes(
     if (body.purity === "") body.purity = null;
     if (body.gemstone === "") body.gemstone = null;
     if (body.imageUrl === "") body.imageUrl = null;
+    if (body.size === "") body.size = null;
+    if (body.color === "") body.color = null;
+    if (body.brand === "") body.brand = null;
     if (body.quantity !== undefined) {
       const qty = Number(body.quantity);
       if (!Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {

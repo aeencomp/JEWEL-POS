@@ -69,9 +69,21 @@ import {
   KeyRound,
   Gem,
   Droplets,
+  Shirt,
   ShieldCheck,
   RotateCcw,
 } from "lucide-react";
+import { posSystemLabel, type PosSystem } from "@/lib/pos-system";
+
+const POS_TYPE_OPTIONS = [
+  { value: "jewel" as const, label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
+  { value: "fashion" as const, label: "FashionPOS", sub: "Clothing store", Icon: Shirt, color: "#db2777" },
+  { value: "oil" as const, label: "FactoryPOS", sub: "Oil factory ERP", Icon: Droplets, color: "#06b6d4" },
+];
+
+function storePosMeta(posSystem: string) {
+  return POS_TYPE_OPTIONS.find((o) => o.value === posSystem) ?? POS_TYPE_OPTIONS[0];
+}
 import type { Store } from "@shared/schema";
 
 type StoreWithUsername = Store & { storeUsername?: string | null };
@@ -97,7 +109,7 @@ const createStoreSchema = z.object({
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
   plan: z.enum(["basic", "standard", "premium"]),
-  posSystem: z.enum(["jewel", "oil"]),
+  posSystem: z.enum(["jewel", "oil", "fashion"]),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -110,7 +122,7 @@ const editStoreSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
-  posSystem: z.enum(["jewel", "oil"]).optional(),
+  posSystem: z.enum(["jewel", "oil", "fashion"]).optional(),
   password: z.string().min(6, "Password must be at least 6 characters").or(z.literal("")).optional(),
 });
 
@@ -207,7 +219,7 @@ export default function AdminStores() {
       phone: store.phone || "",
       email: store.email || "",
       address: store.address || "",
-      posSystem: store.posSystem as "jewel" | "oil" || "jewel",
+      posSystem: (store.posSystem as PosSystem) || "jewel",
       password: "",
     });
     setEditStore(store);
@@ -443,11 +455,8 @@ export default function AdminStores() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>POS System</FormLabel>
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { value: "jewel", label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
-                          { value: "oil", label: "OilPOS", sub: "Oil factory ERP", Icon: Droplets, color: "#06b6d4" },
-                        ].map(({ value, label, sub, Icon, color }) => (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {POS_TYPE_OPTIONS.map(({ value, label, sub, Icon, color }) => (
                           <button
                             key={value}
                             type="button"
@@ -558,17 +567,18 @@ export default function AdminStores() {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
+                    {(() => {
+                      const meta = storePosMeta(store.posSystem);
+                      const Icon = meta.Icon;
+                      return (
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{
-                        backgroundColor: store.posSystem === "oil" ? "#06b6d420" : "#d4a57420",
-                      }}
+                      style={{ backgroundColor: meta.color + "20" }}
                     >
-                      {store.posSystem === "oil"
-                        ? <Droplets className="h-5 w-5" style={{ color: "#06b6d4" }} />
-                        : <Gem className="h-5 w-5" style={{ color: "#d4a574" }} />
-                      }
+                      <Icon className="h-5 w-5" style={{ color: meta.color }} />
                     </div>
+                      );
+                    })()}
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3
@@ -580,11 +590,11 @@ export default function AdminStores() {
                         <span
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
                           style={{
-                            backgroundColor: store.posSystem === "oil" ? "#06b6d415" : "#d4a57415",
-                            color: store.posSystem === "oil" ? "#06b6d4" : "#d4a574",
+                            backgroundColor: storePosMeta(store.posSystem).color + "15",
+                            color: storePosMeta(store.posSystem).color,
                           }}
                         >
-                          {store.posSystem === "oil" ? "OilPOS" : "JewelPOS"}
+                          {posSystemLabel(store.posSystem as PosSystem, false)}
                         </span>
                       </div>
                       <p
@@ -846,11 +856,8 @@ export default function AdminStores() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>POS System</FormLabel>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { value: "jewel", label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
-                        { value: "oil", label: "OilPOS", sub: "Oil factory ERP", Icon: Droplets, color: "#06b6d4" },
-                      ].map(({ value, label, sub, Icon, color }) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {POS_TYPE_OPTIONS.map(({ value, label, sub, Icon, color }) => (
                         <button
                           key={value}
                           type="button"

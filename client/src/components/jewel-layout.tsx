@@ -10,8 +10,9 @@ import {
   ShoppingCart, Package, Users, ClipboardList, Wrench,
   Clock, Palette, LogOut, Menu, X, Gem, ChevronRight,
   ShoppingBag, HandCoins, ClipboardCheck, HardDrive, ArrowLeft,
-  Wifi,
+  Wifi, Shirt,
 } from "lucide-react";
+import { isFashionStore, JEWEL_ONLY_PATHS, posSystemLabel, posSystemSubtitle } from "@/lib/pos-system";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -79,12 +80,18 @@ export default function JewelLayout({
     },
   });
 
-  const brandColor = branding?.brandColor || "#d4a574";
+  const posSystem = (user as { posSystem?: string })?.posSystem;
+  const isFashion = isFashionStore(posSystem);
+  const brandColor = branding?.brandColor || (isFashion ? "#db2777" : "#d4a574");
+  const visibleNavItems = isFashion
+    ? navItems.filter((item) => !JEWEL_ONLY_PATHS.includes(item.path))
+    : navItems;
+  const StoreIcon = isFashion ? Shirt : Gem;
 
   const isActive = (item: (typeof navItems)[0]) =>
     item.exact ? location === item.path : location.startsWith(item.path);
 
-  const currentPage = navItems.find((i) => isActive(i));
+  const currentPage = visibleNavItems.find((i) => isActive(i));
 
   // ── Sidebar theme tokens ──────────────────────────────────────────────────
   // Light mode → warm rich dark (luxury jewelry feel)
@@ -133,15 +140,15 @@ export default function JewelLayout({
                 boxShadow: `0 4px 18px ${brandColor}50`,
               }}
             >
-              <Gem className="h-5 w-5 text-white drop-shadow" />
+              <StoreIcon className="h-5 w-5 text-white drop-shadow" />
             </div>
           )}
           <div className="min-w-0">
             <p className="font-bold text-sm tracking-tight text-white truncate leading-tight">
-              {branding?.name || "JewelPOS"}
+              {branding?.name || posSystemLabel(isFashion ? "fashion" : "jewel", isAr)}
             </p>
             <p className="text-[11px] leading-tight mt-0.5" style={{ color: inactiveText }}>
-              {isAr ? "نظام إدارة المجوهرات" : "Jewelry Management"}
+              {posSystemSubtitle(isFashion ? "fashion" : "jewel", isAr)}
             </p>
           </div>
         </div>
@@ -156,7 +163,7 @@ export default function JewelLayout({
           {isAr ? "القائمة" : "Main Menu"}
         </p>
 
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
 
