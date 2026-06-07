@@ -286,3 +286,70 @@
     inset: -1px;
   }
 }
+
+/* FashionPOS — branded scrollbars (uses --fashion-brand from layout) */
+.fashion-scroll {
+  --fashion-brand: #db2777;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fashion-brand) transparent;
+}
+
+.fashion-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.fashion-scroll::-webkit-scrollbar-button,
+.fashion-scroll::-webkit-scrollbar-corner {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.fashion-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+  margin: 6px 0;
+}
+
+.fashion-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fashion-brand) 70%, white),
+    var(--fashion-brand)
+  );
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--fashion-brand) 40%, transparent);
+  min-height: 40px;
+}
+
+.fashion-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--fashion-brand);
+}
+
+/* Sidebar — blends with dark purple nav */
+.fashion-scroll-dark {
+  scrollbar-color: var(--fashion-brand) rgba(255, 255, 255, 0.06);
+}
+
+.fashion-scroll-dark::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.fashion-scroll-dark::-webkit-scrollbar-thumb {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--fashion-brand) 50%, transparent);
+}
+
+/* Main content — soft pink tint track */
+.fashion-scroll-light {
+  scrollbar-color: var(--fashion-brand) rgba(219, 39, 119, 0.1);
+}
+
+.fashion-scroll-light::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--fashion-brand) 8%, transparent);
+}
+
+.fashion-scroll-light::-webkit-scrollbar-thumb {
+  border: 1px solid color-mix(in srgb, var(--fashion-brand) 25%, white);
+}

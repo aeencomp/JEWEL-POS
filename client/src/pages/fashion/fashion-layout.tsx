@@ -71,6 +71,7 @@ export default function FashionLayout({
   });
 
   const brandColor = branding?.brandColor || "#db2777";
+  const brandStyle = { "--fashion-brand": brandColor } as React.CSSProperties;
 
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/logout"),
@@ -90,7 +91,10 @@ export default function FashionLayout({
     : "linear-gradient(160deg, #2d0a1e 0%, #4a1942 60%, #2d0a1e 100%)";
 
   const Sidebar = () => (
-    <div className="flex flex-col h-full" style={{ background: sidebarBg, borderInlineEnd: "1px solid rgba(255,255,255,0.08)" }}>
+    <div
+      className="flex flex-col h-full"
+      style={{ ...brandStyle, background: sidebarBg, borderInlineEnd: "1px solid rgba(255,255,255,0.08)" }}
+    >
       <div className="px-5 pt-6 pb-5 border-b border-white/10">
         <div className="flex items-center gap-3">
           {branding?.logoUrl ? (
@@ -112,7 +116,7 @@ export default function FashionLayout({
         </div>
       </div>
 
-      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto fashion-scroll fashion-scroll-dark">
         <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-3 text-pink-200/40">
           {isAr ? "القائمة" : "Menu"}
         </p>
@@ -186,7 +190,11 @@ export default function FashionLayout({
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: isDark ? "#0f0a12" : "#fdf2f8" }} dir={isAr ? "rtl" : "ltr"}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ ...brandStyle, background: isDark ? "#0f0a12" : "#fdf2f8" }}
+      dir={isAr ? "rtl" : "ltr"}
+    >
       <aside className="hidden md:flex flex-col w-60 flex-shrink-0 shadow-xl">
         <Sidebar />
       </aside>
@@ -229,7 +237,7 @@ export default function FashionLayout({
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto fashion-scroll fashion-scroll-light">{children}</main>
       </div>
     </div>
   );
