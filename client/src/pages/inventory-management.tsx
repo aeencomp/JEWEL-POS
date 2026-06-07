@@ -58,12 +58,14 @@ import {
   ChevronDown,
   ChevronRight,
   Barcode,
+  RefreshCw,
   Power,
   Gem,
   Shirt,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
+import { generateInventoryBarcode } from "@/lib/barcode";
 
 const categoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -87,6 +89,7 @@ const inventoryFormSchema = z.object({
   color: z.string().optional(),
   brand: z.string().optional(),
   styleCode: z.string().optional(),
+  barcode: z.string().optional(),
 });
 
 type InventoryFormValues = z.infer<typeof inventoryFormSchema>;
@@ -185,6 +188,7 @@ export default function InventoryManagement() {
       color: "",
       brand: "",
       styleCode: "",
+      barcode: "",
     },
   });
 
@@ -374,10 +378,34 @@ export default function InventoryManagement() {
       }, 0) / inventory.length)
     : 0;
 
+  function barcodeSuffix(): string {
+    const values = itemForm.getValues();
+    if (isFashion) {
+      return `${values.styleCode || ""}${values.size || ""}${values.color || ""}`;
+    }
+    return values.sku || "";
+  }
+
+  function handleGenerateSku() {
+    const catId = itemForm.getValues("categoryId");
+    if (!catId) return;
+    itemForm.setValue("sku", generateSku(categories, catId, inventory));
+  }
+
+  function handleGenerateBarcode() {
+    const storeId = user?.storeId;
+    if (!storeId) return;
+    const posSystem = (user as { posSystem?: string })?.posSystem;
+    itemForm.setValue("barcode", generateInventoryBarcode(storeId, posSystem, barcodeSuffix()));
+  }
+
   function openAddItem() {
     setEditingItem(null);
     const defaultCategoryId = categories.length > 0 ? categories[0].id : 0;
     const sku = defaultCategoryId ? generateSku(categories, defaultCategoryId, inventory) : "";
+    const storeId = user?.storeId;
+    const posSystem = (user as { posSystem?: string })?.posSystem;
+    const barcode = storeId ? generateInventoryBarcode(storeId, posSystem, sku) : "";
     itemForm.reset({
       sku,
       name: "",
@@ -396,6 +424,7 @@ export default function InventoryManagement() {
       color: "",
       brand: "",
       styleCode: "",
+      barcode,
     });
     setItemDialogOpen(true);
   }
@@ -420,6 +449,7 @@ export default function InventoryManagement() {
       color: (item as InventoryItem & { color?: string }).color || "",
       brand: (item as InventoryItem & { brand?: string }).brand || "",
       styleCode: (item as InventoryItem & { styleCode?: string }).styleCode || "",
+      barcode: item.barcode || "",
     });
     setItemDialogOpen(true);
   }
@@ -873,7 +903,54 @@ export default function InventoryManagement() {
                 <FormField control={itemForm.control} name="sku" render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("inventory.sku")}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-item-sku" /></FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input {...field} className="flex-1 font-mono" data-testid="input-item-sku" />
+                      </FormControl>
+                      {!editingItem && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={handleGenerateSku}
+                          title={t("inventory.generateSku")}
+                          data-testid="button-generate-sku"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={itemForm.control} name="barcode" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("inventory.barcode")}</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="flex-1 font-mono text-sm"
+                          readOnly={!!editingItem?.barcode}
+                          placeholder={t("inventory.generateBarcode")}
+                          data-testid="input-item-barcode"
+                        />
+                      </FormControl>
+                      {(!editingItem || !editingItem.barcode) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={handleGenerateBarcode}
+                          title={t("inventory.generateBarcode")}
+                          data-testid="button-generate-barcode"
+                        >
+                          <Barcode className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1034,16 +1111,6 @@ export default function InventoryManagement() {
                   <FormMessage />
                 </FormItem>
               )} />
-              {!editingItem && (
-                <p className="text-xs text-muted-foreground">
-                  {isAr ? "يُنشأ الباركود تلقائياً عند الحفظ" : "Barcode is auto-generated when you save"}
-                </p>
-              )}
-              {editingItem?.barcode && (
-                <p className="text-xs font-mono text-muted-foreground">
-                  {t("inventory.barcode")}: {editingItem.barcode}
-                </p>
-              )}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => { setItemDialogOpen(false); setEditingItem(null); }} data-testid="button-cancel-item">
                   {t("common.cancel")}

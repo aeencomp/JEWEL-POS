@@ -151,6 +151,8 @@ type TranslationKeys = {
   "inventory.noItems": string;
   "inventory.profit": string;
   "inventory.barcode": string;
+  "inventory.generateBarcode": string;
+  "inventory.generateSku": string;
   "inventory.viewBarcode": string;
   "inventory.styleCode": string;
   "inventory.addVariants": string;
@@ -633,6 +635,8 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noItems": "No items in inventory",
     "inventory.profit": "Profit",
     "inventory.barcode": "Barcode",
+    "inventory.generateBarcode": "Generate barcode",
+    "inventory.generateSku": "Generate SKU",
     "inventory.viewBarcode": "View Barcode",
     "inventory.styleCode": "Style Code",
     "inventory.addVariants": "Add Variants",
@@ -1097,6 +1101,8 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noItems": "لا توجد منتجات في المخزون",
     "inventory.profit": "الربح",
     "inventory.barcode": "الباركود",
+    "inventory.generateBarcode": "إنشاء باركود",
+    "inventory.generateSku": "إنشاء رمز المنتج",
     "inventory.viewBarcode": "عرض الباركود",
     "inventory.styleCode": "رمز الطراز",
     "inventory.addVariants": "إضافة متغيرات",

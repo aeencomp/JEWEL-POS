@@ -173,9 +173,6 @@ th, td {
 .detail-lbl { font-weight: 900 !important; }
 .totals td { border: 3px solid #000; padding: 6px 4px; }
 .grand td { font-size: 19px !important; padding: 10px 4px !important; border: 4px solid #000 !important; }
-.barcode { text-align: center; margin: 10px 0 6px; }
-.barcode svg { max-width: 100%; height: auto; }
-.barcode text, .barcode rect { fill: #000 !important; stroke: #000 !important; }
 .footer { text-align: center; margin-top: 12px; font-size: 14px !important; }
 .thanks { font-size: 17px !important; font-weight: 900 !important; margin: 10px 0; }
 @media print {
@@ -266,7 +263,6 @@ function buildThermalBody(ctx: ReturnType<typeof buildContext>) {
   <tr><td><b>${esc(labels.orderNumber)}</b></td><td class="r"><b>${esc(order.orderNumber)}</b></td></tr>
   <tr><td><b>${esc(labels.date)}</b></td><td class="r"><b>${esc(dateStr)}</b></td></tr>
 </table>
-${orderBarcodeSvg(order.orderNumber, "thermal")}
 ${customerBlock}
 ${notesBlock}
 <table>
