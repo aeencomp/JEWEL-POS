@@ -42,6 +42,7 @@ type TranslationKeys = {
   "auth.noAccount": string;
   "auth.hasAccount": string;
   "auth.adminPortal": string;
+  "auth.adminControlPanel": string;
   "auth.storePortal": string;
   "auth.storeLoginTitle": string;
   "auth.storeLoginSubtitle": string;
@@ -515,6 +516,7 @@ const translations: Record<Language, TranslationKeys> = {
     "auth.noAccount": "Don't have an account? Register",
     "auth.hasAccount": "Already have an account? Sign in",
     "auth.adminPortal": "Admin Portal",
+    "auth.adminControlPanel": "Admin Control Panel",
     "auth.storePortal": "Store Portal",
     "auth.storeLoginTitle": "Store Login",
     "auth.storeLoginSubtitle": "Sign in to access your jewelry store POS",
@@ -983,6 +985,7 @@ const translations: Record<Language, TranslationKeys> = {
     "auth.noAccount": "ليس لديك حساب؟ سجّل الآن",
     "auth.hasAccount": "لديك حساب بالفعل؟ سجّل الدخول",
     "auth.adminPortal": "بوابة الإدارة",
+    "auth.adminControlPanel": "لوحة تحكم الإدارة",
     "auth.storePortal": "بوابة المتجر",
     "auth.storeLoginTitle": "دخول المتجر",
     "auth.storeLoginSubtitle": "سجّل الدخول للوصول إلى نقطة بيع المجوهرات",

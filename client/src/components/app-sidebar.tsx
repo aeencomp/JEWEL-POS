@@ -105,7 +105,7 @@ export function AppSidebar() {
           )}
           <div>
             <span className="font-semibold text-sm" data-testid="text-app-name">
-              {showStoreNav && branding?.name ? branding.name : "JewelPOS"}
+              {showStoreNav && branding?.name ? branding.name : t("auth.adminControlPanel")}
             </span>
             <p className="text-xs text-muted-foreground">
               {showStoreNav ? t("auth.storePortal") : t("auth.adminPortal")}

@@ -66,7 +66,7 @@ export default function AuthPage() {
               <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
                 <Gem className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-semibold text-lg">JewelPOS</span>
+              <span className="font-semibold text-lg">{t("auth.adminControlPanel")}</span>
             </div>
             <h1 className="text-2xl font-bold mt-4" data-testid="text-auth-title">
               {isRegister ? t("auth.register") : t("auth.adminLoginTitle")}
@@ -204,7 +204,7 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
         <div className="relative z-10 max-w-md text-primary-foreground">
           <h2 className="text-3xl font-bold mb-3">
-            JewelPOS
+            {t("auth.adminControlPanel")}
           </h2>
           <p className="text-primary-foreground/80 mb-10 text-sm leading-relaxed">
             {t("auth.adminLoginSubtitle")}
