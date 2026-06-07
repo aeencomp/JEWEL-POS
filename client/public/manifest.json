@@ -1,12 +1,14 @@
 {
-  "name": "IQ-POS Factory ERP",
+  "name": "IQ-POS Platform",
   "short_name": "IQ-POS",
-  "description": "Factory ERP System – Oil Factory Management",
-  "start_url": "/oil",
+  "description": "IQ-POS — Multi-store POS platform for jewelry, fashion, restaurants, oil factories, and more.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
+  "theme_color": "#b45309",
+  "orientation": "any",
   "icons": [
     {
       "src": "/favicon.png",
