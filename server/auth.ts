@@ -20,6 +20,7 @@ declare module "express-session" {
     impersonatingStoreName?: string;
     pendingUserId?: number;
     demoStoreId?: number;
+    demoPosSystem?: DemoPosSystem;
   }
 }
 
@@ -52,18 +53,30 @@ const verifyAttempts = new Map<number, { count: number; lastAttempt: number }>()
 const MAX_VERIFY_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 
+type DemoSession = { demoStoreId?: number; demoPosSystem?: DemoPosSystem };
+
 /** Attach store posSystem so portal logins (Jewel / Fashion / Oil / Restaurant) can route correctly */
 async function enrichUserResponse(
   user: SelectUser,
-  session?: { demoStoreId?: number },
+  session?: DemoSession,
+  demoPosFallback?: DemoPosSystem,
 ): Promise<Record<string, unknown>> {
   const userData: Record<string, unknown> = { ...user };
-  if (isDemoUser(user) && session?.demoStoreId) {
-    const store = await storage.getStore(session.demoStoreId);
-    if (store) {
-      userData.posSystem = store.posSystem;
-      userData.demoStoreId = store.id;
-      userData.demoStoreName = store.name;
+  if (isDemoUser(user)) {
+    const posHint = session?.demoPosSystem ?? demoPosFallback;
+    let storeId = session?.demoStoreId;
+    if (!storeId && posHint) {
+      storeId = (await resolveDemoStoreId(posHint)) ?? undefined;
+    }
+    if (storeId) {
+      const store = await storage.getStore(storeId);
+      if (store) {
+        userData.posSystem = store.posSystem;
+        userData.demoStoreId = store.id;
+        userData.demoStoreName = store.name;
+      }
+    } else if (posHint) {
+      userData.posSystem = posHint;
     }
   } else if (user.storeId) {
     const store = await storage.getStore(user.storeId);
@@ -73,12 +86,28 @@ async function enrichUserResponse(
 }
 
 async function bindDemoStoreSession(
-  req: { session: { demoStoreId?: number } },
+  req: { session: DemoSession },
   posSystem: DemoPosSystem,
 ): Promise<number | null> {
   const demoStoreId = await resolveDemoStoreId(posSystem);
+  req.session.demoPosSystem = posSystem;
   if (demoStoreId) req.session.demoStoreId = demoStoreId;
   return demoStoreId;
+}
+
+function sendLoginResponse(
+  req: { session: DemoSession & { save: (cb: (err?: unknown) => void) => void } },
+  res: import("express").Response,
+  user: SelectUser,
+  demoPosFallback?: DemoPosSystem,
+) {
+  req.session.save(async (saveErr) => {
+    if (saveErr) {
+      console.error("[login] session save failed:", saveErr);
+      return res.status(500).json({ message: "Login session failed. Please try again." });
+    }
+    res.status(200).json(await enrichUserResponse(user, req.session, demoPosFallback));
+  });
 }
 
 export function setupAuth(app: Express) {
@@ -149,12 +178,20 @@ export function setupAuth(app: Express) {
       }
 
       if (portal === "store" && user.role === "store") {
-        if (isDemoUser(user)) {
-          const posSystem = normalizeDemoPosSystem(req.body.posSystem);
-          const demoStoreId = await bindDemoStoreSession(req, posSystem);
-          if (!demoStoreId) {
-            return res.status(503).json({
-              message: "Demo stores are not ready yet. Restart the server or run db:push, then try again.",
+        const requestedPos = normalizeDemoPosSystem(req.body.posSystem);
+
+        if (!isDemoUser(user) && user.storeId) {
+          const store = await storage.getStore(user.storeId);
+          const actualPos = store?.posSystem ?? "jewel";
+          if (actualPos !== requestedPos) {
+            const portalNames: Record<DemoPosSystem, string> = {
+              jewel: "JewelPOS",
+              fashion: "FashionPOS",
+              oil: "FactoryPOS",
+              restaurant: "RestoPOS",
+            };
+            return res.status(403).json({
+              message: `This account is for ${portalNames[actualPos as DemoPosSystem] ?? actualPos}, not ${portalNames[requestedPos]}. Use the correct login page or set store type in admin.`,
             });
           }
         }
@@ -168,7 +205,17 @@ export function setupAuth(app: Express) {
           }
           req.login(user, async (loginErr) => {
             if (loginErr) return next(loginErr);
-            res.status(200).json(await enrichUserResponse(user, req.session));
+            let demoPos: DemoPosSystem | undefined;
+            if (isDemoUser(user)) {
+              demoPos = requestedPos;
+              const demoStoreId = await bindDemoStoreSession(req, demoPos);
+              if (!demoStoreId) {
+                return res.status(503).json({
+                  message: "Demo stores are not ready yet. Restart the server or run db:push, then try again.",
+                });
+              }
+            }
+            sendLoginResponse(req, res, user, demoPos);
           });
           return;
         }
@@ -257,7 +304,7 @@ export function setupAuth(app: Express) {
           console.error("[verify-2fa] req.login failed:", loginErr);
           return res.status(500).json({ message: "Login session failed. Please try again." });
         }
-        res.status(200).json(await enrichUserResponse(user, req.session));
+        sendLoginResponse(req, res, user);
       });
     } catch (err: any) {
       console.error("[verify-2fa]", err);
@@ -305,6 +352,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/logout", (req, res, next) => {
     delete req.session.demoStoreId;
+    delete req.session.demoPosSystem;
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
@@ -319,13 +367,8 @@ export function setupAuth(app: Express) {
       userData.impersonatingStoreName = req.session.impersonatingStoreName;
       const impStore = await storage.getStore(req.session.impersonatingStoreId);
       if (impStore) userData.posSystem = impStore.posSystem;
-    } else if (isDemoUser(req.user) && req.session.demoStoreId) {
-      const store = await storage.getStore(req.session.demoStoreId);
-      if (store) {
-        userData.posSystem = store.posSystem;
-        userData.demoStoreId = store.id;
-        userData.demoStoreName = store.name;
-      }
+    } else if (isDemoUser(req.user)) {
+      Object.assign(userData, await enrichUserResponse(req.user, req.session));
     } else if (req.user?.storeId) {
       const store = await storage.getStore(req.user.storeId);
       if (store) userData.posSystem = store.posSystem;

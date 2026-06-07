@@ -41,14 +41,19 @@ export async function resolveDemoStoreId(posSystem: DemoPosSystem): Promise<numb
 /** Effective store for API handlers (admin impersonation + universal demo user). */
 export function getEffectiveStoreId(req: {
   user?: { role?: string; storeId?: number | null; username?: string };
-  session: { impersonatingStoreId?: number; demoStoreId?: number };
+  session: {
+    impersonatingStoreId?: number;
+    demoStoreId?: number;
+    demoPosSystem?: DemoPosSystem;
+  };
 }): number | null {
   if (!req.user) return null;
   if (req.user.role === "admin" && req.session.impersonatingStoreId) {
     return req.session.impersonatingStoreId;
   }
-  if (isDemoUser(req.user) && req.session.demoStoreId) {
-    return req.session.demoStoreId;
+  if (isDemoUser(req.user)) {
+    if (req.session.demoStoreId) return req.session.demoStoreId;
+    // demoStoreId is set on login; demoPosSystem is a fallback marker only
   }
   return req.user.storeId ?? null;
 }
