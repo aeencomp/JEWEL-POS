@@ -5,7 +5,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { isFashionStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
-import { buildReceiptHtml, openReceiptPrint, type ReceiptLabels } from "@/lib/receipt-print";
+import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category, Customer, Order, OrderItem, PosTerminal } from "@shared/schema";
 import { Input } from "@/components/ui/input";
@@ -304,8 +304,11 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       customer: t("pos.customer"),
       phone: t("customers.phone"),
       item: t("pos.item"),
+      details: t("receipt.details"),
       qty: t("pos.qty"),
       price: t("pos.price"),
+      unitPrice: t("receipt.unitPrice"),
+      lineTotal: t("receipt.lineTotal"),
       total: t("pos.total"),
       discount: t("pos.discount"),
       grandTotal: t("pos.grandTotal"),
@@ -319,9 +322,43 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       color: t("inventory.color"),
       brand: t("inventory.brand"),
       barcode: t("inventory.barcode"),
+      styleCode: t("inventory.styleCode"),
+      category: t("inventory.category"),
+      description: t("inventory.description"),
       metalType: t("inventory.metalType"),
       purity: t("inventory.purity"),
       weight: t("inventory.weight"),
+      gemstone: t("inventory.gemstone"),
+      caratWeight: t("inventory.caratWeight"),
+    };
+  }
+
+  function receiptPrintInput() {
+    if (!completedOrder) return null;
+    const customer = completedOrder.customerId
+      ? customers.find((c) => c.id === completedOrder.customerId)
+      : null;
+    const logoUrlRaw = branding?.logoUrl || "";
+    const logoUrl = logoUrlRaw && logoUrlRaw.startsWith("/")
+      ? `${window.location.origin}${logoUrlRaw}`
+      : logoUrlRaw;
+    return {
+      order: completedOrder,
+      items: completedOrder.items || [],
+      inventory,
+      categories,
+      labels: receiptLabels(),
+      isAr,
+      isFashion,
+      storeName: branding?.name || "Store",
+      storeAddress: branding?.address || "",
+      brandColor: branding?.brandColor || "#333",
+      logoUrl: logoUrl || undefined,
+      receiptHeader: branding?.receiptHeader || "",
+      receiptFooter: branding?.receiptFooter || "",
+      customerName: completedOrder.customerName || customer?.name,
+      customerPhone: completedOrder.customerPhone || customer?.phone || null,
+      paymentLabel: paymentLabels[completedOrder.paymentMethod || "cash"] || completedOrder.paymentMethod || "cash",
     };
   }
 
@@ -332,26 +369,10 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     debit: isAr ? "آجل" : "Credit",
   };
 
-  function printReceipt() {
-    if (!completedOrder) return;
-    const customer = completedOrder.customerId
-      ? customers.find((c) => c.id === completedOrder.customerId)
-      : null;
-    openReceiptPrint(buildReceiptHtml({
-      order: completedOrder,
-      items: completedOrder.items || [],
-      inventory,
-      labels: receiptLabels(),
-      isAr,
-      isFashion,
-      storeName: branding?.name || "Store",
-      storeAddress: branding?.address || "",
-      receiptHeader: branding?.receiptHeader || "",
-      receiptFooter: branding?.receiptFooter || "",
-      customerName: completedOrder.customerName || customer?.name,
-      customerPhone: completedOrder.customerPhone || customer?.phone || null,
-      paymentLabel: paymentLabels[completedOrder.paymentMethod || "cash"] || completedOrder.paymentMethod || "cash",
-    }));
+  function handlePrintReceipt(format: ReceiptFormat) {
+    const input = receiptPrintInput();
+    if (!input) return;
+    printReceipt(input, format);
   }
 
   const terminalCatLocked = effectiveTerminalConfig?.categoryId != null;
@@ -881,10 +902,14 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={printReceipt} data-testid="button-print-receipt">
+          <DialogFooter className="gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => handlePrintReceipt("thermal")} data-testid="button-print-receipt-thermal">
               <Printer className="w-4 h-4 me-2" />
-              {t("pos.printReceipt")}
+              {t("receipt.printThermal")}
+            </Button>
+            <Button variant="outline" onClick={() => handlePrintReceipt("a4")} data-testid="button-print-receipt-a4">
+              <Printer className="w-4 h-4 me-2" />
+              {t("receipt.printA4")}
             </Button>
             <Button onClick={() => setOrderDialog(false)} data-testid="button-close-dialog">
               {t("pos.close")}

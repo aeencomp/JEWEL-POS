@@ -4,9 +4,9 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { isFashionStore } from "@/lib/pos-system";
-import { buildReceiptHtml, openReceiptPrint, type ReceiptLabels } from "@/lib/receipt-print";
+import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Order, OrderItem, InventoryItem } from "@shared/schema";
+import type { Order, OrderItem, InventoryItem, Category } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +84,10 @@ export default function OrdersHistory() {
     queryKey: ["/api/inventory"],
   });
 
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
   const { data: branding } = useQuery<BrandingData>({
     queryKey: ["/api/store/branding"],
   });
@@ -95,8 +99,11 @@ export default function OrdersHistory() {
       customer: t("pos.customer"),
       phone: t("customers.phone"),
       item: t("pos.item"),
+      details: t("receipt.details"),
       qty: t("pos.qty"),
       price: t("pos.price"),
+      unitPrice: t("receipt.unitPrice"),
+      lineTotal: t("receipt.lineTotal"),
       total: t("pos.total"),
       discount: t("pos.discount"),
       grandTotal: t("pos.grandTotal"),
@@ -110,9 +117,14 @@ export default function OrdersHistory() {
       color: t("inventory.color"),
       brand: t("inventory.brand"),
       barcode: t("inventory.barcode"),
+      styleCode: t("inventory.styleCode"),
+      category: t("inventory.category"),
+      description: t("inventory.description"),
       metalType: t("inventory.metalType"),
       purity: t("inventory.purity"),
       weight: t("inventory.weight"),
+      gemstone: t("inventory.gemstone"),
+      caratWeight: t("inventory.caratWeight"),
     };
   }
 
@@ -123,26 +135,33 @@ export default function OrdersHistory() {
     debit: isAr ? "آجل" : "Credit",
   };
 
-  async function printOrderReceipt(order: Order) {
+  async function printOrderReceipt(order: Order, format: ReceiptFormat = "thermal") {
     const res = await fetch(`/api/orders/${order.id}/items`, { credentials: "include" });
     if (!res.ok) return;
     const items: OrderItem[] = await res.json();
+    const logoUrlRaw = branding?.logoUrl || "";
+    const logoUrl = logoUrlRaw && logoUrlRaw.startsWith("/")
+      ? `${window.location.origin}${logoUrlRaw}`
+      : logoUrlRaw;
 
-    openReceiptPrint(buildReceiptHtml({
+    printReceipt({
       order,
       items,
       inventory,
+      categories,
       labels: receiptLabels(),
       isAr,
       isFashion,
       storeName: branding?.name || "Store",
       storeAddress: branding?.address || "",
+      brandColor: branding?.brandColor || "#333",
+      logoUrl: logoUrl || undefined,
       receiptHeader: branding?.receiptHeader || "",
       receiptFooter: branding?.receiptFooter || "",
       customerName: order.customerName,
       customerPhone: order.customerPhone || null,
       paymentLabel: paymentLabels[order.paymentMethod || "cash"] || order.paymentMethod || "cash",
-    }));
+    }, format);
   }
 
   const { data: orderItems = [], isLoading: loadingItems } = useQuery<OrderItem[]>({
@@ -485,14 +504,22 @@ export default function OrdersHistory() {
             </div>
           )}
           {selectedOrder && (
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end gap-2 pt-2 flex-wrap">
               <Button
                 variant="outline"
-                onClick={() => printOrderReceipt(selectedOrder)}
-                data-testid="button-print-order-dialog"
+                onClick={() => printOrderReceipt(selectedOrder, "thermal")}
+                data-testid="button-print-order-thermal"
               >
                 <Printer className="h-4 w-4 me-2" />
-                {t("pos.printReceipt")}
+                {t("receipt.printThermal")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => printOrderReceipt(selectedOrder, "a4")}
+                data-testid="button-print-order-a4"
+              >
+                <Printer className="h-4 w-4 me-2" />
+                {t("receipt.printA4")}
               </Button>
             </div>
           )}

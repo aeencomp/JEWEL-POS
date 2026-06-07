@@ -460,6 +460,11 @@ type TranslationKeys = {
   "receipt.orderNo": string;
   "receipt.thankYou": string;
   "receipt.notes": string;
+  "receipt.details": string;
+  "receipt.unitPrice": string;
+  "receipt.lineTotal": string;
+  "receipt.printThermal": string;
+  "receipt.printA4": string;
   "receipt.print": string;
 };
 
@@ -921,6 +926,11 @@ const translations: Record<Language, TranslationKeys> = {
     "receipt.orderNo": "Order No.",
     "receipt.thankYou": "Thank you for your purchase!",
     "receipt.notes": "Notes",
+    "receipt.details": "Details",
+    "receipt.unitPrice": "Unit Price",
+    "receipt.lineTotal": "Line Total",
+    "receipt.printThermal": "Thermal Receipt",
+    "receipt.printA4": "A4 Receipt",
     "receipt.print": "Print",
   },
   ar: {
@@ -1380,6 +1390,11 @@ const translations: Record<Language, TranslationKeys> = {
     "receipt.orderNo": "رقم الطلب",
     "receipt.thankYou": "شكراً لتسوقكم معنا!",
     "receipt.notes": "ملاحظات",
+    "receipt.details": "التفاصيل",
+    "receipt.unitPrice": "سعر الوحدة",
+    "receipt.lineTotal": "مجموع السطر",
+    "receipt.printThermal": "إيصال حراري",
+    "receipt.printA4": "إيصال A4",
     "receipt.print": "طباعة",
   },
 };
