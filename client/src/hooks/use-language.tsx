@@ -112,6 +112,7 @@ type TranslationKeys = {
   "pos.price": string;
   "pos.amount": string;
   "pos.payment": string;
+  "pos.notes": string;
   "pos.noItems": string;
 
   "inventory.title": string;
@@ -458,6 +459,7 @@ type TranslationKeys = {
   "receipt.date": string;
   "receipt.orderNo": string;
   "receipt.thankYou": string;
+  "receipt.notes": string;
   "receipt.print": string;
 };
 
@@ -574,6 +576,7 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.price": "Price",
     "pos.amount": "Amount",
     "pos.payment": "Payment",
+    "pos.notes": "Notes",
     "pos.noItems": "No items found",
 
     "inventory.title": "Inventory",
@@ -917,6 +920,7 @@ const translations: Record<Language, TranslationKeys> = {
     "receipt.date": "Date",
     "receipt.orderNo": "Order No.",
     "receipt.thankYou": "Thank you for your purchase!",
+    "receipt.notes": "Notes",
     "receipt.print": "Print",
   },
   ar: {
@@ -1031,6 +1035,7 @@ const translations: Record<Language, TranslationKeys> = {
     "pos.price": "السعر",
     "pos.amount": "المبلغ",
     "pos.payment": "الدفع",
+    "pos.notes": "ملاحظات",
     "pos.noItems": "لا توجد منتجات",
 
     "inventory.title": "المخزون",
@@ -1374,6 +1379,7 @@ const translations: Record<Language, TranslationKeys> = {
     "receipt.date": "التاريخ",
     "receipt.orderNo": "رقم الطلب",
     "receipt.thankYou": "شكراً لتسوقكم معنا!",
+    "receipt.notes": "ملاحظات",
     "receipt.print": "طباعة",
   },
 };

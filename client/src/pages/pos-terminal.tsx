@@ -5,9 +5,11 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { isFashionStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
+import { buildReceiptHtml, openReceiptPrint, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category, Customer, Order, OrderItem, PosTerminal } from "@shared/schema";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -129,6 +131,9 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
   const [loyaltyRedeem, setLoyaltyRedeem] = useState(0);
   const [manualDiscount, setManualDiscount] = useState(0);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("walk-in");
+  const [cartCustomerName, setCartCustomerName] = useState("");
+  const [cartCustomerPhone, setCartCustomerPhone] = useState("");
+  const [cartNotes, setCartNotes] = useState("");
   const [orderDialog, setOrderDialog] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderResponse | null>(null);
   const [newCustomerDialog, setNewCustomerDialog] = useState(false);
@@ -150,6 +155,8 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     mutationFn: async (payload: {
       customerId: number | null;
       customerName: string;
+      customerPhone?: string | null;
+      notes?: string | null;
       subtotal: string;
       discount: string;
       total: string;
@@ -170,6 +177,9 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       setManualDiscount(0);
       setLoyaltyRedeem(0);
       setSelectedCustomerId("walk-in");
+      setCartCustomerName("");
+      setCartCustomerPhone("");
+      setCartNotes("");
       toast({ title: t("pos.orderPlaced") });
     },
     onError: (err: Error) => {
@@ -261,9 +271,17 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       toast({ title: t("pos.debitRequiresCustomer"), variant: "destructive" });
       return;
     }
+    const trimmedName = cartCustomerName.trim();
+    const trimmedPhone = cartCustomerPhone.trim();
+    const trimmedNotes = cartNotes.trim();
+    const customerName = trimmedName || selectedCustomer?.name || t("pos.walkIn");
+    const customerPhone = trimmedPhone || selectedCustomer?.phone || null;
+
     orderMutation.mutate({
       customerId: selectedCustomer ? selectedCustomer.id : null,
-      customerName: selectedCustomer ? selectedCustomer.name : t("pos.walkIn"),
+      customerName,
+      customerPhone: customerPhone || null,
+      notes: trimmedNotes || null,
       subtotal: subtotal.toString(),
       discount: discount.toString(),
       total: grandTotal.toString(),
@@ -279,126 +297,61 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     });
   }
 
+  function receiptLabels(): ReceiptLabels {
+    return {
+      orderNumber: t("pos.orderNumber"),
+      date: t("receipt.date"),
+      customer: t("pos.customer"),
+      phone: t("customers.phone"),
+      item: t("pos.item"),
+      qty: t("pos.qty"),
+      price: t("pos.price"),
+      total: t("pos.total"),
+      discount: t("pos.discount"),
+      grandTotal: t("pos.grandTotal"),
+      payment: t("pos.payment"),
+      notes: t("receipt.notes"),
+      thankYou: t("receipt.thankYou"),
+      currency: t("common.currency"),
+      walkIn: t("pos.walkIn"),
+      sku: t("inventory.sku"),
+      size: t("inventory.size"),
+      color: t("inventory.color"),
+      brand: t("inventory.brand"),
+      barcode: t("inventory.barcode"),
+      metalType: t("inventory.metalType"),
+      purity: t("inventory.purity"),
+      weight: t("inventory.weight"),
+    };
+  }
+
+  const paymentLabels: Record<string, string> = {
+    cash: isAr ? "نقدي" : "Cash",
+    card: isAr ? "بطاقة" : "Card",
+    transfer: isAr ? "تحويل" : "Transfer",
+    debit: isAr ? "آجل" : "Credit",
+  };
+
   function printReceipt() {
     if (!completedOrder) return;
-    const w = window.open("", "_blank", "width=320,height=720");
-    if (!w) return;
-
-    const storeName = branding?.name || "Store";
-    const storeAddress = branding?.address || "";
-    const header = branding?.receiptHeader || "";
-    const footer = branding?.receiptFooter || "";
-    const currency = t("common.currency");
-    const paymentLabel: Record<string, string> = {
-      cash: isAr ? "نقدي" : "Cash",
-      card: isAr ? "بطاقة" : "Card",
-      transfer: isAr ? "تحويل" : "Transfer",
-      debit: isAr ? "آجل" : "Credit",
-    };
-
     const customer = completedOrder.customerId
       ? customers.find((c) => c.id === completedOrder.customerId)
       : null;
-    const customerBlock = customer
-      ? `<div class="block"><div class="lbl">${t("pos.customer")}</div><div>${customer.name}</div>${customer.phone ? `<div class="sub">${t("customers.phone")}: ${customer.phone}</div>` : ""}</div>`
-      : completedOrder.customerName && completedOrder.customerName !== t("pos.walkIn")
-        ? `<div class="block"><div class="lbl">${t("pos.customer")}</div><div>${completedOrder.customerName}</div></div>`
-        : "";
-
-    const itemsHtml = (completedOrder.items || []).map((item) => {
-      const inv = inventory.find((i) => i.id === item.inventoryItemId) as
-        (InventoryItem & { size?: string; color?: string; brand?: string; barcode?: string }) | undefined;
-      const details: string[] = [];
-      if (item.sku) details.push(`${t("inventory.sku")}: ${item.sku}`);
-      if (isFashion) {
-        if (inv?.size) details.push(`${t("inventory.size")}: ${inv.size}`);
-        if (inv?.color) details.push(`${t("inventory.color")}: ${inv.color}`);
-        if (inv?.brand) details.push(`${t("inventory.brand")}: ${inv.brand}`);
-        if (inv?.barcode) details.push(`${t("inventory.barcode")}: ${inv.barcode}`);
-      } else {
-        if (inv?.metalType && inv.metalType !== "other") details.push(`${t("inventory.metalType")}: ${inv.metalType}`);
-        if (inv?.purity) details.push(`${t("inventory.purity")}: ${inv.purity}`);
-        if (inv?.weightGrams) details.push(`${t("inventory.weight")}: ${inv.weightGrams}g`);
-      }
-      const lineTotal = Number(item.price) * item.quantity;
-      const detailHtml = details.length ? `<div class="sub">${details.join(" | ")}</div>` : "";
-      return `<tr>
-        <td><div class="item">${item.name}</div>${detailHtml}</td>
-        <td class="c">${item.quantity}</td>
-        <td class="r">${Number(item.price).toLocaleString()}<br><span class="sub">${lineTotal.toLocaleString()} ${currency}</span></td>
-      </tr>`;
-    }).join("");
-
-    const discountHtml = Number(completedOrder.discount) > 0
-      ? `<div class="row"><span>${t("pos.discount")}</span><span>-${Number(completedOrder.discount).toLocaleString()} ${currency}</span></div>`
-      : "";
-
-    w.document.write(`<!DOCTYPE html>
-<html dir="${isAr ? "rtl" : "ltr"}">
-<head>
-<meta charset="utf-8">
-<title>${completedOrder.orderNumber}</title>
-<style>
-  @page { size: 80mm auto; margin: 2mm; }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body {
-    font-family: Arial, Helvetica, "Courier New", monospace;
-    width: 72mm; max-width: 72mm; margin: 0 auto; padding: 4mm 2mm;
-    color: #000; background: #fff; font-size: 13px; font-weight: 700; line-height: 1.35;
-  }
-  .center { text-align: center; }
-  .store { font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
-  .addr, .sub { font-size: 11px; font-weight: 700; margin-top: 2px; }
-  .line { border-top: 2px solid #000; margin: 8px 0; }
-  .row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin: 3px 0; }
-  .block { border: 2px solid #000; padding: 6px; margin: 8px 0; }
-  .lbl { font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 3px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-  th { font-size: 11px; font-weight: 900; text-align: left; border-bottom: 2px solid #000; padding: 4px 2px; }
-  th.c, td.c { text-align: center; width: 28px; }
-  th.r, td.r { text-align: right; white-space: nowrap; }
-  td { padding: 6px 2px; border-bottom: 1px solid #000; vertical-align: top; font-weight: 800; }
-  .item { font-size: 13px; font-weight: 900; }
-  .total-box { border: 3px solid #000; padding: 8px; margin-top: 8px; }
-  .grand { display: flex; justify-content: space-between; font-size: 16px; font-weight: 900; }
-  .pay { text-align: center; font-size: 12px; font-weight: 900; margin-top: 6px; }
-  .footer { text-align: center; margin-top: 10px; font-size: 12px; font-weight: 800; }
-  .thanks { font-size: 14px; font-weight: 900; margin: 6px 0; }
-</style>
-</head>
-<body>
-  <div class="center">
-    <div class="store">${storeName}</div>
-    ${storeAddress ? `<div class="addr">${storeAddress}</div>` : ""}
-    ${header ? `<div class="sub">${header}</div>` : ""}
-  </div>
-  <div class="line"></div>
-  <div class="row"><span>${t("pos.orderNumber")}</span><span>${completedOrder.orderNumber}</span></div>
-  <div class="row"><span>${t("receipt.date")}</span><span>${new Date(completedOrder.createdAt).toLocaleString(isAr ? "ar-IQ" : "en-GB")}</span></div>
-  ${customerBlock}
-  <table>
-    <thead><tr>
-      <th>${t("pos.item")}</th>
-      <th class="c">${t("pos.qty")}</th>
-      <th class="r">${t("pos.price")}</th>
-    </tr></thead>
-    <tbody>${itemsHtml}</tbody>
-  </table>
-  <div class="total-box">
-    <div class="row"><span>${t("pos.total")}</span><span>${Number(completedOrder.subtotal).toLocaleString()} ${currency}</span></div>
-    ${discountHtml}
-    <div class="line"></div>
-    <div class="grand"><span>${t("pos.grandTotal")}</span><span>${Number(completedOrder.total).toLocaleString()} ${currency}</span></div>
-    <div class="pay">${t("pos.payment")}: ${paymentLabel[completedOrder.paymentMethod || "cash"] || completedOrder.paymentMethod}</div>
-  </div>
-  <div class="footer">
-    ${footer ? `<div>${footer}</div>` : ""}
-    <div class="thanks">${t("receipt.thankYou")}</div>
-    <div>www.iq-pos.com</div>
-  </div>
-  <script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
-</body></html>`);
-    w.document.close();
+    openReceiptPrint(buildReceiptHtml({
+      order: completedOrder,
+      items: completedOrder.items || [],
+      inventory,
+      labels: receiptLabels(),
+      isAr,
+      isFashion,
+      storeName: branding?.name || "Store",
+      storeAddress: branding?.address || "",
+      receiptHeader: branding?.receiptHeader || "",
+      receiptFooter: branding?.receiptFooter || "",
+      customerName: completedOrder.customerName || customer?.name,
+      customerPhone: completedOrder.customerPhone || customer?.phone || null,
+      paymentLabel: paymentLabels[completedOrder.paymentMethod || "cash"] || completedOrder.paymentMethod || "cash",
+    }));
   }
 
   const terminalCatLocked = effectiveTerminalConfig?.categoryId != null;
@@ -600,7 +553,13 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
             </div>
             {cart.length > 0 && (
               <button
-                onClick={() => { setCart([]); setDiscount(0); }}
+                onClick={() => {
+                  setCart([]);
+                  setDiscount(0);
+                  setManualDiscount(0);
+                  setLoyaltyRedeem(0);
+                  setCartNotes("");
+                }}
                 className="text-xs text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1"
                 data-testid="button-clear-cart"
               >
@@ -619,6 +578,14 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
                   setSelectedCustomerId(v);
                   setLoyaltyRedeem(0);
                   setDiscount(manualDiscount);
+                  if (v === "walk-in") {
+                    setCartCustomerName("");
+                    setCartCustomerPhone("");
+                  } else {
+                    const c = customers.find((x) => x.id === Number(v));
+                    setCartCustomerName(c?.name || "");
+                    setCartCustomerPhone(c?.phone || "");
+                  }
                 }}
               >
                 <SelectTrigger className="flex-1 h-9 text-sm" data-testid="select-customer">
@@ -649,6 +616,31 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
                 {t("loyalty.available")}: <span className="font-semibold text-foreground">{selectedCustomer.loyaltyPoints || 0}</span> {t("loyalty.points")}
               </p>
             )}
+            <div className="mt-3 space-y-2">
+              <Input
+                value={cartCustomerName}
+                onChange={(e) => setCartCustomerName(e.target.value)}
+                placeholder={t("customers.name")}
+                className="h-9 text-sm"
+                data-testid="input-cart-customer-name"
+              />
+              <Input
+                value={cartCustomerPhone}
+                onChange={(e) => setCartCustomerPhone(e.target.value)}
+                placeholder={t("customers.phone")}
+                className="h-9 text-sm"
+                dir="ltr"
+                data-testid="input-cart-customer-phone"
+              />
+              <Textarea
+                value={cartNotes}
+                onChange={(e) => setCartNotes(e.target.value)}
+                placeholder={t("pos.notes")}
+                rows={2}
+                className="text-sm resize-none min-h-[60px]"
+                data-testid="input-cart-notes"
+              />
+            </div>
           </div>
 
           {/* Cart items */}

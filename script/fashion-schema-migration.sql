@@ -6,3 +6,4 @@ ALTER TABLE customers ADD COLUMN IF NOT EXISTS loyalty_points integer NOT NULL D
 ALTER TABLE order_items ADD COLUMN IF NOT EXISTS returned_quantity integer NOT NULL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS loyalty_points_earned integer NOT NULL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS loyalty_points_redeemed integer NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone text;

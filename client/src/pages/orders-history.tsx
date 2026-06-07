@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { isFashionStore } from "@/lib/pos-system";
+import { buildReceiptHtml, openReceiptPrint, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, OrderItem, InventoryItem } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,7 +63,10 @@ type EditItem = {
 };
 
 export default function OrdersHistory() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
+  const { user } = useAuth();
+  const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
   const { toast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -82,108 +88,61 @@ export default function OrdersHistory() {
     queryKey: ["/api/store/branding"],
   });
 
+  function receiptLabels(): ReceiptLabels {
+    return {
+      orderNumber: t("pos.orderNumber"),
+      date: t("receipt.date"),
+      customer: t("pos.customer"),
+      phone: t("customers.phone"),
+      item: t("pos.item"),
+      qty: t("pos.qty"),
+      price: t("pos.price"),
+      total: t("pos.total"),
+      discount: t("pos.discount"),
+      grandTotal: t("pos.grandTotal"),
+      payment: t("pos.payment"),
+      notes: t("receipt.notes"),
+      thankYou: t("receipt.thankYou"),
+      currency: t("common.currency"),
+      walkIn: t("pos.walkIn"),
+      sku: t("inventory.sku"),
+      size: t("inventory.size"),
+      color: t("inventory.color"),
+      brand: t("inventory.brand"),
+      barcode: t("inventory.barcode"),
+      metalType: t("inventory.metalType"),
+      purity: t("inventory.purity"),
+      weight: t("inventory.weight"),
+    };
+  }
+
+  const paymentLabels: Record<string, string> = {
+    cash: isAr ? "نقدي" : "Cash",
+    card: isAr ? "بطاقة" : "Card",
+    transfer: isAr ? "تحويل" : "Transfer",
+    debit: isAr ? "آجل" : "Credit",
+  };
+
   async function printOrderReceipt(order: Order) {
     const res = await fetch(`/api/orders/${order.id}/items`, { credentials: "include" });
     if (!res.ok) return;
     const items: OrderItem[] = await res.json();
 
-    const w = window.open("", "_blank", "width=400,height=600");
-    if (!w) return;
-
-    const brandColor = branding?.brandColor || "#d4a574";
-    const storeName = branding?.name || "Store";
-    const storeAddress = branding?.address || "";
-    const logoUrlRaw = branding?.logoUrl || "";
-    const logoUrl = logoUrlRaw && logoUrlRaw.startsWith("/") ? `${window.location.origin}${logoUrlRaw}` : logoUrlRaw;
-    const header = branding?.receiptHeader || "";
-    const footer = branding?.receiptFooter || "";
-
-    const customerHtml = order.customerName && order.customerName !== t("pos.walkIn")
-      ? `<div class="customer-block"><div class="customer-label">${t("pos.customer")}</div><div class="customer-name">${order.customerName}</div></div>`
-      : "";
-
-    const itemsHtml = items.map((item, idx) => {
-      const invItem = inventory.find((inv) => inv.id === item.inventoryItemId);
-      const details: string[] = [];
-      if (item.sku) details.push(`${t("inventory.sku")}: ${item.sku}`);
-      if (invItem?.metalType) details.push(`${t("inventory.metalType")}: ${invItem.metalType}`);
-      if (invItem?.purity) details.push(`${t("inventory.purity")}: ${invItem.purity}`);
-      if (invItem?.weightGrams) details.push(`${t("inventory.weight")}: ${invItem.weightGrams}g`);
-      if (invItem?.gemstone) details.push(`${t("inventory.gemstone")}: ${invItem.gemstone}`);
-      const detailsStr = details.length > 0 ? `<div class="item-details">${details.join(" &middot; ")}</div>` : "";
-      const lineTotal = Number(item.price) * item.quantity;
-      const rowBg = idx % 2 === 0 ? "#fafafa" : "#fff";
-      return `
-      <tr style="background:${rowBg}">
-        <td class="item-cell"><div class="item-name">${item.name}</div>${detailsStr}</td>
-        <td class="item-cell" style="text-align:center">${item.quantity}</td>
-        <td class="item-cell" style="text-align:right;white-space:nowrap">
-          ${Number(item.price).toLocaleString()} ${t("common.currency")}
-          ${item.quantity > 1 ? `<div class="item-details">${t("pos.total")}: ${lineTotal.toLocaleString()} ${t("common.currency")}</div>` : ""}
-        </td>
-      </tr>`;
-    }).join("");
-
-    w.document.write(`<!DOCTYPE html>
-<html><head><title>Receipt</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Poppins',sans-serif;max-width:360px;margin:0 auto;padding:18px;color:#111;font-size:13.5px;line-height:1.5;font-weight:400}
-.header{text-align:center;background:${brandColor};color:#fff;padding:18px 14px;border-radius:10px;margin-bottom:16px}
-.store-name{font-size:24px;font-weight:800;letter-spacing:0.5px;text-shadow:0 1px 2px rgba(0,0,0,0.15)}
-.header-sub{font-size:12px;margin-top:5px;opacity:0.92;font-weight:600}
-.divider{border:none;border-top:1.5px dashed #d0d0d0;margin:14px 0}
-.order-info{display:flex;justify-content:space-between;font-size:12.5px;color:#444;margin-bottom:3px;font-weight:400}
-.order-info strong{color:#111;font-weight:700}
-.customer-block{margin:12px 0;padding:11px 14px;background:#f5f5f5;border-radius:8px;border-left:4px solid ${brandColor}}
-.customer-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:${brandColor};font-weight:800;margin-bottom:5px}
-.customer-name{font-weight:700;font-size:14px;color:#111}
-table{width:100%;border-collapse:collapse;margin-top:4px}
-thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#666;font-weight:700;padding:7px 5px;border-bottom:2px solid #ddd;text-align:left}
-.item-cell{padding:9px 5px;border-bottom:1px solid #eee;vertical-align:top;font-size:13px}
-.item-name{font-weight:700;font-size:13px;color:#111}
-.item-details{font-size:11px;color:#777;margin-top:3px;font-weight:400}
-.totals{margin-top:14px;padding-top:12px;border-top:2px solid #ddd}
-.total-line{display:flex;justify-content:space-between;font-size:13px;color:#444;padding:4px 0;font-weight:600}
-.grand-total{display:flex;justify-content:space-between;margin-top:8px;padding:12px 14px;background:${brandColor};color:#fff;border-radius:8px;font-size:18px;font-weight:800;letter-spacing:0.3px}
-.payment-method{font-size:12px;color:#666;margin-top:9px;text-align:center;font-weight:600}
-.footer{text-align:center;margin-top:16px;padding-top:13px;border-top:1.5px dashed #d0d0d0}
-.footer-text{font-size:12px;color:#555;margin-bottom:5px;font-weight:600}
-.thank-you{font-size:14px;font-weight:700;color:${brandColor};margin-bottom:6px}
-.website{font-size:11px;color:#aaa;margin-top:8px;letter-spacing:0.5px;font-weight:400}
-.print-btn{display:block;margin:18px auto 0;width:100%;padding:11px;font-size:14px;font-weight:700;background:${brandColor};color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Poppins',sans-serif}
-.print-btn:hover{opacity:0.9}
-@media print{.print-btn{display:none}}
-</style></head><body>
-<div class="header">
-${logoUrl ? `<img src="${logoUrl}" alt="logo" style="height:48px;max-width:160px;object-fit:contain;margin-bottom:8px;border-radius:4px">` : ""}
-<div class="store-name">${storeName}</div>
-${storeAddress ? `<div class="header-sub">${storeAddress}</div>` : ""}
-${header ? `<div class="header-sub">${header}</div>` : ""}
-</div>
-<div class="order-info"><span><strong>${t("pos.orderNumber")}</strong> ${order.orderNumber}</span></div>
-<div class="order-info"><span><strong>${t("receipt.date")}:</strong> ${new Date(order.createdAt!).toLocaleString()}</span></div>
-<hr class="divider">
-${customerHtml}
-<table>
-<thead><tr><th>${t("pos.item")}</th><th style="text-align:center">${t("pos.qty")}</th><th style="text-align:right">${t("pos.price")}</th></tr></thead>
-<tbody>${itemsHtml}</tbody>
-</table>
-<div class="totals">
-<div class="total-line"><span>${t("pos.total")}:</span><span>${Number(order.subtotal).toLocaleString()} ${t("common.currency")}</span></div>
-${Number(order.discount) > 0 ? `<div class="total-line"><span>${t("pos.discount")}:</span><span style="color:#e53e3e">-${Number(order.discount).toLocaleString()} ${t("common.currency")}</span></div>` : ""}
-<div class="grand-total"><span>${t("pos.grandTotal")}:</span><span>${Number(order.total).toLocaleString()} ${t("common.currency")}</span></div>
-${order.paymentMethod ? `<div class="payment-method">${t("pos.payment")}: ${order.paymentMethod}</div>` : ""}
-</div>
-<div class="footer">
-${footer ? `<div class="footer-text">${footer}</div>` : ""}
-<div class="thank-you">${t("receipt.thankYou")}</div>
-<div class="website">www.IQ-pos.com</div>
-</div>
-<button class="print-btn" onclick="window.print()">${t("receipt.print")}</button>
-</body></html>`);
-    w.document.close();
+    openReceiptPrint(buildReceiptHtml({
+      order,
+      items,
+      inventory,
+      labels: receiptLabels(),
+      isAr,
+      isFashion,
+      storeName: branding?.name || "Store",
+      storeAddress: branding?.address || "",
+      receiptHeader: branding?.receiptHeader || "",
+      receiptFooter: branding?.receiptFooter || "",
+      customerName: order.customerName,
+      customerPhone: order.customerPhone || null,
+      paymentLabel: paymentLabels[order.paymentMethod || "cash"] || order.paymentMethod || "cash",
+    }));
   }
 
   const { data: orderItems = [], isLoading: loadingItems } = useQuery<OrderItem[]>({
@@ -498,11 +457,31 @@ ${footer ? `<div class="footer-text">${footer}</div>` : ""}
             </div>
           )}
           {selectedOrder && (
-            <div className="flex justify-between items-center pt-2 text-sm font-medium">
-              <span>{t("pos.grandTotal")}</span>
-              <span data-testid="text-order-detail-total">
-                {parseFloat(selectedOrder.total).toLocaleString()} {t("common.currency")}
-              </span>
+            <div className="space-y-2 pt-2 text-sm">
+              {selectedOrder.customerName && selectedOrder.customerName !== t("pos.walkIn") && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">{t("pos.customer")}</span>
+                  <span className="font-medium">{selectedOrder.customerName}</span>
+                </div>
+              )}
+              {selectedOrder.customerPhone && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">{t("customers.phone")}</span>
+                  <span className="font-medium" dir="ltr">{selectedOrder.customerPhone}</span>
+                </div>
+              )}
+              {selectedOrder.notes && (
+                <div>
+                  <span className="text-muted-foreground">{t("pos.notes")}: </span>
+                  <span className="font-medium">{selectedOrder.notes}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center font-medium">
+                <span>{t("pos.grandTotal")}</span>
+                <span data-testid="text-order-detail-total">
+                  {parseFloat(selectedOrder.total).toLocaleString()} {t("common.currency")}
+                </span>
+              </div>
             </div>
           )}
           {selectedOrder && (

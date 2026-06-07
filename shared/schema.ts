@@ -156,6 +156,7 @@ export const orders = pgTable("orders", {
   customerId: integer("customer_id").references(() => customers.id),
   orderNumber: text("order_number").notNull(),
   customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
   status: text("status", { enum: ["pending", "completed", "cancelled", "refunded"] }).notNull().default("pending"),
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
   discount: decimal("discount", { precision: 12, scale: 2 }).notNull().default("0"),
