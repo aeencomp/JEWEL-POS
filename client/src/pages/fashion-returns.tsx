@@ -7,13 +7,7 @@ import type { Order, OrderItem } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -24,39 +18,42 @@ import {
 } from "@/components/ui/table";
 import { Loader2, RotateCcw, Search } from "lucide-react";
 
+type ReturnableOrder = Order & { returnableQty?: number; itemCount?: number };
+
 export default function FashionReturnsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [returnQtys, setReturnQtys] = useState<Record<number, number>>({});
 
-  const { data: orders = [], isLoading: loadingOrders } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
+  const { data: returnableOrders = [], isLoading: loadingOrders, refetch } = useQuery<ReturnableOrder[]>({
+    queryKey: ["/api/orders/returnable"],
+    refetchOnMount: "always",
   });
-
-  const orderIdNum = selectedOrderId ? parseInt(selectedOrderId) : null;
 
   const { data: orderItems = [], isLoading: loadingItems } = useQuery<OrderItem[]>({
-    queryKey: ["/api/orders", orderIdNum, "items"],
+    queryKey: ["/api/orders", selectedOrderId, "items"],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/orders/${orderIdNum}/items`);
+      const res = await fetch(`/api/orders/${selectedOrderId}/items`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load order items");
       return res.json();
     },
-    enabled: !!orderIdNum,
+    enabled: selectedOrderId !== null,
   });
 
-  const returnableOrders = useMemo(() => {
-    return orders.filter((o) => {
-      if (o.status !== "completed") return false;
-      const q = search.toLowerCase();
-      if (!q) return true;
-      return (
-        o.orderNumber.toLowerCase().includes(q) ||
-        (o.customerName || "").toLowerCase().includes(q)
-      );
-    });
-  }, [orders, search]);
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return returnableOrders;
+    return returnableOrders.filter((o) =>
+      o.orderNumber.toLowerCase().includes(q) ||
+      (o.customerName || "").toLowerCase().includes(q) ||
+      (o.customerPhone || "").toLowerCase().includes(q),
+    );
+  }, [returnableOrders, search]);
+
+  const selectedOrder = returnableOrders.find((o) => o.id === selectedOrderId) ?? null;
 
   const returnMutation = useMutation({
     mutationFn: async (payload: { orderId: number; items: { orderItemId: number; quantity: number }[] }) => {
@@ -65,14 +62,20 @@ export default function FashionReturnsPage() {
       });
       return res.json() as Promise<{ refundAmount: string; fullyReturned: boolean }>;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/orders/returnable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      if (orderIdNum) {
-        queryClient.invalidateQueries({ queryKey: ["/api/orders", orderIdNum, "items"] });
+      if (selectedOrderId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/orders", selectedOrderId, "items"] });
       }
       setReturnQtys({});
+      if (data.fullyReturned) {
+        setSelectedOrderId(null);
+      } else {
+        refetch();
+      }
       toast({
         title: t("returns.success"),
         description: `${parseFloat(data.refundAmount).toLocaleString()} ${t("common.currency")}`,
@@ -83,8 +86,13 @@ export default function FashionReturnsPage() {
     },
   });
 
+  function selectOrder(order: ReturnableOrder) {
+    setSelectedOrderId(order.id);
+    setReturnQtys({});
+  }
+
   function handleProcessReturn() {
-    if (!orderIdNum) return;
+    if (!selectedOrderId) return;
     const items = Object.entries(returnQtys)
       .filter(([, qty]) => qty > 0)
       .map(([orderItemId, quantity]) => ({
@@ -95,7 +103,7 @@ export default function FashionReturnsPage() {
       toast({ title: t("returns.noItems"), variant: "destructive" });
       return;
     }
-    returnMutation.mutate({ orderId: orderIdNum, items });
+    returnMutation.mutate({ orderId: selectedOrderId, items });
   }
 
   const estimatedRefund = orderItems.reduce((sum, oi) => {
@@ -123,39 +131,87 @@ export default function FashionReturnsPage() {
 
       <Card>
         <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("returns.searchOrder")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="ps-9"
-                data-testid="input-search-returns"
-              />
-            </div>
-            <Select
-              value={selectedOrderId}
-              onValueChange={(v) => {
-                setSelectedOrderId(v);
-                setReturnQtys({});
-              }}
-            >
-              <SelectTrigger className="sm:w-72" data-testid="select-return-order">
-                <SelectValue placeholder={t("returns.selectOrder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {returnableOrders.map((o) => (
-                  <SelectItem key={o.id} value={String(o.id)}>
-                    {o.orderNumber} — {o.customerName || t("pos.walkIn")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="relative max-w-md">
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("returns.searchOrder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-9"
+              data-testid="input-search-returns"
+            />
           </div>
 
-          {orderIdNum && (
-            loadingItems ? (
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground" data-testid="text-no-returnable-orders">
+              <RotateCcw className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="font-medium">{t("returns.noOrders")}</p>
+              <p className="text-sm mt-1">{t("returns.noOrdersHint")}</p>
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("pos.orderNumber")}</TableHead>
+                    <TableHead>{t("pos.customer")}</TableHead>
+                    <TableHead>{t("receipt.date")}</TableHead>
+                    <TableHead>{t("pos.grandTotal")}</TableHead>
+                    <TableHead>{t("returns.returnQty")}</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow
+                      key={order.id}
+                      className={selectedOrderId === order.id ? "bg-muted/50" : "cursor-pointer"}
+                      onClick={() => selectOrder(order)}
+                      data-testid={`row-return-order-${order.id}`}
+                    >
+                      <TableCell className="font-mono font-medium">{order.orderNumber}</TableCell>
+                      <TableCell>{order.customerName || t("pos.walkIn")}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {order.createdAt ? new Date(order.createdAt).toLocaleString(isAr ? "ar-IQ" : "en-GB") : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {parseFloat(order.total).toLocaleString()} {t("common.currency")}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{order.returnableQty ?? "—"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-end">
+                        <Button
+                          size="sm"
+                          variant={selectedOrderId === order.id ? "default" : "outline"}
+                          onClick={(e) => { e.stopPropagation(); selectOrder(order); }}
+                          data-testid={`button-select-return-${order.id}`}
+                        >
+                          {t("returns.selectOrder")}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedOrder && (
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h2 className="font-semibold">
+                {selectedOrder.orderNumber} — {selectedOrder.customerName || t("pos.walkIn")}
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedOrderId(null); setReturnQtys({}); }}>
+                {isAr ? "إلغاء" : "Clear"}
+              </Button>
+            </div>
+
+            {loadingItems ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -169,7 +225,7 @@ export default function FashionReturnsPage() {
                       <TableRow>
                         <TableHead>{t("inventory.name")}</TableHead>
                         <TableHead>{t("inventory.sku")}</TableHead>
-                        <TableHead>{t("pos.total")}</TableHead>
+                        <TableHead>{t("pos.price")}</TableHead>
                         <TableHead>{t("inventory.quantity")}</TableHead>
                         <TableHead>{t("returns.returnQty")}</TableHead>
                       </TableRow>
@@ -231,10 +287,10 @@ export default function FashionReturnsPage() {
                   </Button>
                 </div>
               </div>
-            )
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

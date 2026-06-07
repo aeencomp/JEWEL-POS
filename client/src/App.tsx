@@ -77,6 +77,7 @@ function StoreRouter() {
       <Route path="/inventory" component={InventoryManagement} />
       <Route path="/customers" component={CustomersPage} />
       <Route path="/orders" component={OrdersHistory} />
+      <Route path="/returns" component={FashionReturns} />
       <Route path="/repairs" component={RepairOrders} />
       <Route path="/purchases" component={PurchasesPage} />
       <Route path="/layaway" component={LayawayPage} />

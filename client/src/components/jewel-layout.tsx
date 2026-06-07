@@ -27,7 +27,7 @@ const navItems = [
   { path: "/inventory", icon: Package, label: "Inventory", labelAr: "المخزون" },
   { path: "/customers", icon: Users, label: "Customers", labelAr: "العملاء" },
   { path: "/orders", icon: ClipboardList, label: "Orders", labelAr: "الطلبات" },
-  { path: "/returns", icon: RotateCcw, label: "Returns", labelAr: "المرتجعات", fashionOnly: true },
+  { path: "/returns", icon: RotateCcw, label: "Returns", labelAr: "المرتجعات" },
   { path: "/repairs", icon: Wrench, label: "Repairs", labelAr: "الإصلاحات" },
   { path: "/purchases", icon: ShoppingBag, label: "Buy Jewel", labelAr: "شراء مجوهرات" },
   { path: "/layaway", icon: Clock, label: "Layaway", labelAr: "التقسيط" },

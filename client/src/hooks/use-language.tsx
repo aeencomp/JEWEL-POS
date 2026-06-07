@@ -177,6 +177,8 @@ type TranslationKeys = {
   "returns.processReturn": string;
   "returns.success": string;
   "returns.noItems": string;
+  "returns.noOrders": string;
+  "returns.noOrdersHint": string;
   "returns.fullyReturned": string;
 
   "purchases.title": string;
@@ -661,6 +663,8 @@ const translations: Record<Language, TranslationKeys> = {
     "returns.processReturn": "Process return",
     "returns.success": "Return processed",
     "returns.noItems": "No items to return",
+    "returns.noOrders": "No sales available for return",
+    "returns.noOrdersHint": "Completed sales with returnable items will appear here after checkout.",
     "returns.fullyReturned": "Fully returned",
 
     "purchases.title": "Buy Jewel",
@@ -1127,6 +1131,8 @@ const translations: Record<Language, TranslationKeys> = {
     "returns.processReturn": "تنفيذ الإرجاع",
     "returns.success": "تمت معالجة الإرجاع",
     "returns.noItems": "لا توجد عناصر للإرجاع",
+    "returns.noOrders": "لا توجد مبيعات قابلة للإرجاع",
+    "returns.noOrdersHint": "ستظهر المبيعات المكتملة هنا بعد إتمام البيع.",
     "returns.fullyReturned": "مُرجَع بالكامل",
 
     "purchases.title": "شراء مجوهرات",

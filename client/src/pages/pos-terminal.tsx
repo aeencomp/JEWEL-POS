@@ -171,6 +171,7 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     onSuccess: (order) => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/returnable"] });
       setCompletedOrder(order);
       setOrderDialog(true);
       setCart([]);

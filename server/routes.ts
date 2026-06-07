@@ -1404,6 +1404,35 @@ export async function registerRoutes(
     res.json(ordersList);
   });
 
+  app.get("/api/orders/returnable", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.json([]);
+    const store = await storage.getStore(storeId);
+    if (!store || store.posSystem === "oil") {
+      return res.json([]);
+    }
+
+    const ordersList = await storage.getOrders(storeId);
+    const result = [];
+
+    for (const order of ordersList) {
+      if (order.status !== "completed") continue;
+      const items = await storage.getOrderItems(order.id);
+      const returnableQty = items.reduce(
+        (sum, oi) => sum + Math.max(0, oi.quantity - (oi.returnedQuantity || 0)),
+        0,
+      );
+      if (returnableQty <= 0) continue;
+      result.push({
+        ...order,
+        returnableQty,
+        itemCount: items.length,
+      });
+    }
+
+    res.json(result);
+  });
+
   app.post("/api/orders", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
@@ -1547,8 +1576,8 @@ export async function registerRoutes(
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const store = await storage.getStore(storeId);
-    if (!store || store.posSystem !== "fashion") {
-      return res.status(400).json({ message: "Returns are for fashion stores only" });
+    if (!store || store.posSystem === "oil") {
+      return res.status(400).json({ message: "Returns are not available for this store type" });
     }
 
     const order = await storage.getOrder(id);
