@@ -536,20 +536,20 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing Section ─────────────────────────── */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-slate-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(251,191,36,0.18),transparent)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+      <section className="relative py-20 overflow-hidden border-t">
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-50/60 via-background to-background dark:from-slate-950 dark:via-slate-950 dark:to-slate-950" />
+        <div className="absolute inset-0 hidden dark:block bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(251,191,36,0.18),transparent)]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent dark:via-amber-500/40" />
 
         <div className="relative max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-amber-500/15 text-amber-300 border-amber-500/25 text-xs px-3 py-1">
+            <Badge className="mb-4 bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/25 text-xs px-3 py-1">
               {isAr ? "الأسعار" : "Pricing"}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
               {isAr ? "اشتراك شهري قياسي واحد" : "One Standard Monthly Plan"}
             </h2>
-            <p className="text-slate-400 mt-3 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            <p className="text-muted-foreground mt-3 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
               {isAr
                 ? "سعر موحّد لجميع أنظمة نقاط البيع — اختر النظام المناسب لقطاعك واحصل على كل المزايا"
                 : "One flat price for every POS system — pick the right system for your industry and get full access"}
@@ -558,7 +558,7 @@ export default function LandingPage() {
 
           {/* Hero pricing card */}
           <div
-            className="grid lg:grid-cols-5 rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/40 mb-14"
+            className="grid lg:grid-cols-5 rounded-3xl overflow-hidden border border-border bg-card shadow-xl dark:border-white/10 dark:shadow-2xl dark:shadow-black/40 mb-14"
             data-testid="pricing-standard-banner"
           >
             <div className="lg:col-span-2 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 p-8 sm:p-10 flex flex-col justify-between gap-8">
@@ -586,7 +586,7 @@ export default function LandingPage() {
               </div>
               <Button
                 size="lg"
-                className="w-full bg-white text-amber-700 hover:bg-amber-50 font-semibold shadow-lg shadow-black/20 border-0"
+                className="w-full bg-white text-amber-700 hover:bg-amber-50 font-semibold shadow-lg shadow-black/10 border-0"
                 onClick={() => handleOpen()}
                 data-testid="button-pricing-hero"
               >
@@ -596,17 +596,17 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            <div className="lg:col-span-3 bg-slate-900/90 backdrop-blur-sm p-8 sm:p-10">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-6">
+            <div className="lg:col-span-3 bg-card dark:bg-slate-900/90 p-8 sm:p-10">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">
                 {isAr ? "يشمل كل اشتراك" : "Every subscription includes"}
               </p>
               <ul className="space-y-4">
                 {(isAr ? PLATFORM_INCLUDES.ar : PLATFORM_INCLUDES.en).map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-start gap-4 group">
-                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-500/20 transition-colors">
-                      <Icon className="h-4 w-4 text-amber-400" />
+                    <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20 transition-colors">
+                      <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     </div>
-                    <span className="text-sm text-slate-300 leading-relaxed pt-1.5">{text}</span>
+                    <span className="text-sm text-foreground/80 dark:text-slate-300 leading-relaxed pt-1.5">{text}</span>
                   </li>
                 ))}
               </ul>
@@ -616,15 +616,15 @@ export default function LandingPage() {
           {/* Per-system details with tabs */}
           <div>
             <div className="text-center mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold text-white">
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground">
                 {isAr ? "ما يشمله كل نظام" : "What's Included in Each System"}
               </h3>
-              <p className="text-slate-400 text-sm mt-2">
+              <p className="text-muted-foreground text-sm mt-2">
                 {isAr ? "اختر نظامك لعرض المزايا الكاملة" : "Select your system to view the full feature list"}
               </p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-6 p-1.5 bg-slate-900/60 border border-white/10 rounded-2xl max-w-2xl mx-auto">
+            <div className="flex flex-wrap justify-center gap-2 mb-6 p-1.5 bg-muted border border-border dark:bg-slate-900/60 dark:border-white/10 rounded-2xl max-w-2xl mx-auto">
               {POS_PRICING_PLANS.map((plan) => {
                 const Icon = plan.icon;
                 const isActive = activePlan === plan.id;
@@ -637,7 +637,7 @@ export default function LandingPage() {
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                       isActive
                         ? `bg-gradient-to-r ${plan.gradient} text-white shadow-lg`
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -656,29 +656,29 @@ export default function LandingPage() {
               return (
                 <div
                   key={plan.id}
-                  className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm overflow-hidden"
+                  className="rounded-2xl border border-border bg-card shadow-sm dark:border-white/10 dark:bg-slate-900/60 overflow-hidden"
                   data-testid={`pricing-plan-${plan.id}`}
                 >
                   <div className={`h-1 w-full bg-gradient-to-r ${plan.gradient}`} />
                   <div className="p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-border dark:border-white/10">
                       <div className="flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br ${plan.gradient} shadow-lg`}>
                           <Icon className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-lg text-white">{isAr ? plan.nameAr : plan.name}</h4>
-                          <p className="text-sm text-slate-400">{isAr ? plan.subtitleAr : plan.subtitle}</p>
+                          <h4 className="font-bold text-lg text-foreground">{isAr ? plan.nameAr : plan.name}</h4>
+                          <p className="text-sm text-muted-foreground">{isAr ? plan.subtitleAr : plan.subtitle}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 sm:text-end">
                         <div>
-                          <p className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">
                             {isAr ? "الاشتراك الشهري" : "Monthly"}
                           </p>
-                          <p className="text-2xl font-extrabold text-white" data-testid={`price-${plan.id}`}>
+                          <p className="text-2xl font-extrabold text-foreground" data-testid={`price-${plan.id}`}>
                             {fmtPrice(pricing.monthly)}{" "}
-                            <span className="text-sm font-medium text-slate-400">
+                            <span className="text-sm font-medium text-muted-foreground">
                               {isAr ? "د.ع" : "IQD"}
                             </span>
                           </p>
@@ -697,7 +697,7 @@ export default function LandingPage() {
                       {[col1, col2].map((col, ci) => (
                         <ul key={ci} className="space-y-3">
                           {col.map((feature) => (
-                            <li key={feature} className="flex items-start gap-3 text-sm text-slate-300">
+                            <li key={feature} className="flex items-start gap-3 text-sm text-muted-foreground">
                               <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-gradient-to-br ${plan.gradient} opacity-90`}>
                                 <Check className="h-3 w-3 text-white" strokeWidth={3} />
                               </div>
