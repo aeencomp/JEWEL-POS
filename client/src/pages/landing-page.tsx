@@ -25,6 +25,7 @@ import {
   Pill,
   ArrowRight,
   CheckCircle,
+  Check,
   Globe,
   Zap,
   Shield,
@@ -33,6 +34,10 @@ import {
   UserPlus,
   Send,
   LogIn,
+  Cloud,
+  Headphones,
+  RefreshCw,
+  BadgeCheck,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -312,18 +317,18 @@ const POS_PRICING_PLANS: PosPricingPlan[] = [
 
 const PLATFORM_INCLUDES = {
   en: [
-    "Cloud-hosted — access from any device",
-    "Secure login with optional email verification (2FA)",
-    "Dedicated technical support",
-    "Free updates & new features",
-    "One flat monthly price — no hidden fees",
+    { icon: Cloud, text: "Cloud-hosted — access from any device" },
+    { icon: Shield, text: "Secure login with optional email verification (2FA)" },
+    { icon: Headphones, text: "Dedicated technical support" },
+    { icon: RefreshCw, text: "Free updates & new features" },
+    { icon: BadgeCheck, text: "One flat monthly price — no hidden fees" },
   ],
   ar: [
-    "استضافة سحابية — الوصول من أي جهاز",
-    "تسجيل دخول آمن مع تحقق بالبريد الإلكتروني (اختياري)",
-    "دعم فني مخصص",
-    "تحديثات مجانية وميزات جديدة",
-    "سعر شهري ثابت — بدون رسوم خفية",
+    { icon: Cloud, text: "استضافة سحابية — الوصول من أي جهاز" },
+    { icon: Shield, text: "تسجيل دخول آمن مع تحقق بالبريد الإلكتروني (اختياري)" },
+    { icon: Headphones, text: "دعم فني مخصص" },
+    { icon: RefreshCw, text: "تحديثات مجانية وميزات جديدة" },
+    { icon: BadgeCheck, text: "سعر شهري ثابت — بدون رسوم خفية" },
   ],
 };
 
@@ -344,6 +349,7 @@ export default function LandingPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil">("jewel");
   const [form, setForm] = useState<SignupForm>({
     name: "",
     businessName: "",
@@ -530,111 +536,182 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing Section ─────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 pb-24">
-        <div className="text-center mb-10">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-            {isAr ? "الأسعار" : "Pricing"}
-          </h2>
-          <p className="text-3xl font-extrabold">
-            {isAr ? "اشتراك شهري قياسي واحد" : "One Standard Monthly Plan"}
-          </p>
-          <p className="text-muted-foreground mt-2 text-sm max-w-xl mx-auto">
-            {isAr
-              ? "سعر موحّد لجميع أنظمة نقاط البيع — اختر النظام المناسب لقطاعك واحصل على كل المزايا"
-              : "One flat price for every POS system — pick the right system for your industry and get full access"}
-          </p>
-        </div>
+      <section className="relative py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-slate-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(251,191,36,0.18),transparent)]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
 
-        {/* Unified price banner */}
-        <div
-          className="rounded-2xl border-2 border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 p-8 mb-10 text-center shadow-lg"
-          data-testid="pricing-standard-banner"
-        >
-          <Badge className="bg-amber-500 text-white px-3 py-0.5 text-[11px] mb-4">
-            <Star className="h-3 w-3 me-1" />
-            {isAr ? "الخطة القياسية" : "Standard Plan"}
-          </Badge>
-          <div className="flex items-end justify-center gap-2 mb-2">
-            <span className="text-5xl font-extrabold tracking-tight" data-testid="price-monthly">
-              {fmtPrice(pricing.monthly)}
-            </span>
-            <span className="text-lg text-muted-foreground mb-2">
-              {isAr ? "د.ع / شهر" : "IQD / month"}
-            </span>
+        <div className="relative max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-amber-500/15 text-amber-300 border-amber-500/25 text-xs px-3 py-1">
+              {isAr ? "الأسعار" : "Pricing"}
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              {isAr ? "اشتراك شهري قياسي واحد" : "One Standard Monthly Plan"}
+            </h2>
+            <p className="text-slate-400 mt-3 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+              {isAr
+                ? "سعر موحّد لجميع أنظمة نقاط البيع — اختر النظام المناسب لقطاعك واحصل على كل المزايا"
+                : "One flat price for every POS system — pick the right system for your industry and get full access"}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mb-5">
-            {isAr
-              ? "ينطبق على JewelPOS و FashionPOS و FactoryPOS وجميع الأنظمة القادمة"
-              : "Applies to JewelPOS, FashionPOS, FactoryPOS, and all upcoming systems"}
-          </p>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground max-w-3xl mx-auto text-start">
-            {(isAr ? PLATFORM_INCLUDES.ar : PLATFORM_INCLUDES.en).map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
 
-        {/* Per-system feature details */}
-        <h3 className="text-center text-lg font-bold mb-6">
-          {isAr ? "ما يشمله كل نظام" : "What's Included in Each System"}
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {POS_PRICING_PLANS.map((plan) => {
-            const Icon = plan.icon;
-            const features = isAr ? plan.featuresAr : plan.features;
-            return (
-              <div
-                key={plan.id}
-                className="rounded-2xl border bg-card overflow-hidden flex flex-col"
-                data-testid={`pricing-plan-${plan.id}`}
-              >
-                <div className={`h-2 w-full bg-gradient-to-r ${plan.gradient}`} />
-                <div className="p-6 flex flex-col flex-1 gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${plan.gradient} shadow-sm`}>
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-lg">{isAr ? plan.nameAr : plan.name}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {isAr ? plan.subtitleAr : plan.subtitle}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-end gap-1 py-2 border-y">
-                    <span className="text-2xl font-extrabold" data-testid={`price-${plan.id}`}>
-                      {fmtPrice(pricing.monthly)}
-                    </span>
-                    <span className="text-xs text-muted-foreground mb-1">
-                      {isAr ? "د.ع/شهر" : "IQD/mo"}
-                    </span>
-                  </div>
-
-                  <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                    {features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2">
-                        <CheckCircle className={`h-4 w-4 ${plan.accent} flex-shrink-0 mt-0.5`} />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    className={`w-full bg-gradient-to-r ${plan.gradient} text-white border-0`}
-                    onClick={() => handleOpen(plan.id)}
-                    data-testid={`button-pricing-${plan.id}`}
-                  >
-                    <UserPlus className="h-4 w-4 me-2" />
-                    {isAr ? "اطلب الاشتراك" : "Request Subscription"}
-                  </Button>
+          {/* Hero pricing card */}
+          <div
+            className="grid lg:grid-cols-5 rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/40 mb-14"
+            data-testid="pricing-standard-banner"
+          >
+            <div className="lg:col-span-2 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 p-8 sm:p-10 flex flex-col justify-between gap-8">
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-semibold text-white/90 mb-6">
+                  <Star className="h-3 w-3" />
+                  {isAr ? "الخطة القياسية" : "Standard Plan"}
                 </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span
+                    className="text-5xl sm:text-6xl font-extrabold text-white tracking-tight leading-none"
+                    data-testid="price-monthly"
+                  >
+                    {fmtPrice(pricing.monthly)}
+                  </span>
+                  <span className="text-lg text-amber-100/80 font-medium">
+                    {isAr ? "د.ع / شهر" : "IQD / mo"}
+                  </span>
+                </div>
+                <p className="text-amber-100/70 text-sm mt-4 leading-relaxed">
+                  {isAr
+                    ? "ينطبق على JewelPOS و FashionPOS و FactoryPOS وجميع الأنظمة القادمة"
+                    : "Applies to JewelPOS, FashionPOS, FactoryPOS, and all upcoming systems"}
+                </p>
               </div>
-            );
-          })}
+              <Button
+                size="lg"
+                className="w-full bg-white text-amber-700 hover:bg-amber-50 font-semibold shadow-lg shadow-black/20 border-0"
+                onClick={() => handleOpen()}
+                data-testid="button-pricing-hero"
+              >
+                <UserPlus className="h-4 w-4 me-2" />
+                {isAr ? "اطلب الاشتراك الآن" : "Request Subscription"}
+                <ArrowRight className="h-4 w-4 ms-2" />
+              </Button>
+            </div>
+
+            <div className="lg:col-span-3 bg-slate-900/90 backdrop-blur-sm p-8 sm:p-10">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-6">
+                {isAr ? "يشمل كل اشتراك" : "Every subscription includes"}
+              </p>
+              <ul className="space-y-4">
+                {(isAr ? PLATFORM_INCLUDES.ar : PLATFORM_INCLUDES.en).map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-start gap-4 group">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-500/20 transition-colors">
+                      <Icon className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <span className="text-sm text-slate-300 leading-relaxed pt-1.5">{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Per-system details with tabs */}
+          <div>
+            <div className="text-center mb-8">
+              <h3 className="text-xl sm:text-2xl font-bold text-white">
+                {isAr ? "ما يشمله كل نظام" : "What's Included in Each System"}
+              </h3>
+              <p className="text-slate-400 text-sm mt-2">
+                {isAr ? "اختر نظامك لعرض المزايا الكاملة" : "Select your system to view the full feature list"}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2 mb-6 p-1.5 bg-slate-900/60 border border-white/10 rounded-2xl max-w-2xl mx-auto">
+              {POS_PRICING_PLANS.map((plan) => {
+                const Icon = plan.icon;
+                const isActive = activePlan === plan.id;
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setActivePlan(plan.id)}
+                    data-testid={`tab-pricing-${plan.id}`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                      isActive
+                        ? `bg-gradient-to-r ${plan.gradient} text-white shadow-lg`
+                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {isAr ? plan.nameAr : plan.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {POS_PRICING_PLANS.filter((p) => p.id === activePlan).map((plan) => {
+              const Icon = plan.icon;
+              const features = isAr ? plan.featuresAr : plan.features;
+              const mid = Math.ceil(features.length / 2);
+              const col1 = features.slice(0, mid);
+              const col2 = features.slice(mid);
+              return (
+                <div
+                  key={plan.id}
+                  className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm overflow-hidden"
+                  data-testid={`pricing-plan-${plan.id}`}
+                >
+                  <div className={`h-1 w-full bg-gradient-to-r ${plan.gradient}`} />
+                  <div className="p-6 sm:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/10">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br ${plan.gradient} shadow-lg`}>
+                          <Icon className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-lg text-white">{isAr ? plan.nameAr : plan.name}</h4>
+                          <p className="text-sm text-slate-400">{isAr ? plan.subtitleAr : plan.subtitle}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 sm:text-end">
+                        <div>
+                          <p className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">
+                            {isAr ? "الاشتراك الشهري" : "Monthly"}
+                          </p>
+                          <p className="text-2xl font-extrabold text-white" data-testid={`price-${plan.id}`}>
+                            {fmtPrice(pricing.monthly)}{" "}
+                            <span className="text-sm font-medium text-slate-400">
+                              {isAr ? "د.ع" : "IQD"}
+                            </span>
+                          </p>
+                        </div>
+                        <Button
+                          className={`bg-gradient-to-r ${plan.gradient} text-white border-0 shrink-0`}
+                          onClick={() => handleOpen(plan.id)}
+                          data-testid={`button-pricing-${plan.id}`}
+                        >
+                          {isAr ? "اطلب الآن" : "Get Started"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-x-10 gap-y-3">
+                      {[col1, col2].map((col, ci) => (
+                        <ul key={ci} className="space-y-3">
+                          {col.map((feature) => (
+                            <li key={feature} className="flex items-start gap-3 text-sm text-slate-300">
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-gradient-to-br ${plan.gradient} opacity-90`}>
+                                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                              </div>
+                              <span className="leading-relaxed">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
