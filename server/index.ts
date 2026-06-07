@@ -67,6 +67,8 @@ app.use((req, res, next) => {
   try {
     const { seedDatabase } = await import("./seed");
     await seedDatabase();
+    const { seedDemoEnvironment } = await import("./demo");
+    await seedDemoEnvironment();
   } catch (seedErr) {
     console.error(
       "Seed failed — check DATABASE_URL in .env and run: npm run db:push",

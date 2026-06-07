@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageToggle } from "@/components/language-toggle";
+import { DemoLoginHint } from "@/components/demo-login-hint";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -78,7 +79,7 @@ export default function RestaurantLogin() {
               <Button variant="ghost" className="w-full" onClick={() => { clearPending2FA(); setVerificationCode(""); }}>{isAr ? "رجوع" : "Back"}</Button>
             </div>
           ) : (
-            <form onSubmit={form.handleSubmit((v) => { setError(""); loginMutation.mutate({ ...v, portal: "store" }); })} className="space-y-4">
+            <form onSubmit={form.handleSubmit((v) => { setError(""); loginMutation.mutate({ ...v, portal: "store", posSystem: "restaurant" }); })} className="space-y-4">
               <h2 className="font-bold text-xl">{isAr ? "تسجيل الدخول" : "Sign In"}</h2>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="relative"><User className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><input {...form.register("username")} className="w-full h-11 ps-10 rounded-xl border bg-background px-3" placeholder={isAr ? "اسم المستخدم" : "Username"} /></div>
@@ -86,6 +87,7 @@ export default function RestaurantLogin() {
               <Button type="submit" className="w-full h-11 bg-orange-600 hover:bg-orange-700" disabled={loginMutation.isPending}>
                 {loginMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (isAr ? "دخول" : "Sign In")}
               </Button>
+              <DemoLoginHint />
             </form>
           )}
         </div>

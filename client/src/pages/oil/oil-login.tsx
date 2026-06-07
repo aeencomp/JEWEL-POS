@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
+import { DemoLoginHint } from "@/components/demo-login-hint";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export default function OilLogin() {
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginForm) =>
-      apiRequest("POST", "/api/login", { ...data, portal: "store" }),
+      apiRequest("POST", "/api/login", { ...data, portal: "store", posSystem: "oil" }),
     onSuccess: async (res: any) => {
       const data = await res.json();
       if (data.requires2FA) {
@@ -208,6 +209,7 @@ export default function OilLogin() {
                   </>
                 )}
               </button>
+              <DemoLoginHint />
 
               {/* Back to landing */}
               <div className="text-center pt-2">

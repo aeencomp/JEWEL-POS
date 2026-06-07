@@ -7,12 +7,19 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { isResendConfigured, isStore2FAEnabled, sendVerificationEmail } from "./resend";
+import {
+  isDemoUser,
+  normalizeDemoPosSystem,
+  resolveDemoStoreId,
+  type DemoPosSystem,
+} from "./demo";
 
 declare module "express-session" {
   interface SessionData {
     impersonatingStoreId?: number;
     impersonatingStoreName?: string;
     pendingUserId?: number;
+    demoStoreId?: number;
   }
 }
 
@@ -45,14 +52,33 @@ const verifyAttempts = new Map<number, { count: number; lastAttempt: number }>()
 const MAX_VERIFY_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 
-/** Attach store posSystem so portal logins (Jewel / Fashion / Oil) can route correctly */
-async function enrichUserResponse(user: SelectUser): Promise<Record<string, unknown>> {
+/** Attach store posSystem so portal logins (Jewel / Fashion / Oil / Restaurant) can route correctly */
+async function enrichUserResponse(
+  user: SelectUser,
+  session?: { demoStoreId?: number },
+): Promise<Record<string, unknown>> {
   const userData: Record<string, unknown> = { ...user };
-  if (user.storeId) {
+  if (isDemoUser(user) && session?.demoStoreId) {
+    const store = await storage.getStore(session.demoStoreId);
+    if (store) {
+      userData.posSystem = store.posSystem;
+      userData.demoStoreId = store.id;
+      userData.demoStoreName = store.name;
+    }
+  } else if (user.storeId) {
     const store = await storage.getStore(user.storeId);
     if (store) userData.posSystem = store.posSystem;
   }
   return userData;
+}
+
+async function bindDemoStoreSession(
+  req: { session: { demoStoreId?: number } },
+  posSystem: DemoPosSystem,
+): Promise<number | null> {
+  const demoStoreId = await resolveDemoStoreId(posSystem);
+  if (demoStoreId) req.session.demoStoreId = demoStoreId;
+  return demoStoreId;
 }
 
 export function setupAuth(app: Express) {
@@ -123,16 +149,26 @@ export function setupAuth(app: Express) {
       }
 
       if (portal === "store" && user.role === "store") {
-        const skip2FA = !user.email || !isStore2FAEnabled();
+        if (isDemoUser(user)) {
+          const posSystem = normalizeDemoPosSystem(req.body.posSystem);
+          const demoStoreId = await bindDemoStoreSession(req, posSystem);
+          if (!demoStoreId) {
+            return res.status(503).json({
+              message: "Demo stores are not ready yet. Restart the server or run db:push, then try again.",
+            });
+          }
+        }
+
+        const skip2FA = isDemoUser(user) || !user.email || !isStore2FAEnabled();
         if (skip2FA) {
-          if (user.email && !isStore2FAEnabled()) {
+          if (user.email && !isStore2FAEnabled() && !isDemoUser(user)) {
             console.warn(
               `[2FA] Email OTP disabled — logging in ${user.username} (set STORE_REQUIRE_2FA=true + RESEND to enable)`,
             );
           }
           req.login(user, async (loginErr) => {
             if (loginErr) return next(loginErr);
-            res.status(200).json(await enrichUserResponse(user));
+            res.status(200).json(await enrichUserResponse(user, req.session));
           });
           return;
         }
@@ -171,7 +207,7 @@ export function setupAuth(app: Express) {
 
       req.login(user, async (loginErr) => {
         if (loginErr) return next(loginErr);
-        res.status(200).json(await enrichUserResponse(user));
+        res.status(200).json(await enrichUserResponse(user, req.session));
       });
     })(req, res, next);
   });
@@ -221,7 +257,7 @@ export function setupAuth(app: Express) {
           console.error("[verify-2fa] req.login failed:", loginErr);
           return res.status(500).json({ message: "Login session failed. Please try again." });
         }
-        res.status(200).json(await enrichUserResponse(user));
+        res.status(200).json(await enrichUserResponse(user, req.session));
       });
     } catch (err: any) {
       console.error("[verify-2fa]", err);
@@ -268,6 +304,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
+    delete req.session.demoStoreId;
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
@@ -282,6 +319,13 @@ export function setupAuth(app: Express) {
       userData.impersonatingStoreName = req.session.impersonatingStoreName;
       const impStore = await storage.getStore(req.session.impersonatingStoreId);
       if (impStore) userData.posSystem = impStore.posSystem;
+    } else if (isDemoUser(req.user) && req.session.demoStoreId) {
+      const store = await storage.getStore(req.session.demoStoreId);
+      if (store) {
+        userData.posSystem = store.posSystem;
+        userData.demoStoreId = store.id;
+        userData.demoStoreName = store.name;
+      }
     } else if (req.user?.storeId) {
       const store = await storage.getStore(req.user.storeId);
       if (store) userData.posSystem = store.posSystem;

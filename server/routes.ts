@@ -9,6 +9,7 @@ import { categories, customers, inventoryItems, orders, orderItems, repairOrders
 import { eq, desc } from "drizzle-orm";
 import { calcLoyaltyEarned } from "@shared/loyalty";
 import { registerRestaurantRoutes } from "./restaurant-routes";
+import { getEffectiveStoreId, isDemoUser, resolveDemoStoreId, type DemoPosSystem } from "./demo";
 import { menuCategories, restaurantTables } from "@shared/schema";
 import multer from "multer";
 import path from "path";
@@ -48,13 +49,6 @@ function requireAdmin(req: any, res: any, next: any) {
     return res.sendStatus(403);
   }
   next();
-}
-
-function getEffectiveStoreId(req: any): number | null {
-  if (req.user.role === "admin" && req.session.impersonatingStoreId) {
-    return req.session.impersonatingStoreId;
-  }
-  return req.user.storeId;
 }
 
 function generateInventoryBarcode(storeId: number, posSystem: string | null | undefined, suffix = ""): string {
@@ -156,8 +150,13 @@ export async function registerRoutes(
     const username = req.query.username as string;
     if (!username) return res.json([]);
     const user = await storage.getUserByUsername(username);
-    if (!user || !user.storeId) return res.json([]);
-    const terminals = await storage.getPosTerminals(user.storeId);
+    if (!user) return res.json([]);
+    let storeId = user.storeId;
+    if (!storeId && isDemoUser(user)) {
+      storeId = await resolveDemoStoreId((req.query.posSystem as DemoPosSystem) || "jewel");
+    }
+    if (!storeId) return res.json([]);
+    const terminals = await storage.getPosTerminals(storeId);
     res.json(terminals.map((t) => ({ id: t.id, name: t.name, icon: t.icon, color: t.color, description: t.description })));
   });
 

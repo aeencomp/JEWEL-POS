@@ -7,6 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageToggle } from "@/components/language-toggle";
+import { DemoLoginHint } from "@/components/demo-login-hint";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -60,7 +61,7 @@ export default function FashionLogin() {
 
   function onSubmit(values: LoginForm) {
     setError("");
-    loginMutation.mutate({ ...values, portal: "store" });
+    loginMutation.mutate({ ...values, portal: "store", posSystem: "fashion" });
   }
 
   function onVerify() {
@@ -202,6 +203,7 @@ export default function FashionLogin() {
                       </>
                     )}
                   </Button>
+                  <DemoLoginHint />
                 </form>
               </>
             ) : (

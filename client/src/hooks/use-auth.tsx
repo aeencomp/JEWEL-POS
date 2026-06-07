@@ -36,7 +36,10 @@ type AuthContextType = {
   clearPending2FA: () => void;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password"> & { portal?: string };
+type LoginData = Pick<InsertUser, "username" | "password"> & {
+  portal?: string;
+  posSystem?: "jewel" | "oil" | "fashion" | "restaurant";
+};
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 

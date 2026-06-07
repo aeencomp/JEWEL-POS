@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
+import { DemoLoginHint } from "@/components/demo-login-hint";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Gem,
@@ -126,7 +127,7 @@ export default function StorePortal() {
   }
 
   function onSubmit(data: LoginForm) {
-    loginMutation.mutate({ ...data, portal: "store" });
+    loginMutation.mutate({ ...data, portal: "store", posSystem: "jewel" });
   }
 
   function onVerify() {
@@ -381,6 +382,7 @@ export default function StorePortal() {
                       </>
                     )}
                   </button>
+                  <DemoLoginHint />
 
                   <div className="text-center pt-1">
                     <button
