@@ -38,6 +38,11 @@ import {
   Headphones,
   RefreshCw,
   BadgeCheck,
+  User,
+  Building2,
+  Phone,
+  Mail,
+  Loader2,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -336,6 +341,42 @@ function fmtPrice(n: number) {
   return n.toLocaleString("en-US");
 }
 
+const SIGNUP_POS_OPTIONS = [
+  {
+    id: "jewel" as const,
+    label: "JewelPOS",
+    subEn: "Jewelry",
+    subAr: "مجوهرات",
+    icon: Gem,
+    gradient: "from-amber-500 to-yellow-600",
+    activeBorder: "border-amber-500",
+    activeBg: "bg-amber-50 dark:bg-amber-950/30",
+    hoverBorder: "hover:border-amber-300",
+  },
+  {
+    id: "fashion" as const,
+    label: "FashionPOS",
+    subEn: "Clothing",
+    subAr: "ملابس",
+    icon: Shirt,
+    gradient: "from-pink-500 to-purple-600",
+    activeBorder: "border-pink-500",
+    activeBg: "bg-pink-50 dark:bg-pink-950/30",
+    hoverBorder: "hover:border-pink-300",
+  },
+  {
+    id: "oil" as const,
+    label: "FactoryPOS",
+    subEn: "Factory",
+    subAr: "زيوت",
+    icon: Droplets,
+    gradient: "from-blue-600 to-cyan-600",
+    activeBorder: "border-blue-500",
+    activeBg: "bg-blue-50 dark:bg-blue-950/30",
+    hoverBorder: "hover:border-blue-300",
+  },
+];
+
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const { language } = useLanguage();
@@ -377,9 +418,15 @@ export default function LandingPage() {
 
   function validate(): boolean {
     const e: Partial<SignupForm> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!form.name.trim()) e.name = isAr ? "الاسم مطلوب" : "Name is required";
     if (!form.businessName.trim()) e.businessName = isAr ? "اسم العمل مطلوب" : "Business name is required";
     if (!form.phone.trim()) e.phone = isAr ? "رقم الهاتف مطلوب" : "Phone is required";
+    if (!form.email.trim()) {
+      e.email = isAr ? "البريد الإلكتروني مطلوب" : "Email is required";
+    } else if (!emailRegex.test(form.email.trim())) {
+      e.email = isAr ? "بريد إلكتروني غير صالح" : "Invalid email address";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -729,158 +776,170 @@ export default function LandingPage() {
 
       {/* Sign-up Request Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md" dir={isAr ? "rtl" : "ltr"}>
+        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden border shadow-2xl" dir={isAr ? "rtl" : "ltr"}>
           {!submitted ? (
             <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-lg">
-                  <UserPlus className="h-5 w-5 text-amber-600" />
-                  {isAr ? "طلب الاشتراك في IQ-POS" : "Request Access to IQ-POS"}
-                </DialogTitle>
-                <DialogDescription>
-                  {isAr
-                    ? "أرسل طلبك وسيتواصل معك فريقنا في أقرب وقت."
-                    : "Submit your request and our team will get back to you shortly."}
-                </DialogDescription>
-              </DialogHeader>
+              <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 px-6 py-5">
+                <DialogHeader className="space-y-1 text-start">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                      <UserPlus className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-white text-lg font-bold">
+                        {isAr ? "طلب الاشتراك في IQ-POS" : "Request Access to IQ-POS"}
+                      </DialogTitle>
+                      <DialogDescription className="text-amber-100/85 text-sm mt-0.5">
+                        {isAr
+                          ? "أرسل طلبك وسيتواصل معك فريقنا في أقرب وقت."
+                          : "Submit your request and our team will get back to you shortly."}
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                {/* POS System selector */}
-                <div className="space-y-1.5">
-                  <Label>{isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, posSystem: "jewel" }))}
-                      data-testid="pos-select-jewel"
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                        form.posSystem === "jewel"
-                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
-                          : "border-border hover:border-amber-300 bg-card"
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
-                        <Gem className="h-5 w-5 text-white" />
-                      </div>
-                      <span className="text-sm font-semibold">JewelPOS</span>
-                      <span className="text-[10px] text-muted-foreground">{isAr ? "مجوهرات" : "Jewelry"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, posSystem: "fashion" }))}
-                      data-testid="pos-select-fashion"
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                        form.posSystem === "fashion"
-                          ? "border-pink-500 bg-pink-50 dark:bg-pink-950/30"
-                          : "border-border hover:border-pink-300 bg-card"
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                        <Shirt className="h-5 w-5 text-white" />
-                      </div>
-                      <span className="text-sm font-semibold">FashionPOS</span>
-                      <span className="text-[10px] text-muted-foreground">{isAr ? "ملابس" : "Clothing"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, posSystem: "oil" }))}
-                      data-testid="pos-select-oil"
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                        form.posSystem === "oil"
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                          : "border-border hover:border-blue-300 bg-card"
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-                        <Droplets className="h-5 w-5 text-white" />
-                      </div>
-                      <span className="text-sm font-semibold">FactoryPOS</span>
-                      <span className="text-[10px] text-muted-foreground">{isAr ? "زيوت" : "Factory"}</span>
-                    </button>
+              <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-card">
+                <div className="space-y-2.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {SIGNUP_POS_OPTIONS.map((opt) => {
+                      const Icon = opt.icon;
+                      const isSelected = form.posSystem === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, posSystem: opt.id }))}
+                          data-testid={`pos-select-${opt.id}`}
+                          className={`relative flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200 ${
+                            isSelected
+                              ? `${opt.activeBorder} ${opt.activeBg} shadow-md ring-2 ring-offset-2 ring-offset-background ${
+                                  opt.id === "jewel" ? "ring-amber-500/40" : opt.id === "fashion" ? "ring-pink-500/40" : "ring-blue-500/40"
+                                }`
+                              : `border-border bg-background ${opt.hoverBorder} hover:shadow-sm`
+                          }`}
+                        >
+                          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${opt.gradient} flex items-center justify-center shadow-sm`}>
+                            <Icon className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="text-xs font-bold leading-tight">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{isAr ? opt.subAr : opt.subEn}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Full Name */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="req-name">{isAr ? "الاسم الكامل" : "Full Name"} *</Label>
-                  <Input
-                    id="req-name"
-                    data-testid="input-signup-name"
-                    value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder={isAr ? "محمد علي" : "John Smith"}
-                  />
-                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                <div className="h-px bg-border" />
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="req-name" className="text-sm font-medium">
+                      {isAr ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        id="req-name"
+                        data-testid="input-signup-name"
+                        value={form.name}
+                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                        placeholder={isAr ? "محمد علي" : "John Smith"}
+                        className={`h-11 ps-10 rounded-xl ${errors.name ? "border-destructive" : ""}`}
+                      />
+                    </div>
+                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="req-business" className="text-sm font-medium">
+                      {isAr ? "اسم المحل / الشركة" : "Business Name"} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Building2 className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        id="req-business"
+                        data-testid="input-signup-business"
+                        value={form.businessName}
+                        onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+                        placeholder={isAr ? "مجوهرات النور" : "Golden Jewelers"}
+                        className={`h-11 ps-10 rounded-xl ${errors.businessName ? "border-destructive" : ""}`}
+                      />
+                    </div>
+                    {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="req-phone" className="text-sm font-medium">
+                      {isAr ? "رقم الهاتف" : "Phone Number"} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Phone className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        id="req-phone"
+                        data-testid="input-signup-phone"
+                        value={form.phone}
+                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                        placeholder="+964 7xx xxx xxxx"
+                        dir="ltr"
+                        className={`h-11 ps-10 rounded-xl ${errors.phone ? "border-destructive" : ""}`}
+                      />
+                    </div>
+                    {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="req-email" className="text-sm font-medium">
+                      {isAr ? "البريد الإلكتروني" : "Email Address"} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        id="req-email"
+                        data-testid="input-signup-email"
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                        placeholder="you@example.com"
+                        dir="ltr"
+                        className={`h-11 ps-10 rounded-xl ${errors.email ? "border-destructive" : ""}`}
+                      />
+                    </div>
+                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                  </div>
                 </div>
 
-                {/* Business Name */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="req-business">{isAr ? "اسم المحل / الشركة" : "Business Name"} *</Label>
-                  <Input
-                    id="req-business"
-                    data-testid="input-signup-business"
-                    value={form.businessName}
-                    onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))}
-                    placeholder={isAr ? "مجوهرات النور" : "Golden Jewelers"}
-                  />
-                  {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="req-phone">{isAr ? "رقم الهاتف" : "Phone Number"} *</Label>
-                  <Input
-                    id="req-phone"
-                    data-testid="input-signup-phone"
-                    value={form.phone}
-                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="+964 7xx xxx xxxx"
-                    dir="ltr"
-                  />
-                  {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-                </div>
-
-                {/* Email (optional) */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="req-email">
-                    {isAr ? "البريد الإلكتروني" : "Email"}{" "}
-                    <span className="text-muted-foreground text-xs">({isAr ? "اختياري" : "optional"})</span>
-                  </Label>
-                  <Input
-                    id="req-email"
-                    data-testid="input-signup-email"
-                    type="email"
-                    value={form.email}
-                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    placeholder="you@example.com"
-                    dir="ltr"
-                  />
-                </div>
-
-                {/* Notes (optional) */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="req-notes">
+                  <Label htmlFor="req-notes" className="text-sm font-medium">
                     {isAr ? "ملاحظات" : "Additional Notes"}{" "}
-                    <span className="text-muted-foreground text-xs">({isAr ? "اختياري" : "optional"})</span>
+                    <span className="text-muted-foreground text-xs font-normal">({isAr ? "اختياري" : "optional"})</span>
                   </Label>
                   <Textarea
                     id="req-notes"
                     data-testid="input-signup-notes"
                     value={form.notes}
-                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                     placeholder={isAr ? "أي تفاصيل إضافية..." : "Any additional details..."}
-                    rows={2}
+                    rows={3}
+                    className="rounded-xl resize-none"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  size="lg"
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg shadow-amber-500/20 border-0"
                   disabled={mutation.isPending}
                   data-testid="button-signup-submit"
                 >
                   {mutation.isPending ? (
-                    <>{isAr ? "جاري الإرسال..." : "Sending..."}</>
+                    <>
+                      <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                      {isAr ? "جاري الإرسال..." : "Sending..."}
+                    </>
                   ) : (
                     <>
                       <Send className="h-4 w-4 me-2" />
@@ -891,23 +950,23 @@ export default function LandingPage() {
               </form>
             </>
           ) : (
-            <div className="py-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+            <div className="py-10 px-6 text-center space-y-4 bg-card">
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto ring-4 ring-green-500/10">
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="font-bold text-xl">
                 {isAr ? "تم إرسال طلبك!" : "Request Sent!"}
               </h3>
-              <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
                 {isAr
-                  ? "شكراً لك. سيتواصل معك فريقنا قريباً على الرقم الذي قدمته."
-                  : "Thank you! Our team will contact you soon on the phone number you provided."}
+                  ? "شكراً لك. سيتواصل معك فريقنا قريباً عبر الهاتف أو البريد الإلكتروني."
+                  : "Thank you! Our team will contact you soon via phone or email."}
               </p>
               <Button
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-signup-close"
-                className="mt-2"
+                className="mt-2 rounded-xl"
               >
                 {isAr ? "إغلاق" : "Close"}
               </Button>

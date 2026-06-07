@@ -360,6 +360,8 @@ export const insertSignupRequestSchema = createInsertSchema(signupRequests).omit
   id: true,
   status: true,
   createdAt: true,
+}).extend({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
 });
 
 export type SignupRequest = typeof signupRequests.$inferSelect;
