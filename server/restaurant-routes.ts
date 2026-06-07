@@ -134,7 +134,7 @@ const staffOrderSchema = z.object({
 export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
   const { requireAuth, getEffectiveStoreId, sendValidationError } = helpers;
 
-  // ── Public (Belly-style guest ordering) ─────────────────────
+  // ── Public guest ordering ───────────────────────────────────
   app.get("/api/public/restaurant/:storeId/menu", async (req, res) => {
     const storeId = parseInt(req.params.storeId);
     if (!storeId) return res.status(400).json({ message: "Invalid store" });

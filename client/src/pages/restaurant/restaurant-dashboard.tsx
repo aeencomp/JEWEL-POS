@@ -43,7 +43,7 @@ export default function RestaurantDashboard() {
         })}
       </div>
       <Card><CardContent className="p-4 flex items-center justify-between">
-        <div><p className="font-semibold">{isAr ? "طلب عبر QR (مثل Belly)" : "QR Table Ordering (Belly-style)"}</p><p className="text-sm text-muted-foreground">{isAr ? "أنشئ روابط QR للطاولات" : "Generate QR links for each table"}</p></div>
+        <div><p className="font-semibold">{isAr ? "طلب عبر QR" : "QR Table Ordering"}</p><p className="text-sm text-muted-foreground">{isAr ? "أنشئ روابط QR للطاولات" : "Generate QR links for each table"}</p></div>
         <Link href="/restaurant/qr"><Button variant="outline">{isAr ? "إدارة QR" : "Manage QR"}<ArrowRight className="h-4 w-4 ms-2" /></Button></Link>
       </CardContent></Card>
     </div>

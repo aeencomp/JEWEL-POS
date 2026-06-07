@@ -25,7 +25,7 @@ export default function RestaurantQr() {
         <h1 className="text-xl font-bold">{isAr ? "روابط طلب QR" : "QR Ordering Links"}</h1>
       </div>
       <p className="text-sm text-muted-foreground">
-        {isAr ? "اطبع هذه الروابط كـ QR على كل طاولة — العملاء يطلبون مباشرة (مثل Belly)" : "Print these as QR codes on each table — customers order directly (Belly-style)"}
+        {isAr ? "اطبع هذه الروابط كـ QR على كل طاولة — العملاء يطلبون مباشرة من هواتفهم" : "Print these as QR codes on each table — customers order directly from their phones"}
       </p>
       <Card>
         <CardHeader><CardTitle className="text-base">{isAr ? "رابط عام" : "General Link"}</CardTitle></CardHeader>
