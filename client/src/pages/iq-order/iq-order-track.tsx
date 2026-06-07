@@ -4,6 +4,9 @@ import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, MapPin, Phone, RefreshCw, Bike } from "lucide-react";
 import { IqOrderShell, TrackingTimeline, IQ_ORDER_BRAND } from "./iq-order-shared";
+import { usePwaManifest } from "@/lib/use-pwa-manifest";
+import DeliveryMap from "@/components/delivery-map";
+import { PushEnableButton } from "@/components/push-enable-button";
 
 type TrackData = {
   orderNumber: string;
@@ -22,7 +25,9 @@ type TrackData = {
   timeline: { key: string; en: string; ar: string; done: boolean }[];
   items: { id: number; name: string; quantity: number; price: string }[];
   store: { name: string; brandColor: string | null; phone: string } | null;
-  driver?: { id: number; name: string; phone: string; vehicleType: string } | null;
+  destLat?: number | null;
+  destLng?: number | null;
+  driver?: { id: number; name: string; phone: string; vehicleType: string; lat?: number | null; lng?: number | null } | null;
 };
 
 export default function IqOrderTrack() {
@@ -31,6 +36,8 @@ export default function IqOrderTrack() {
   const [, params] = useRoute("/app/track/:token");
   const [, navigate] = useLocation();
   const token = params?.token || "";
+
+  usePwaManifest("/manifest-iq-order.json");
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<TrackData>({
     queryKey: [`/api/public/iq-order/track/${token}`],
@@ -77,6 +84,22 @@ export default function IqOrderTrack() {
               )}
               <p className="text-xs text-muted-foreground mt-2">{data.store?.name}</p>
             </div>
+
+            {(data.destLat && data.destLng) || (data.driver?.lat && data.driver?.lng) ? (
+              <div className="rounded-2xl border bg-card p-4 space-y-2">
+                <h3 className="font-semibold text-sm">{isAr ? "تتبع GPS مباشر" : "Live GPS Tracking"}</h3>
+                <DeliveryMap
+                  destination={data.destLat && data.destLng ? { lat: data.destLat, lng: data.destLng } : null}
+                  driver={data.driver?.lat && data.driver?.lng ? { lat: data.driver.lat, lng: data.driver.lng } : null}
+                  height={240}
+                />
+                <p className="text-[10px] text-muted-foreground text-center">
+                  🏠 {isAr ? "منزلك" : "Your home"} · 🛵 {isAr ? "السائق" : "Driver"}
+                </p>
+              </div>
+            ) : null}
+
+            <PushEnableButton role="customer" refKey={token} isAr={isAr} />
 
             <div className="rounded-2xl border bg-card p-4">
               <div className="flex items-center justify-between mb-4">

@@ -10,6 +10,7 @@ import {
   stores,
 } from "@shared/schema";
 import { eq, and, isNull, desc, or } from "drizzle-orm";
+import { notifyOrderEvent } from "./push-service";
 
 type AuthHelpers = {
   sendValidationError: (res: Response, error: z.ZodError) => Response;
@@ -108,6 +109,27 @@ export function registerDriverRoutes(app: Express, helpers: AuthHelpers) {
       status: driver.status,
       vehicleType: driver.vehicleType,
     });
+  });
+
+  app.patch("/api/driver/location", requireDriver, async (req, res) => {
+    const schema = z.object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return sendValidationError(res, parsed.error);
+
+    const driver = await getDriver(req);
+    if (!driver) return res.status(401).json({ message: "Session expired" });
+
+    const now = new Date();
+    await db.update(deliveryDrivers).set({
+      currentLat: String(parsed.data.lat),
+      currentLng: String(parsed.data.lng),
+      locationUpdatedAt: now,
+    }).where(eq(deliveryDrivers.id, driver.id));
+
+    res.json({ ok: true, updatedAt: now });
   });
 
   app.patch("/api/driver/status", requireDriver, async (req, res) => {
@@ -236,6 +258,11 @@ export function registerDriverRoutes(app: Express, helpers: AuthHelpers) {
     if (!updated) return res.status(409).json({ message: "Order already taken" });
 
     await db.update(deliveryDrivers).set({ status: "busy" }).where(eq(deliveryDrivers.id, driver.id));
+    void notifyOrderEvent("driver_assigned", {
+      storeId: updated.storeId,
+      orderNumber: updated.orderNumber,
+      trackingToken: updated.trackingToken,
+    });
     res.json(await enrichDriverOrder(updated));
   });
 
@@ -256,6 +283,11 @@ export function registerDriverRoutes(app: Express, helpers: AuthHelpers) {
     )).returning();
 
     if (!updated) return res.status(400).json({ message: "Cannot pick up this order" });
+    void notifyOrderEvent("pickup", {
+      storeId: updated.storeId,
+      orderNumber: updated.orderNumber,
+      trackingToken: updated.trackingToken,
+    });
     res.json(await enrichDriverOrder(updated));
   });
 
@@ -278,6 +310,11 @@ export function registerDriverRoutes(app: Express, helpers: AuthHelpers) {
     if (!updated) return res.status(400).json({ message: "Cannot complete this order" });
 
     await db.update(deliveryDrivers).set({ status: "online" }).where(eq(deliveryDrivers.id, driver.id));
+    void notifyOrderEvent("delivered", {
+      storeId: updated.storeId,
+      orderNumber: updated.orderNumber,
+      trackingToken: updated.trackingToken,
+    });
     res.json(await enrichDriverOrder(updated));
   });
 

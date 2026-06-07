@@ -6,6 +6,8 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bike, Phone, Lock, Loader2 } from "lucide-react";
+import { usePwaManifest } from "@/lib/use-pwa-manifest";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 export default function DriverLogin() {
   const { language } = useLanguage();
@@ -15,6 +17,7 @@ export default function DriverLogin() {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  usePwaManifest("/manifest-driver.json");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) navigate("/driver");
@@ -44,6 +47,12 @@ export default function DriverLogin() {
             <h1 className="text-2xl font-bold text-white">{isAr ? "تطبيق السائق" : "Driver App"}</h1>
             <p className="text-sm text-slate-400">{isAr ? "طلب IQ — استلم ووصّل الطلبات" : "IQ Order — pick up & deliver orders"}</p>
           </div>
+
+          <PwaInstallBanner
+            isAr={isAr}
+            label="Install IQ Driver app on your phone"
+            labelAr="ثبّت تطبيق السائق على هاتفك"
+          />
 
           <form onSubmit={handleLogin} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
             <div className="relative">

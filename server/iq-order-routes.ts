@@ -12,6 +12,8 @@ import {
   deliveryDrivers,
 } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { geocodeAddress } from "./geocode";
+import { notifyOrderEvent } from "./push-service";
 
 export type DeliverySettings = {
   deliveryEnabled: boolean;
@@ -81,15 +83,34 @@ async function enrichOrder(row: typeof restaurantOrders.$inferSelect) {
   let driver = null;
   if (row.driverId) {
     const [d] = await db.select().from(deliveryDrivers).where(eq(deliveryDrivers.id, row.driverId));
-    if (d) driver = { id: d.id, name: d.name, phone: d.phone, vehicleType: d.vehicleType };
+    if (d) {
+      driver = {
+        id: d.id,
+        name: d.name,
+        phone: d.phone,
+        vehicleType: d.vehicleType,
+        lat: d.currentLat ? parseFloat(String(d.currentLat)) : null,
+        lng: d.currentLng ? parseFloat(String(d.currentLng)) : null,
+        locationUpdatedAt: d.locationUpdatedAt,
+      };
+    }
   }
   return {
     ...row,
     subtotal: String(row.subtotal),
     total: String(row.total),
     deliveryFee: row.deliveryFee ? String(row.deliveryFee) : "0",
+    destLat: row.destLat ? parseFloat(String(row.destLat)) : null,
+    destLng: row.destLng ? parseFloat(String(row.destLng)) : null,
     items: itemRows.map(serializeOrderItem),
-    store: store ? { id: store.id, name: store.name, brandColor: store.brandColor, logoUrl: store.logoUrl, phone: store.phone } : null,
+    store: store ? {
+      id: store.id,
+      name: store.name,
+      brandColor: store.brandColor,
+      logoUrl: store.logoUrl,
+      phone: store.phone,
+      address: store.address,
+    } : null,
     driver,
   };
 }
@@ -222,6 +243,8 @@ export function registerIqOrderRoutes(app: Express, helpers: { sendValidationErr
     const deliveryFee = settings.deliveryFee;
     const total = subtotal + deliveryFee;
     const trackingToken = genTrackingToken();
+    const fullAddress = `${parsed.data.deliveryAddress}${parsed.data.deliveryArea ? `, ${parsed.data.deliveryArea}` : ""}, Iraq`;
+    const coords = await geocodeAddress(fullAddress);
 
     const [order] = await db.insert(restaurantOrders).values({
       storeId,
@@ -235,6 +258,8 @@ export function registerIqOrderRoutes(app: Express, helpers: { sendValidationErr
       notes: parsed.data.notes || null,
       deliveryAddress: parsed.data.deliveryAddress,
       deliveryArea: parsed.data.deliveryArea || null,
+      destLat: coords ? String(coords.lat) : null,
+      destLng: coords ? String(coords.lng) : null,
       deliveryFee: deliveryFee.toFixed(2),
       trackingToken,
       paymentMethod: parsed.data.paymentMethod,
@@ -257,6 +282,12 @@ export function registerIqOrderRoutes(app: Express, helpers: { sendValidationErr
     }
 
     const enriched = await enrichOrder(order);
+    void notifyOrderEvent("new", {
+      storeId,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      trackingToken,
+    });
     res.status(201).json({ ...enriched, items, trackingUrl: `/app/track/${trackingToken}` });
   });
 

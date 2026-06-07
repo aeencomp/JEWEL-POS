@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { storage } from "./storage";
 import { getDeliverySettings, deliverySettingsKey, type DeliverySettings } from "./iq-order-routes";
+import { notifyOrderEvent } from "./push-service";
 import {
   restaurantTables,
   menuCategories,
@@ -529,6 +530,13 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
     }
 
     const [enriched] = await enrichOrders([updated]);
+    if (status === "ready" && updated.orderType === "delivery") {
+      void notifyOrderEvent("ready", {
+        storeId: updated.storeId,
+        orderNumber: updated.orderNumber,
+        trackingToken: updated.trackingToken,
+      });
+    }
     res.json(enriched);
   });
 
@@ -538,7 +546,7 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const settings = await getDeliverySettings(storeId);
     const base = `${req.protocol}://${req.get("host")}`;
-    res.json({ ...settings, appUrl: `${base}/app`, storeUrl: `${base}/app/store/${storeId}` });
+    res.json({ ...settings, storeId, appUrl: `${base}/app`, storeUrl: `${base}/app/store/${storeId}` });
   });
 
   app.patch("/api/restaurant/delivery/settings", requireAuth, async (req, res) => {

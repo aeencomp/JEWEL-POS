@@ -6,6 +6,8 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Bike, Sparkles } from "lucide-react";
 import { IqOrderShell, RestaurantCard } from "./iq-order-shared";
+import { usePwaManifest } from "@/lib/use-pwa-manifest";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 type StoreListing = {
   id: number;
@@ -25,6 +27,8 @@ export default function IqOrderHome() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
 
+  usePwaManifest("/manifest-iq-order.json");
+
   const { data: stores = [], isLoading } = useQuery<StoreListing[]>({
     queryKey: ["/api/public/iq-order/stores"],
   });
@@ -38,6 +42,11 @@ export default function IqOrderHome() {
   return (
     <IqOrderShell isAr={isAr}>
       <div className="p-4 space-y-5 pb-8">
+        <PwaInstallBanner
+          isAr={isAr}
+          label="Install IQ Order on your phone — works like a native app"
+          labelAr="ثبّت تطبيق طلب IQ على هاتفك — يعمل كتطبيق أصلي"
+        />
         <div className="rounded-2xl p-5 text-white shadow-lg" style={{ background: "linear-gradient(135deg, #fbbf24, #b45309)" }}>
           <div className="flex items-start justify-between gap-2">
             <div>

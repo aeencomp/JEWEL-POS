@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { RestoPageHeader, OrderStatusBadge, ElapsedTimer } from "./restaurant-shared";
 import { useToast } from "@/hooks/use-toast";
+import { PushEnableButton } from "@/components/push-enable-button";
 
 type OrderItem = { id: number; name: string; quantity: number };
 type DeliveryOrder = {
@@ -26,6 +27,7 @@ type DeliverySettings = {
   deliveryFee: number;
   minOrder: number;
   estMinutes: number;
+  storeId?: number;
   appUrl: string;
   storeUrl: string;
 };
@@ -122,6 +124,10 @@ export default function RestaurantDelivery() {
           </div>
         }
       />
+
+      {settings?.storeId && (
+        <PushEnableButton role="staff" refKey={String(settings.storeId)} isAr={isAr} />
+      )}
 
       {showSettings && form && (
         <div className="rounded-2xl border bg-card p-5 mb-6 space-y-4">

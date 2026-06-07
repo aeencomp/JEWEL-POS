@@ -759,6 +759,8 @@ export const restaurantOrders = pgTable("restaurant_orders", {
   notes: text("notes"),
   deliveryAddress: text("delivery_address"),
   deliveryArea: text("delivery_area"),
+  destLat: decimal("dest_lat", { precision: 10, scale: 7 }),
+  destLng: decimal("dest_lng", { precision: 10, scale: 7 }),
   deliveryFee: decimal("delivery_fee", { precision: 12, scale: 2 }).default("0"),
   trackingToken: text("tracking_token"),
   driverId: integer("driver_id"),
@@ -804,11 +806,26 @@ export const deliveryDrivers = pgTable("delivery_drivers", {
   isActive: boolean("is_active").notNull().default(true),
   status: text("status", { enum: ["offline", "online", "busy"] }).notNull().default("offline"),
   storeId: integer("store_id").references(() => stores.id),
+  currentLat: decimal("current_lat", { precision: 10, scale: 7 }),
+  currentLng: decimal("current_lng", { precision: 10, scale: 7 }),
+  locationUpdatedAt: timestamp("location_updated_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertDeliveryDriverSchema = createInsertSchema(deliveryDrivers).omit({ id: true, createdAt: true });
 export type DeliveryDriver = typeof deliveryDrivers.$inferSelect;
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  role: text("role", { enum: ["customer", "driver", "staff"] }).notNull(),
+  refKey: text("ref_key").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),

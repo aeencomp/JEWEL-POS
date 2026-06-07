@@ -9,6 +9,10 @@
   "background_color": "#0f172a",
   "theme_color": "#b45309",
   "orientation": "any",
+  "shortcuts": [
+    { "name": "IQ Order", "short_name": "Order", "url": "/app", "icons": [{ "src": "/favicon.png", "sizes": "192x192" }] },
+    { "name": "IQ Driver", "short_name": "Driver", "url": "/driver-login", "icons": [{ "src": "/favicon.png", "sizes": "192x192" }] }
+  ],
   "icons": [
     {
       "src": "/favicon.png",

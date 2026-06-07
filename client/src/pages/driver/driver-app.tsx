@@ -12,6 +12,9 @@ import {
   CheckCircle, Store, Clock, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePwaManifest } from "@/lib/use-pwa-manifest";
+import { useDriverGps } from "@/lib/use-driver-gps";
+import { PushEnableButton } from "@/components/push-enable-button";
 
 type DriverOrder = {
   id: number;
@@ -35,6 +38,7 @@ export default function DriverApp() {
   const [, navigate] = useLocation();
   const { driver, isLoading, isAuthenticated, logoutMutation, setStatusMutation } = useDriverAuth();
   const [tab, setTab] = useState<Tab>("available");
+  usePwaManifest("/manifest-driver.json");
 
   const isOnline = driver?.status === "online" || driver?.status === "busy";
 
@@ -54,6 +58,8 @@ export default function DriverApp() {
     queryKey: ["/api/driver/orders/history"],
     enabled: isAuthenticated && tab === "history",
   });
+
+  useDriverGps(isAuthenticated && active.length > 0);
 
   const acceptOrder = useMutation({
     mutationFn: (id: number) => apiRequest("POST", `/api/driver/orders/${id}/accept`),
@@ -223,6 +229,7 @@ export default function DriverApp() {
       </div>
 
       <main className="flex-1 max-w-lg mx-auto w-full p-4 space-y-3 pb-8">
+        {driver && <PushEnableButton role="driver" refKey={String(driver.id)} isAr={isAr} />}
         {tab === "available" && (
           available.length > 0 ? available.map((o) => <OrderCard key={o.id} order={o} mode="available" />)
             : <EmptyState isAr={isAr} msg={isOnline ? (isAr ? "لا طلبات متاحة الآن" : "No orders available") : (isAr ? "أنت غير متصل" : "You are offline")} />
