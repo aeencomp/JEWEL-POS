@@ -242,6 +242,36 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
     const tables = await db.select().from(restaurantTables).where(eq(restaurantTables.storeId, storeId));
     const menuCount = await db.select().from(menuItems).where(eq(menuItems.storeId, storeId));
 
+    const todayOrderIds = todayOrders.map((o) => o.id);
+    const popularMap = new Map<string, number>();
+    if (todayOrderIds.length > 0) {
+      const todayLineItems = await db.select().from(restaurantOrderItems)
+        .where(inArray(restaurantOrderItems.orderId, todayOrderIds));
+      for (const li of todayLineItems) {
+        popularMap.set(li.name, (popularMap.get(li.name) ?? 0) + li.quantity);
+      }
+    }
+    const popularItems = [...popularMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([name, quantity]) => ({ name, quantity }));
+
+    const recentOrders = await enrichOrders(
+      allOrders
+        .filter((o) => !["completed", "cancelled"].includes(o.status))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 8),
+    );
+
+    const hourlySales = Array.from({ length: 24 }, (_, hour) => {
+      const bucket = todayOrders.filter((o) => new Date(o.createdAt).getHours() === hour);
+      return {
+        hour,
+        count: bucket.length,
+        total: bucket.reduce((s, o) => s + parseFloat(o.total), 0),
+      };
+    }).filter((h) => h.count > 0);
+
     res.json({
       todayOrders: todayOrders.length,
       todaySales: todayOrders.reduce((s, o) => s + parseFloat(o.total), 0),
@@ -249,6 +279,21 @@ export function registerRestaurantRoutes(app: Express, helpers: AuthHelpers) {
       occupiedTables: tables.filter((t) => t.status === "occupied").length,
       totalTables: tables.length,
       menuItems: menuCount.length,
+      avgTicket: todayOrders.length
+        ? todayOrders.reduce((s, o) => s + parseFloat(o.total), 0) / todayOrders.length
+        : 0,
+      qrOrdersToday: todayOrders.filter((o) => o.source === "qr").length,
+      staffOrdersToday: todayOrders.filter((o) => o.source === "staff").length,
+      popularItems,
+      recentOrders,
+      hourlySales,
+      tables: tables.map((t) => ({
+        id: t.id,
+        tableNumber: t.tableNumber,
+        status: t.status,
+        section: t.section,
+        name: t.name,
+      })),
     });
   });
 

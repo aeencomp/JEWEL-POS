@@ -62,6 +62,7 @@ import RestaurantKitchen from "@/pages/restaurant/restaurant-kitchen";
 import RestaurantMenu from "@/pages/restaurant/restaurant-menu";
 import RestaurantOrders from "@/pages/restaurant/restaurant-orders";
 import RestaurantQr from "@/pages/restaurant/restaurant-qr";
+import RestaurantReports from "@/pages/restaurant/restaurant-reports";
 import PublicOrderPage from "@/pages/public-order";
 import { Loader2 } from "lucide-react";
 import { resolveUserPosSystem } from "@/lib/pos-system";
@@ -127,6 +128,7 @@ function RestaurantRouter() {
       <Route path="/restaurant/kitchen" component={RestaurantKitchen} />
       <Route path="/restaurant/menu" component={RestaurantMenu} />
       <Route path="/restaurant/orders" component={RestaurantOrders} />
+      <Route path="/restaurant/reports" component={RestaurantReports} />
       <Route path="/restaurant/qr" component={RestaurantQr} />
       <Route component={NotFound} />
     </Switch>

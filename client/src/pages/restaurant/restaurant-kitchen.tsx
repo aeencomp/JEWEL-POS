@@ -3,22 +3,30 @@ import { useLanguage } from "@/hooks/use-language";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { ChefHat, CheckCircle } from "lucide-react";
+import { ChefHat, CheckCircle, Smartphone, ArrowRight } from "lucide-react";
+import { RestoPageHeader, ElapsedTimer } from "./restaurant-shared";
+import { cn } from "@/lib/utils";
 
 type OrderItem = { id: number; name: string; quantity: number; price?: string; notes: string | null };
 type Order = {
-  id: number;
-  orderNumber: string;
-  status: string;
-  source: string;
-  total: string;
-  customerName: string | null;
-  table: { tableNumber: number } | null;
-  items?: OrderItem[];
+  id: number; orderNumber: string; status: string; source: string; total: string;
+  customerName: string | null; createdAt: string; notes: string | null;
+  table: { tableNumber: number } | null; items?: OrderItem[];
 };
 
-const STATUS_FLOW = ["pending", "accepted", "preparing", "ready", "served", "completed"] as const;
+const COLUMNS = [
+  { key: "new", statuses: ["pending", "accepted"], en: "New Orders", ar: "طلبات جديدة", color: "border-red-200 bg-red-50/50 dark:bg-red-950/20" },
+  { key: "prep", statuses: ["preparing"], en: "Preparing", ar: "قيد التحضير", color: "border-orange-200 bg-orange-50/50 dark:bg-orange-950/20" },
+  { key: "ready", statuses: ["ready"], en: "Ready to Serve", ar: "جاهز للتقديم", color: "border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20" },
+] as const;
+
+function nextAction(status: string, isAr: boolean) {
+  if (status === "pending") return { status: "accepted", label: isAr ? "قبول" : "Accept" };
+  if (status === "accepted") return { status: "preparing", label: isAr ? "بدء التحضير" : "Start Prep" };
+  if (status === "preparing") return { status: "ready", label: isAr ? "جاهز" : "Mark Ready" };
+  if (status === "ready") return { status: "served", label: isAr ? "تم التقديم" : "Served" };
+  return { status: "completed", label: isAr ? "إنهاء" : "Complete" };
+}
 
 export default function RestaurantKitchen() {
   const { language } = useLanguage();
@@ -26,7 +34,7 @@ export default function RestaurantKitchen() {
 
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ["/api/restaurant/orders"],
-    refetchInterval: 5000,
+    refetchInterval: 4000,
   });
 
   const updateStatus = useMutation({
@@ -38,95 +46,78 @@ export default function RestaurantKitchen() {
     },
   });
 
-  const active = orders.filter((o) => !["completed", "cancelled"].includes(o.status));
-
-  function nextStatus(current: string) {
-    const idx = STATUS_FLOW.indexOf(current as (typeof STATUS_FLOW)[number]);
-    return idx >= 0 && idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : "completed";
-  }
-
-  const statusLabel: Record<string, { en: string; ar: string; color: string }> = {
-    pending: { en: "New", ar: "جديد", color: "bg-red-500" },
-    accepted: { en: "Accepted", ar: "مقبول", color: "bg-blue-500" },
-    preparing: { en: "Preparing", ar: "قيد التحضير", color: "bg-orange-500" },
-    ready: { en: "Ready", ar: "جاهز", color: "bg-emerald-500" },
-    served: { en: "Served", ar: "تم التقديم", color: "bg-purple-500" },
-  };
+  const active = orders.filter((o) => !["completed", "cancelled", "served"].includes(o.status));
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <ChefHat className="h-6 w-6 text-orange-600" />
-        <h1 className="text-xl font-bold">{isAr ? "شاشة المطبخ" : "Kitchen Display"}</h1>
-        <Badge variant="secondary">{active.length} {isAr ? "نشط" : "active"}</Badge>
-      </div>
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {active.map((order) => {
-          const sl = statusLabel[order.status] || statusLabel.pending;
-          const lineItems = order.items ?? [];
+    <div className="p-6 h-full min-h-0 flex flex-col max-w-[1600px] mx-auto">
+      <RestoPageHeader
+        title={isAr ? "شاشة المطبخ (KDS)" : "Kitchen Display (KDS)"}
+        subtitle={isAr ? "تتبع الطلبات — جديد → تحضير → جاهز" : "Track orders — New → Preparing → Ready"}
+        isAr={isAr}
+        action={<Badge variant="secondary" className="text-sm px-3 py-1">{active.length} {isAr ? "نشط" : "active"}</Badge>}
+      />
+
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
+        {COLUMNS.map((col) => {
+          const colOrders = orders.filter((o) => (col.statuses as readonly string[]).includes(o.status));
           return (
-            <Card key={order.id} className="border-2 border-orange-200 dark:border-orange-900">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-bold">{order.orderNumber}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.table
-                        ? `${isAr ? "طاولة" : "Table"} #${order.table.tableNumber}`
-                        : order.customerName || (isAr ? "طلب QR" : "QR Order")}
-                      {order.source === "qr" && <Badge className="ms-2 text-[10px]">QR</Badge>}
-                    </p>
-                  </div>
-                  <Badge className={`${sl.color} text-white shrink-0`}>{isAr ? sl.ar : sl.en}</Badge>
-                </div>
+            <div key={col.key} className={cn("rounded-2xl border-2 flex flex-col min-h-0 overflow-hidden", col.color)}>
+              <div className="px-4 py-3 border-b border-inherit flex items-center justify-between shrink-0">
+                <h3 className="font-bold text-sm flex items-center gap-2">
+                  <ChefHat className="h-4 w-4" />
+                  {isAr ? col.ar : col.en}
+                </h3>
+                <Badge className="bg-background text-foreground">{colOrders.length}</Badge>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
+                {colOrders.map((order) => {
+                  const action = nextAction(order.status, isAr);
+                  const lineItems = order.items ?? [];
+                  return (
+                    <div key={order.id} className="rounded-xl border bg-card shadow-sm p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-base">{order.orderNumber}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {order.table ? `${isAr ? "طاولة" : "T"}#${order.table.tableNumber}` : order.customerName || "—"}
+                          </p>
+                        </div>
+                        <div className="text-end shrink-0 space-y-1">
+                          <ElapsedTimer since={order.createdAt} isAr={isAr} />
+                          {order.source === "qr" && <Badge variant="outline" className="text-[10px]"><Smartphone className="h-3 w-3" /></Badge>}
+                        </div>
+                      </div>
 
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
-                    {isAr ? "الأصناف المطلوبة" : "Order Items"}
-                  </p>
-                  {lineItems.length > 0 ? (
-                    <ul className="space-y-2 text-sm">
-                      {lineItems.map((item) => (
-                        <li key={item.id} className="flex items-start justify-between gap-2">
-                          <span className="font-medium">
-                            <span className="text-orange-600 font-bold me-1">{item.quantity}×</span>
-                            {item.name}
-                          </span>
-                          {item.price && (
-                            <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
-                              {(parseFloat(item.price) * item.quantity).toLocaleString()}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      {isAr ? "لا توجد أصناف مسجلة لهذا الطلب" : "No items recorded for this order"}
-                    </p>
-                  )}
-                  <p className="text-xs font-semibold text-end mt-2 pt-2 border-t border-border/60 tabular-nums">
-                    {isAr ? "المجموع:" : "Total:"} {parseFloat(order.total || "0").toLocaleString()} {isAr ? "د.ع" : "IQD"}
-                  </p>
-                </div>
+                      <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
+                        {lineItems.length > 0 ? lineItems.map((item) => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span><strong className="text-orange-600">{item.quantity}×</strong> {item.name}</span>
+                          </div>
+                        )) : (
+                          <p className="text-xs text-muted-foreground italic">{isAr ? "لا أصناف" : "No items"}</p>
+                        )}
+                        {order.notes && <p className="text-xs text-amber-700 dark:text-amber-400 pt-1 border-t border-border/50">📝 {order.notes}</p>}
+                      </div>
 
-                <Button
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                  size="sm"
-                  onClick={() => updateStatus.mutate({ id: order.id, status: nextStatus(order.status) })}
-                >
-                  <CheckCircle className="h-4 w-4 me-2" />
-                  {order.status === "ready" ? (isAr ? "تم التقديم" : "Mark Served") : (isAr ? "التالي" : "Next Step")}
-                </Button>
-              </CardContent>
-            </Card>
+                      <Button
+                        size="sm"
+                        className="w-full bg-orange-600 hover:bg-orange-700 gap-2"
+                        onClick={() => updateStatus.mutate({ id: order.id, status: action.status })}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        {action.label}
+                        <ArrowRight className="h-3 w-3 ms-auto" />
+                      </Button>
+                    </div>
+                  );
+                })}
+                {colOrders.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground py-8">{isAr ? "فارغ" : "Empty"}</p>
+                )}
+              </div>
+            </div>
           );
         })}
-        {active.length === 0 && (
-          <p className="text-muted-foreground col-span-full text-center py-12">
-            {isAr ? "لا طلبات نشطة" : "No active orders"}
-          </p>
-        )}
       </div>
     </div>
   );
