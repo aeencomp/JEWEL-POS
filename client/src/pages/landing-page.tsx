@@ -446,53 +446,192 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <IqPosLogo size={32} />
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-lg shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <IqPosLogo size={34} />
             <span className="font-bold text-lg tracking-tight">IQ-POS</span>
-            <Badge variant="secondary" className="text-[10px] px-1.5 hidden sm:flex">Platform</Badge>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex text-muted-foreground"
+              onClick={() => document.getElementById("industries")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              {isAr ? "الأنظمة" : "Systems"}
+            </Button>
+            <Button
+              size="sm"
+              className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 hidden sm:inline-flex"
+              onClick={() => handleOpen()}
+            >
+              {isAr ? "اطلب الاشتراك" : "Get Started"}
+            </Button>
             <LanguageToggle />
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-amber-50/60 via-background to-background dark:from-amber-950/20 dark:via-background" />
-        <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-12 text-center">
-          <Badge className="mb-4 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-700 text-xs px-3 py-1">
-            {isAr ? "منصة نقاط البيع العراقية" : "Iraqi POS Platform"}
-          </Badge>
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight leading-tight">
-            {isAr ? (
-              <>نقطة البيع المثالية<br /><span className="text-amber-600">لكل قطاع</span></>
-            ) : (
-              <>The Perfect POS<br /><span className="text-amber-600">for Every Business</span></>
-            )}
-          </h1>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
-            {isAr
-              ? "اختر نظام نقطة البيع المناسب لعملك. مصمم للسوق العراقي، ثنائي اللغة، وسهل الاستخدام."
-              : "Choose the right POS system for your business. Designed for the Iraqi market, bilingual, and easy to use."}
-          </p>
-          <div className="flex flex-wrap justify-center gap-4 mb-2">
-            {features.map(({ icon: Icon, label, labelAr }) => (
-              <div key={label} className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                <span>{isAr ? labelAr : label}</span>
+      <section className="relative overflow-hidden border-b border-border/40">
+        <div className="absolute inset-0 bg-background" />
+        <div
+          className="absolute inset-0 opacity-[0.35] dark:opacity-[0.15]"
+          style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="absolute top-0 end-0 w-[480px] h-[480px] bg-amber-400/10 dark:bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute bottom-0 start-0 w-[360px] h-[360px] bg-orange-400/8 dark:bg-orange-500/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+
+        <div className="relative max-w-6xl mx-auto px-4 py-16 sm:py-20 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="text-center lg:text-start">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/80 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-950/30 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 mb-6">
+                <Star className="h-3.5 w-3.5" />
+                {isAr ? "منصة نقاط البيع العراقية" : "Iraqi POS Platform"}
               </div>
-            ))}
+
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.15] mb-5">
+                {isAr ? (
+                  <>
+                    نقطة البيع المثالية
+                    <br />
+                    <span className="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                      لكل قطاع
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    The Perfect POS
+                    <br />
+                    <span className="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                      for Every Business
+                    </span>
+                  </>
+                )}
+              </h1>
+
+              <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+                {isAr
+                  ? "أنظمة نقاط بيع متخصصة لمحلات المجوهرات والملابس والمصانع — مصممة للسوق العراقي، ثنائية اللغة، وجاهزة للعمل."
+                  : "Specialized POS systems for jewelry, fashion, and factories — built for the Iraqi market, bilingual, and ready to run."}
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 mb-10">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto h-12 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg shadow-amber-500/20 border-0"
+                  onClick={() => handleOpen()}
+                >
+                  <UserPlus className="h-4 w-4 me-2" />
+                  {isAr ? "اطلب الاشتراك" : "Request Access"}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto h-12 px-6 rounded-xl"
+                  onClick={() => document.getElementById("industries")?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  {isAr ? "استكشف الأنظمة" : "Explore Systems"}
+                  <ArrowRight className="h-4 w-4 ms-2" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto lg:mx-0">
+                {features.map(({ icon: Icon, label, labelAr }) => (
+                  <div
+                    key={label}
+                    className="flex items-start gap-3 rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-3.5 text-start shadow-sm hover:shadow-md hover:border-amber-200/60 dark:hover:border-amber-800/40 transition-all"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-medium text-foreground/90 leading-snug pt-1.5">
+                      {isAr ? labelAr : label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative hidden lg:block">
+              <div className="absolute inset-4 bg-gradient-to-br from-amber-500/20 to-orange-600/10 rounded-3xl blur-2xl" />
+              <div className="relative rounded-2xl border border-border/80 bg-card shadow-2xl shadow-black/5 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/60 bg-muted/40">
+                  <div className="flex gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground font-medium ms-2">IQ-POS Dashboard</span>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { icon: Gem, label: "JewelPOS", color: "from-amber-500 to-yellow-600", sales: "2.4M" },
+                      { icon: Shirt, label: "FashionPOS", color: "from-pink-500 to-purple-600", sales: "1.8M" },
+                      { icon: Droplets, label: "FactoryPOS", color: "from-blue-600 to-cyan-600", sales: "5.1M" },
+                    ].map(({ icon: Icon, label, color, sales }) => (
+                      <div key={label} className="rounded-xl border border-border/60 p-3 bg-background/50">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-2`}>
+                          <Icon className="h-4 w-4 text-white" />
+                        </div>
+                        <p className="text-[10px] font-bold truncate">{label}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{sales} IQD</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-xl border border-border/60 p-4 bg-muted/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold">{isAr ? "مبيعات اليوم" : "Today's Sales"}</span>
+                      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 text-[10px]">
+                        +12%
+                      </Badge>
+                    </div>
+                    <div className="flex items-end gap-1.5 h-16">
+                      {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400 opacity-80"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 rounded-lg border border-border/60 px-3 py-2 flex items-center gap-2">
+                      <BarChart3 className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="text-[10px] text-muted-foreground">{isAr ? "تقارير فورية" : "Live reports"}</span>
+                    </div>
+                    <div className="flex-1 rounded-lg border border-border/60 px-3 py-2 flex items-center gap-2">
+                      <Shield className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="text-[10px] text-muted-foreground">{isAr ? "آمن وسحابي" : "Secure cloud"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 pb-20">
-        <h2 className="text-center text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-8">
-          {isAr ? "اختر قطاع عملك" : "Select Your Industry"}
-        </h2>
+      <section id="industries" className="max-w-6xl mx-auto px-4 pb-20 pt-4 scroll-mt-20">
+        <div className="text-center mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
+            {isAr ? "الأنظمة" : "Systems"}
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            {isAr ? "اختر قطاع عملك" : "Select Your Industry"}
+          </h2>
+          <p className="text-muted-foreground text-sm mt-2 max-w-lg mx-auto">
+            {isAr
+              ? "ثلاثة أنظمة متخصصة جاهزة الآن — والمزيد قريباً"
+              : "Three specialized systems live now — more coming soon"}
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {products.map((product) => {
