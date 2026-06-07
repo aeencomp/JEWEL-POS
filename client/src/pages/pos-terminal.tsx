@@ -281,35 +281,123 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
 
   function printReceipt() {
     if (!completedOrder) return;
-    const w = window.open("", "_blank", "width=400,height=600");
+    const w = window.open("", "_blank", "width=320,height=720");
     if (!w) return;
-    const bc = branding?.brandColor || "#d4a574";
+
     const storeName = branding?.name || "Store";
     const storeAddress = branding?.address || "";
-    const logoUrlRaw = branding?.logoUrl || "";
-    const logoUrl = logoUrlRaw && logoUrlRaw.startsWith("/") ? `${window.location.origin}${logoUrlRaw}` : logoUrlRaw;
     const header = branding?.receiptHeader || "";
     const footer = branding?.receiptFooter || "";
-    const customer = completedOrder.customerId ? customers.find((c) => c.id === completedOrder.customerId) : null;
-    const customerHtml = customer
-      ? `<div class="customer-block"><div class="customer-label">${t("pos.customer")}</div><div class="customer-name">${customer.name}</div>${customer.phone ? `<div class="customer-detail">${t("customers.phone")}: ${customer.phone}</div>` : ""}${customer.idNumber ? `<div class="customer-detail">${t("customers.idNumber")}: ${customer.idNumber}</div>` : ""}</div>`
+    const currency = t("common.currency");
+    const paymentLabel: Record<string, string> = {
+      cash: isAr ? "نقدي" : "Cash",
+      card: isAr ? "بطاقة" : "Card",
+      transfer: isAr ? "تحويل" : "Transfer",
+      debit: isAr ? "آجل" : "Credit",
+    };
+
+    const customer = completedOrder.customerId
+      ? customers.find((c) => c.id === completedOrder.customerId)
+      : null;
+    const customerBlock = customer
+      ? `<div class="block"><div class="lbl">${t("pos.customer")}</div><div>${customer.name}</div>${customer.phone ? `<div class="sub">${t("customers.phone")}: ${customer.phone}</div>` : ""}</div>`
       : completedOrder.customerName && completedOrder.customerName !== t("pos.walkIn")
-        ? `<div class="customer-block"><div class="customer-label">${t("pos.customer")}</div><div class="customer-name">${completedOrder.customerName}</div></div>`
+        ? `<div class="block"><div class="lbl">${t("pos.customer")}</div><div>${completedOrder.customerName}</div></div>`
         : "";
-    const itemsHtml = (completedOrder.items || []).map((item, idx) => {
-      const invItem = inventory.find((inv) => inv.id === item.inventoryItemId);
+
+    const itemsHtml = (completedOrder.items || []).map((item) => {
+      const inv = inventory.find((i) => i.id === item.inventoryItemId) as
+        (InventoryItem & { size?: string; color?: string; brand?: string; barcode?: string }) | undefined;
       const details: string[] = [];
       if (item.sku) details.push(`${t("inventory.sku")}: ${item.sku}`);
-      if (invItem?.metalType) details.push(`${t("inventory.metalType")}: ${invItem.metalType}`);
-      if (invItem?.purity) details.push(`${t("inventory.purity")}: ${invItem.purity}`);
-      if (invItem?.weightGrams) details.push(`${t("inventory.weight")}: ${invItem.weightGrams}g`);
-      if (invItem?.gemstone) details.push(`${t("inventory.gemstone")}: ${invItem.gemstone}`);
-      const detailsStr = details.length > 0 ? `<div class="item-details">${details.join(" · ")}</div>` : "";
+      if (isFashion) {
+        if (inv?.size) details.push(`${t("inventory.size")}: ${inv.size}`);
+        if (inv?.color) details.push(`${t("inventory.color")}: ${inv.color}`);
+        if (inv?.brand) details.push(`${t("inventory.brand")}: ${inv.brand}`);
+        if (inv?.barcode) details.push(`${t("inventory.barcode")}: ${inv.barcode}`);
+      } else {
+        if (inv?.metalType && inv.metalType !== "other") details.push(`${t("inventory.metalType")}: ${inv.metalType}`);
+        if (inv?.purity) details.push(`${t("inventory.purity")}: ${inv.purity}`);
+        if (inv?.weightGrams) details.push(`${t("inventory.weight")}: ${inv.weightGrams}g`);
+      }
       const lineTotal = Number(item.price) * item.quantity;
-      const rowBg = idx % 2 === 0 ? "#fafafa" : "#fff";
-      return `<tr style="background:${rowBg}"><td class="item-cell"><div class="item-name">${item.name}</div>${detailsStr}</td><td class="item-cell" style="text-align:center">${item.quantity}</td><td class="item-cell" style="text-align:right;white-space:nowrap">${Number(item.price).toLocaleString()} ${t("common.currency")}${item.quantity > 1 ? `<div class="item-details">${t("pos.total")}: ${lineTotal.toLocaleString()} ${t("common.currency")}</div>` : ""}</td></tr>`;
+      const detailHtml = details.length ? `<div class="sub">${details.join(" | ")}</div>` : "";
+      return `<tr>
+        <td><div class="item">${item.name}</div>${detailHtml}</td>
+        <td class="c">${item.quantity}</td>
+        <td class="r">${Number(item.price).toLocaleString()}<br><span class="sub">${lineTotal.toLocaleString()} ${currency}</span></td>
+      </tr>`;
     }).join("");
-    w.document.write(`<!DOCTYPE html><html><head><title>Receipt</title><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Poppins',sans-serif;max-width:360px;margin:0 auto;padding:18px;color:#111;font-size:13.5px;line-height:1.5}.header{text-align:center;background:${bc};color:#fff;padding:18px 14px;border-radius:10px;margin-bottom:16px}.store-name{font-size:24px;font-weight:800;letter-spacing:0.5px}.header-sub{font-size:12px;margin-top:5px;opacity:0.92;font-weight:600}.divider{border:none;border-top:1.5px dashed #d0d0d0;margin:14px 0}.order-info{display:flex;justify-content:space-between;font-size:12.5px;color:#444;margin-bottom:3px}.order-info strong{color:#111;font-weight:700}.customer-block{margin:12px 0;padding:11px 14px;background:#f5f5f5;border-radius:8px;border-left:4px solid ${bc}}.customer-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:${bc};font-weight:800;margin-bottom:5px}.customer-name{font-weight:700;font-size:14px}.customer-detail{font-size:12px;color:#555;margin-top:3px}table{width:100%;border-collapse:collapse;margin-top:4px}thead th{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#666;font-weight:700;padding:7px 5px;border-bottom:2px solid #ddd;text-align:left}.item-cell{padding:9px 5px;border-bottom:1px solid #eee;vertical-align:top;font-size:13px}.item-name{font-weight:700;font-size:13px}.item-details{font-size:11px;color:#777;margin-top:3px}.totals{margin-top:14px;padding-top:12px;border-top:2px solid #ddd}.total-line{display:flex;justify-content:space-between;font-size:13px;color:#444;padding:4px 0;font-weight:600}.grand-total{display:flex;justify-content:space-between;margin-top:8px;padding:12px 14px;background:${bc};color:#fff;border-radius:8px;font-size:18px;font-weight:800}.payment-method{font-size:12px;color:#666;margin-top:9px;text-align:center;font-weight:600}.footer{text-align:center;margin-top:16px;padding-top:13px;border-top:1.5px dashed #d0d0d0}.footer-text{font-size:12px;color:#555;margin-bottom:5px;font-weight:600}.thank-you{font-size:14px;font-weight:700;color:${bc};margin-bottom:6px}.website{font-size:11px;color:#aaa;margin-top:8px}.print-btn{display:block;margin:18px auto 0;width:100%;padding:11px;font-size:14px;font-weight:700;background:${bc};color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Poppins',sans-serif}@media print{.print-btn{display:none}}</style></head><body><div class="header">${logoUrl ? `<img src="${logoUrl}" alt="logo" style="height:48px;max-width:160px;object-fit:contain;margin-bottom:8px;border-radius:4px">` : ""}<div class="store-name">${storeName}</div>${storeAddress ? `<div class="header-sub">${storeAddress}</div>` : ""}${header ? `<div class="header-sub">${header}</div>` : ""}</div><div class="order-info"><span><strong>${t("pos.orderNumber")}</strong> ${completedOrder.orderNumber}</span></div><div class="order-info"><span><strong>${t("receipt.date")}:</strong> ${new Date(completedOrder.createdAt).toLocaleString()}</span></div><hr class="divider">${customerHtml}<table><thead><tr><th>${t("pos.item")}</th><th style="text-align:center">${t("pos.qty")}</th><th style="text-align:right">${t("pos.price")}</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="totals"><div class="total-line"><span>${t("pos.total")}:</span><span>${Number(completedOrder.subtotal).toLocaleString()} ${t("common.currency")}</span></div>${Number(completedOrder.discount) > 0 ? `<div class="total-line"><span>${t("pos.discount")}:</span><span style="color:#e53e3e">-${Number(completedOrder.discount).toLocaleString()} ${t("common.currency")}</span></div>` : ""}<div class="grand-total"><span>${t("pos.grandTotal")}:</span><span>${Number(completedOrder.total).toLocaleString()} ${t("common.currency")}</span></div><div class="payment-method">${t("pos.payment")}: ${completedOrder.paymentMethod}</div></div><div class="footer">${footer ? `<div class="footer-text">${footer}</div>` : ""}<div class="thank-you">${t("receipt.thankYou")}</div><div class="website">www.IQ-pos.com</div></div><button class="print-btn" onclick="window.print()">${t("receipt.print")}</button></body></html>`);
+
+    const discountHtml = Number(completedOrder.discount) > 0
+      ? `<div class="row"><span>${t("pos.discount")}</span><span>-${Number(completedOrder.discount).toLocaleString()} ${currency}</span></div>`
+      : "";
+
+    w.document.write(`<!DOCTYPE html>
+<html dir="${isAr ? "rtl" : "ltr"}">
+<head>
+<meta charset="utf-8">
+<title>${completedOrder.orderNumber}</title>
+<style>
+  @page { size: 80mm auto; margin: 2mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: Arial, Helvetica, "Courier New", monospace;
+    width: 72mm; max-width: 72mm; margin: 0 auto; padding: 4mm 2mm;
+    color: #000; background: #fff; font-size: 13px; font-weight: 700; line-height: 1.35;
+  }
+  .center { text-align: center; }
+  .store { font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+  .addr, .sub { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .line { border-top: 2px solid #000; margin: 8px 0; }
+  .row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin: 3px 0; }
+  .block { border: 2px solid #000; padding: 6px; margin: 8px 0; }
+  .lbl { font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 3px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th { font-size: 11px; font-weight: 900; text-align: left; border-bottom: 2px solid #000; padding: 4px 2px; }
+  th.c, td.c { text-align: center; width: 28px; }
+  th.r, td.r { text-align: right; white-space: nowrap; }
+  td { padding: 6px 2px; border-bottom: 1px solid #000; vertical-align: top; font-weight: 800; }
+  .item { font-size: 13px; font-weight: 900; }
+  .total-box { border: 3px solid #000; padding: 8px; margin-top: 8px; }
+  .grand { display: flex; justify-content: space-between; font-size: 16px; font-weight: 900; }
+  .pay { text-align: center; font-size: 12px; font-weight: 900; margin-top: 6px; }
+  .footer { text-align: center; margin-top: 10px; font-size: 12px; font-weight: 800; }
+  .thanks { font-size: 14px; font-weight: 900; margin: 6px 0; }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="store">${storeName}</div>
+    ${storeAddress ? `<div class="addr">${storeAddress}</div>` : ""}
+    ${header ? `<div class="sub">${header}</div>` : ""}
+  </div>
+  <div class="line"></div>
+  <div class="row"><span>${t("pos.orderNumber")}</span><span>${completedOrder.orderNumber}</span></div>
+  <div class="row"><span>${t("receipt.date")}</span><span>${new Date(completedOrder.createdAt).toLocaleString(isAr ? "ar-IQ" : "en-GB")}</span></div>
+  ${customerBlock}
+  <table>
+    <thead><tr>
+      <th>${t("pos.item")}</th>
+      <th class="c">${t("pos.qty")}</th>
+      <th class="r">${t("pos.price")}</th>
+    </tr></thead>
+    <tbody>${itemsHtml}</tbody>
+  </table>
+  <div class="total-box">
+    <div class="row"><span>${t("pos.total")}</span><span>${Number(completedOrder.subtotal).toLocaleString()} ${currency}</span></div>
+    ${discountHtml}
+    <div class="line"></div>
+    <div class="grand"><span>${t("pos.grandTotal")}</span><span>${Number(completedOrder.total).toLocaleString()} ${currency}</span></div>
+    <div class="pay">${t("pos.payment")}: ${paymentLabel[completedOrder.paymentMethod || "cash"] || completedOrder.paymentMethod}</div>
+  </div>
+  <div class="footer">
+    ${footer ? `<div>${footer}</div>` : ""}
+    <div class="thanks">${t("receipt.thankYou")}</div>
+    <div>www.iq-pos.com</div>
+  </div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
+</body></html>`);
     w.document.close();
   }
 

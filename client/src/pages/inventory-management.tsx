@@ -120,7 +120,8 @@ function getStockStatus(qty: number, isAvailable: boolean): { label: string; cla
 }
 
 export default function InventoryManagement() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
   const { toast } = useToast();
   const { user } = useAuth();
   const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
@@ -248,11 +249,14 @@ export default function InventoryManagement() {
       const res = await apiRequest("POST", "/api/inventory", { ...data, isAvailable: true });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (item: InventoryItem & { barcode?: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       setItemDialogOpen(false);
       itemForm.reset();
-      toast({ title: t("inventory.addItem") });
+      toast({
+        title: t("inventory.addItem"),
+        description: item.barcode ? `${t("inventory.barcode")}: ${item.barcode}` : undefined,
+      });
     },
   });
 
@@ -732,6 +736,10 @@ export default function InventoryManagement() {
                                       </>}
                                     </>
                                   )}
+                                  {item.barcode && <>
+                                    <div className="text-muted-foreground">{t("inventory.barcode")}</div>
+                                    <div className="font-mono font-medium">{item.barcode}</div>
+                                  </>}
                                 </div>
                               </div>
 
@@ -1026,6 +1034,16 @@ export default function InventoryManagement() {
                   <FormMessage />
                 </FormItem>
               )} />
+              {!editingItem && (
+                <p className="text-xs text-muted-foreground">
+                  {isAr ? "يُنشأ الباركود تلقائياً عند الحفظ" : "Barcode is auto-generated when you save"}
+                </p>
+              )}
+              {editingItem?.barcode && (
+                <p className="text-xs font-mono text-muted-foreground">
+                  {t("inventory.barcode")}: {editingItem.barcode}
+                </p>
+              )}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => { setItemDialogOpen(false); setEditingItem(null); }} data-testid="button-cancel-item">
                   {t("common.cancel")}

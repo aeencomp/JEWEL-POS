@@ -55,6 +55,12 @@ function getEffectiveStoreId(req: any): number | null {
   return req.user.storeId;
 }
 
+function generateInventoryBarcode(storeId: number, posSystem: string | null | undefined, suffix = ""): string {
+  const prefix = posSystem === "fashion" ? "FSH" : posSystem === "oil" ? "OIL" : "JWL";
+  const tail = suffix.replace(/[^A-Z0-9]/gi, "").substring(0, 8).toUpperCase();
+  return `${prefix}${storeId}${Date.now().toString(36).toUpperCase()}${tail}`;
+}
+
 const debtCreateBodySchema = z.object({
   personName: z.string().trim().min(1, "Person name is required"),
   personPhone: z.string().nullable().optional(),
@@ -1236,8 +1242,9 @@ export async function registerRoutes(
     if (body.color === "") body.color = null;
     if (body.brand === "") body.brand = null;
     if (body.styleCode === "") body.styleCode = null;
-    if (!body.barcode) {
-      body.barcode = `JWL${storeId}${Date.now().toString(36).toUpperCase()}`;
+    const store = await storage.getStore(storeId);
+    if (!body.barcode || String(body.barcode).trim() === "") {
+      body.barcode = generateInventoryBarcode(storeId, store?.posSystem, body.sku || "");
     }
     const item = await storage.createInventoryItem({
       ...body,
@@ -1282,7 +1289,7 @@ export async function registerRoutes(
           sku = `${style}-${size}-${colorCode}-${suffix++}`;
         }
         const name = `${baseName} (${size} / ${color})`;
-        const barcode = `FSH${storeId}${Date.now().toString(36).toUpperCase()}${size}${colorCode}`;
+        const barcode = generateInventoryBarcode(storeId, "fashion", `${size}${colorCode}`);
         const item = await storage.createInventoryItem({
           storeId,
           sku,
