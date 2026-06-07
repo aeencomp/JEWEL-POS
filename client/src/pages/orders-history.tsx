@@ -144,7 +144,7 @@ export default function OrdersHistory() {
       ? `${window.location.origin}${logoUrlRaw}`
       : logoUrlRaw;
 
-    printReceipt({
+    await printReceipt({
       order,
       items,
       inventory,

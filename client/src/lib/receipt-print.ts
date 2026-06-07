@@ -1,4 +1,4 @@
-import JsBarcode from "jsbarcode";
+import QRCode from "qrcode";
 import type { Category, InventoryItem, Order, OrderItem } from "@shared/schema";
 
 export type ReceiptFormat = "thermal" | "a4";
@@ -90,9 +90,8 @@ function itemDetailLines(
     if (inv?.size) lines.push(detailLine(labels.size, inv.size));
     if (inv?.color) lines.push(detailLine(labels.color, inv.color));
     if (inv?.brand) lines.push(detailLine(labels.brand, inv.brand));
-    if (inv?.barcode) lines.push(detailLine(labels.barcode, inv.barcode));
   } else {
-    if (inv?.metalType) lines.push(detailLine(labels.metalType, inv.metalType));
+    if (inv?.metalType && inv.metalType !== "other") lines.push(detailLine(labels.metalType, inv.metalType));
     if (inv?.purity) lines.push(detailLine(labels.purity, inv.purity));
     if (inv?.weightGrams) lines.push(detailLine(labels.weight, `${inv.weightGrams}g`));
     if (inv?.gemstone) lines.push(detailLine(labels.gemstone, inv.gemstone));
@@ -105,80 +104,75 @@ function itemDetailLines(
   return lines.length ? `<div class="item-details">${lines.join("")}</div>` : "";
 }
 
-function orderBarcodeSvg(orderNumber: string, format: ReceiptFormat): string {
-  if (typeof document === "undefined" || !orderNumber) return "";
+async function orderQrBlock(orderNumber: string): Promise<string> {
+  if (!orderNumber) return "";
   try {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    JsBarcode(svg, orderNumber, {
-      format: "CODE128",
-      width: format === "a4" ? 2.5 : 2.2,
-      height: format === "a4" ? 64 : 52,
-      displayValue: true,
-      fontOptions: "bold",
-      font: "Arial",
-      fontSize: format === "a4" ? 16 : 14,
-      textAlign: "center",
-      textMargin: 4,
-      margin: 2,
-      lineColor: "#000000",
-      background: "#ffffff",
+    const dataUrl = await QRCode.toDataURL(orderNumber, {
+      width: 140,
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
     });
-    return `<div class="barcode">${svg.outerHTML}</div>`;
+    return `<div class="qr-block">
+      <img src="${dataUrl}" alt="QR" width="70" height="70">
+      <div class="qr-label">${esc(orderNumber)}</div>
+    </div>`;
   } catch {
-    return `<div class="barcode"><b>${esc(orderNumber)}</b></div>`;
+    return "";
   }
 }
 
 const THERMAL_CSS = `
-@page { size: 80mm auto; margin: 0; }
+@page { size: 80mm auto; margin: 2mm; }
 html, body {
   margin: 0; padding: 0;
-  width: 80mm; max-width: 80mm;
+  width: 76mm; max-width: 76mm;
   background: #fff !important;
   color: #000 !important;
   font-family: Arial, Helvetica, Tahoma, sans-serif !important;
-  font-size: 15px !important;
-  font-weight: 900 !important;
-  line-height: 1.45 !important;
-  -webkit-font-smoothing: none !important;
-  text-rendering: optimizeSpeed !important;
-  filter: contrast(1.25);
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  -webkit-font-smoothing: antialiased !important;
 }
-*, *::before, *::after {
-  color: #000 !important;
-  background: transparent !important;
-  font-family: Arial, Helvetica, Tahoma, sans-serif !important;
-  font-weight: 700 !important;
-  box-sizing: border-box;
-  opacity: 1 !important;
-  -webkit-text-stroke: 0.35px #000;
-}
-b, strong, th, td, .store, .thanks, .grand td { font-weight: 900 !important; }
+* { box-sizing: border-box; color: #000 !important; background: transparent !important; }
 .center { text-align: center; }
 .store {
-  font-size: 20px !important; padding: 8px 4px;
-  border: 4px solid #000; margin-bottom: 8px; background: #fff !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  padding: 6px 0 8px;
+  border-bottom: 2px solid #000;
+  margin-bottom: 8px;
 }
-.meta { font-size: 14px !important; margin: 3px 0; }
-.sep { border: none; border-top: 4px solid #000; margin: 10px 0; }
-table { width: 100%; border-collapse: collapse; background: #fff !important; }
+.meta { font-size: 12px !important; margin: 2px 0; font-weight: 400 !important; }
+.sep { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+table { width: 100%; border-collapse: collapse; }
 th, td {
-  border: 3px solid #000; padding: 6px 4px;
-  font-size: 14px !important; vertical-align: top; background: #fff !important;
+  border: 1px solid #000;
+  padding: 5px 4px;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  vertical-align: top;
 }
-.c { text-align: center; width: 26px; }
+th { font-weight: 600 !important; font-size: 11px !important; }
+.c { text-align: center; width: 24px; }
 .r { text-align: right; white-space: nowrap; }
-.item-details { margin-top: 5px; }
-.detail-line { font-size: 12px !important; font-weight: 700 !important; margin: 2px 0; line-height: 1.35; }
-.detail-lbl { font-weight: 900 !important; }
-.totals td { border: 3px solid #000; padding: 6px 4px; }
-.grand td { font-size: 19px !important; padding: 10px 4px !important; border: 4px solid #000 !important; }
-.footer { text-align: center; margin-top: 12px; font-size: 14px !important; }
-.thanks { font-size: 17px !important; font-weight: 900 !important; margin: 10px 0; }
+.item-name { font-weight: 600 !important; }
+.item-details { margin-top: 4px; }
+.detail-line { font-size: 10px !important; font-weight: 400 !important; margin: 1px 0; line-height: 1.3; }
+.detail-lbl { font-weight: 600 !important; }
+.totals td { padding: 5px 4px; }
+.grand td { font-size: 15px !important; font-weight: 700 !important; padding: 7px 4px !important; }
+.qr-block { text-align: center; margin: 12px 0 8px; padding: 8px 0; border-top: 1px dashed #000; }
+.qr-block img { display: inline-block; }
+.qr-label { font-size: 10px !important; font-weight: 600 !important; margin-top: 4px; letter-spacing: 0.3px; }
+.footer { text-align: center; margin-top: 8px; font-size: 12px !important; }
+.thanks { font-size: 13px !important; font-weight: 600 !important; margin: 6px 0; }
 @media print {
   html, body, * {
-    color: #000 !important; background: #fff !important;
-    -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+    color: #000 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 `;
@@ -210,7 +204,6 @@ html, body {
 }
 .info-box h3 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: ${accent}; }
 .info-box p { margin: 3px 0; font-size: 13px; }
-.barcode { text-align: center; margin: 12px 0; }
 .items-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
 .items-table th {
   background: ${accent}; color: #fff; font-size: 12px; font-weight: 700;
@@ -237,8 +230,46 @@ html, body {
 `;
 }
 
-function buildThermalBody(ctx: ReturnType<typeof buildContext>) {
-  const { order, items, inventory, categories, labels, isAr, isFashion, storeName, storeAddress, receiptHeader, receiptFooter, customerName, customerPhone, paymentLabel, dateStr, customerBlock, notesBlock, discountRow } = ctx;
+function buildContext(input: ReceiptPrintInput) {
+  const {
+    order, items, inventory, categories, labels, isAr, isFashion,
+    storeName, storeAddress, receiptHeader, receiptFooter,
+    customerName, customerPhone, paymentLabel, logoUrl,
+  } = input;
+
+  const dateStr = order.createdAt
+    ? new Date(order.createdAt).toLocaleString(isAr ? "ar-IQ" : "en-GB")
+    : "";
+
+  const showCustomer =
+    (customerName && customerName !== labels.walkIn) || !!customerPhone;
+  const customerBlock = showCustomer
+    ? `<table class="totals"><tr><td><span class="detail-lbl">${esc(labels.customer)}</span><br>${customerName && customerName !== labels.walkIn ? esc(customerName) : ""}${customerPhone ? `${customerName && customerName !== labels.walkIn ? "<br>" : ""}${esc(labels.phone)}: ${esc(customerPhone)}` : ""}</td></tr></table>`
+    : "";
+
+  const notesBlock = order.notes?.trim()
+    ? `<table class="totals"><tr><td><span class="detail-lbl">${esc(labels.notes)}</span><br>${esc(order.notes.trim())}</td></tr></table>`
+    : "";
+
+  const discountRow =
+    Number(order.discount) > 0
+      ? `<tr><td${input.format === "a4" ? "" : ' colspan="2"'}><span class="detail-lbl">${esc(labels.discount)}</span></td><td class="r">-${Number(order.discount).toLocaleString()} ${labels.currency}</td></tr>`
+      : "";
+
+  return {
+    order, items, inventory, categories, labels, isAr, isFashion,
+    storeName, storeAddress, receiptHeader, receiptFooter,
+    customerName, customerPhone, paymentLabel, dateStr,
+    customerBlock, notesBlock, discountRow, logoUrl,
+  };
+}
+
+function buildThermalBody(ctx: ReturnType<typeof buildContext>, qrHtml: string) {
+  const {
+    order, items, inventory, categories, labels, isFashion,
+    storeName, storeAddress, receiptHeader, receiptFooter,
+    paymentLabel, dateStr, customerBlock, notesBlock, discountRow,
+  } = ctx;
 
   const rows = items.map((item) => {
     const inv = inventory.find((i) => i.id === item.inventoryItemId) as InvExtra | undefined;
@@ -246,48 +277,53 @@ function buildThermalBody(ctx: ReturnType<typeof buildContext>) {
     const detailsHtml = itemDetailLines(item, inv, labels, isFashion, cat?.name);
     const lineTotal = Number(item.price) * item.quantity;
     return `<tr>
-      <td><b>${esc(item.name)}</b>${detailsHtml}</td>
-      <td class="c"><b>${item.quantity}</b></td>
-      <td class="r"><b>${Number(item.price).toLocaleString()}</b><br><span class="detail-line">${lineTotal.toLocaleString()} ${labels.currency}</span></td>
+      <td><span class="item-name">${esc(item.name)}</span>${detailsHtml}</td>
+      <td class="c">${item.quantity}</td>
+      <td class="r">${Number(item.price).toLocaleString()}<br><span class="detail-line">${lineTotal.toLocaleString()} ${labels.currency}</span></td>
     </tr>`;
   }).join("");
 
   return `
 <div class="center">
-  <div class="store"><b>${esc(storeName)}</b></div>
-  ${storeAddress ? `<div class="meta"><b>${esc(storeAddress)}</b></div>` : ""}
-  ${receiptHeader ? `<div class="meta"><b>${esc(receiptHeader)}</b></div>` : ""}
+  <div class="store">${esc(storeName)}</div>
+  ${storeAddress ? `<div class="meta">${esc(storeAddress)}</div>` : ""}
+  ${receiptHeader ? `<div class="meta">${esc(receiptHeader)}</div>` : ""}
 </div>
 <hr class="sep">
 <table class="totals">
-  <tr><td><b>${esc(labels.orderNumber)}</b></td><td class="r"><b>${esc(order.orderNumber)}</b></td></tr>
-  <tr><td><b>${esc(labels.date)}</b></td><td class="r"><b>${esc(dateStr)}</b></td></tr>
+  <tr><td><span class="detail-lbl">${esc(labels.orderNumber)}</span></td><td class="r">${esc(order.orderNumber)}</td></tr>
+  <tr><td><span class="detail-lbl">${esc(labels.date)}</span></td><td class="r">${esc(dateStr)}</td></tr>
 </table>
 ${customerBlock}
 ${notesBlock}
 <table>
   <thead><tr>
-    <th><b>${esc(labels.item)}</b></th>
-    <th class="c"><b>${esc(labels.qty)}</b></th>
-    <th class="r"><b>${esc(labels.price)}</b></th>
+    <th>${esc(labels.item)}</th>
+    <th class="c">${esc(labels.qty)}</th>
+    <th class="r">${esc(labels.price)}</th>
   </tr></thead>
   <tbody>${rows}</tbody>
 </table>
 <table class="totals">
-  <tr><td colspan="2"><b>${esc(labels.total)}</b></td><td class="r"><b>${Number(order.subtotal).toLocaleString()} ${labels.currency}</b></td></tr>
+  <tr><td colspan="2"><span class="detail-lbl">${esc(labels.total)}</span></td><td class="r">${Number(order.subtotal).toLocaleString()} ${labels.currency}</td></tr>
   ${discountRow}
-  <tr class="grand"><td colspan="2"><b>${esc(labels.grandTotal)}</b></td><td class="r"><b>${Number(order.total).toLocaleString()} ${labels.currency}</b></td></tr>
-  <tr><td colspan="2"><b>${esc(labels.payment)}</b></td><td class="r"><b>${esc(paymentLabel)}</b></td></tr>
+  <tr class="grand"><td colspan="2"><span class="detail-lbl">${esc(labels.grandTotal)}</span></td><td class="r">${Number(order.total).toLocaleString()} ${labels.currency}</td></tr>
+  <tr><td colspan="2"><span class="detail-lbl">${esc(labels.payment)}</span></td><td class="r">${esc(paymentLabel)}</td></tr>
 </table>
+${qrHtml}
 <div class="footer">
-  ${receiptFooter ? `<div><b>${esc(receiptFooter)}</b></div>` : ""}
-  <div class="thanks"><b>${esc(labels.thankYou)}</b></div>
-  <div><b>www.iq-pos.com</b></div>
+  ${receiptFooter ? `<div>${esc(receiptFooter)}</div>` : ""}
+  <div class="thanks">${esc(labels.thankYou)}</div>
+  <div>www.iq-pos.com</div>
 </div>`;
 }
 
 function buildA4Body(ctx: ReturnType<typeof buildContext>) {
-  const { order, items, inventory, categories, labels, isFashion, storeName, storeAddress, receiptHeader, receiptFooter, customerName, customerPhone, paymentLabel, dateStr, customerBlock, notesBlock, discountRow, logoUrl } = ctx;
+  const {
+    order, items, inventory, categories, labels, isFashion,
+    storeName, storeAddress, receiptHeader, receiptFooter,
+    customerName, customerPhone, paymentLabel, dateStr, discountRow, logoUrl,
+  } = ctx;
 
   const rows = items.map((item) => {
     const inv = inventory.find((i) => i.id === item.inventoryItemId) as InvExtra | undefined;
@@ -328,7 +364,6 @@ function buildA4Body(ctx: ReturnType<typeof buildContext>) {
       ${order.notes?.trim() ? `<p><b>${esc(labels.notes)}:</b> ${esc(order.notes.trim())}</p>` : ""}
     </div>
   </div>
-  ${orderBarcodeSvg(order.orderNumber, "a4")}
   <table class="items-table">
     <thead><tr>
       <th>${esc(labels.item)} / ${esc(labels.details)}</th>
@@ -351,44 +386,11 @@ function buildA4Body(ctx: ReturnType<typeof buildContext>) {
 </div>`;
 }
 
-function buildContext(input: ReceiptPrintInput) {
-  const {
-    order, items, inventory, categories, labels, isAr, isFashion,
-    storeName, storeAddress, receiptHeader, receiptFooter,
-    customerName, customerPhone, paymentLabel, logoUrl,
-  } = input;
-
-  const dateStr = order.createdAt
-    ? new Date(order.createdAt).toLocaleString(isAr ? "ar-IQ" : "en-GB")
-    : "";
-
-  const showCustomer =
-    (customerName && customerName !== labels.walkIn) || !!customerPhone;
-  const customerBlock = showCustomer
-    ? `<table class="totals"><tr><td><b>${esc(labels.customer)}</b><br>${customerName && customerName !== labels.walkIn ? esc(customerName) : ""}${customerPhone ? `${customerName && customerName !== labels.walkIn ? "<br>" : ""}${esc(labels.phone)}: ${esc(customerPhone)}` : ""}</td></tr></table>`
-    : "";
-
-  const notesBlock = order.notes?.trim()
-    ? `<table class="totals"><tr><td><b>${esc(labels.notes)}</b><br>${esc(order.notes.trim())}</td></tr></table>`
-    : "";
-
-  const discountRow =
-    Number(order.discount) > 0
-      ? `<tr><td${input.format === "a4" ? "" : ' colspan="2"'}><b>${esc(labels.discount)}</b></td><td class="r"><b>-${Number(order.discount).toLocaleString()} ${labels.currency}</b></td></tr>`
-      : "";
-
-  return {
-    order, items, inventory, categories, labels, isAr, isFashion,
-    storeName, storeAddress, receiptHeader, receiptFooter,
-    customerName, customerPhone, paymentLabel, dateStr,
-    customerBlock, notesBlock, discountRow, logoUrl,
-  };
-}
-
-export function buildReceiptHtml(input: ReceiptPrintInput): string {
+export async function buildReceiptHtml(input: ReceiptPrintInput): Promise<string> {
   const format = input.format ?? "thermal";
   const ctx = buildContext(input);
-  const body = format === "a4" ? buildA4Body(ctx) : buildThermalBody(ctx);
+  const qrHtml = format === "thermal" ? await orderQrBlock(input.order.orderNumber) : "";
+  const body = format === "a4" ? buildA4Body(ctx) : buildThermalBody(ctx, qrHtml);
   const css = format === "a4" ? a4Css(input.brandColor || "#333") : THERMAL_CSS;
 
   return `<!DOCTYPE html>
@@ -414,6 +416,7 @@ export function openReceiptPrint(html: string, format: ReceiptFormat = "thermal"
   w.focus();
 }
 
-export function printReceipt(input: ReceiptPrintInput, format: ReceiptFormat = "thermal") {
-  openReceiptPrint(buildReceiptHtml({ ...input, format }), format);
+export async function printReceipt(input: ReceiptPrintInput, format: ReceiptFormat = "thermal") {
+  const html = await buildReceiptHtml({ ...input, format });
+  openReceiptPrint(html, format);
 }

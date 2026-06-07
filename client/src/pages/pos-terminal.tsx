@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
@@ -125,6 +125,7 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
   const effectiveTerminalConfig = terminalConfig ?? (terminalsAll.length > 0 ? terminalsAll[0] : undefined);
 
   const [search, setSearch] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
@@ -206,17 +207,62 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
   });
 
   const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return inventory.filter((item) => {
+      const barcode = (item as InventoryItem & { barcode?: string }).barcode;
       const matchesSearch =
-        !search ||
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.sku.toLowerCase().includes(search.toLowerCase());
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        item.sku.toLowerCase().includes(q) ||
+        (barcode && barcode.toLowerCase().includes(q));
       const terminalCategoryId = effectiveTerminalConfig?.categoryId ?? null;
       const effectiveCategory = terminalCategoryId !== null ? terminalCategoryId : selectedCategory;
       const matchesCategory = effectiveCategory === null || item.categoryId === effectiveCategory;
       return matchesSearch && matchesCategory;
     });
   }, [inventory, search, selectedCategory, effectiveTerminalConfig]);
+
+  function findItemByScanCode(code: string): InventoryItem | undefined {
+    const trimmed = code.trim();
+    if (!trimmed) return undefined;
+    const lower = trimmed.toLowerCase();
+    return inventory.find((item) => {
+      const barcode = (item as InventoryItem & { barcode?: string }).barcode;
+      return (
+        item.sku.toLowerCase() === lower ||
+        (barcode && barcode.toLowerCase() === lower)
+      );
+    });
+  }
+
+  function handleBarcodeScan(code: string) {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    const item = findItemByScanCode(trimmed);
+    if (!item) {
+      toast({
+        title: isAr ? "لم يُعثر على المنتج" : "Item not found",
+        description: trimmed,
+        variant: "destructive",
+      });
+      setSearch("");
+      searchInputRef.current?.focus();
+      return;
+    }
+    if (!item.isAvailable || item.quantity <= 0) {
+      toast({
+        title: isAr ? "المنتج غير متوفر" : "Out of stock",
+        description: item.name,
+        variant: "destructive",
+      });
+      setSearch("");
+      searchInputRef.current?.focus();
+      return;
+    }
+    addToCart(item);
+    setSearch("");
+    searchInputRef.current?.focus();
+  }
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const selectedCustomer = customers.find((c) => c.id === Number(selectedCustomerId));
@@ -369,10 +415,10 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     debit: isAr ? "آجل" : "Credit",
   };
 
-  function handlePrintReceipt(format: ReceiptFormat) {
+  async function handlePrintReceipt(format: ReceiptFormat) {
     const input = receiptPrintInput();
     if (!input) return;
-    printReceipt(input, format);
+    await printReceipt(input, format);
   }
 
   const terminalCatLocked = effectiveTerminalConfig?.categoryId != null;
@@ -451,9 +497,17 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
             <div className="relative">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
+                ref={searchInputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("pos.searchItems")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleBarcodeScan(search);
+                  }
+                }}
+                placeholder={isAr ? "بحث أو مسح الباركود..." : "Search or scan barcode..."}
+                autoComplete="off"
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ps-10 pe-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:outline-none focus:ring-2 transition-all"
                 style={{ '--tw-ring-color': brandColor } as any}
                 data-testid="input-search-items"
