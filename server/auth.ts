@@ -11,6 +11,7 @@ import {
   isDemoUser,
   normalizeDemoPosSystem,
   resolveDemoStoreId,
+  getDemoSessionStoreId,
   type DemoPosSystem,
 } from "./demo";
 
@@ -64,7 +65,7 @@ async function enrichUserResponse(
   const userData: Record<string, unknown> = { ...user };
   if (isDemoUser(user)) {
     const posHint = session?.demoPosSystem ?? demoPosFallback;
-    let storeId = session?.demoStoreId;
+    let storeId = session ? getDemoSessionStoreId(session) ?? undefined : undefined;
     if (!storeId && posHint) {
       storeId = (await resolveDemoStoreId(posHint)) ?? undefined;
     }
@@ -127,6 +128,17 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Repair demo session store binding on each request (API + page loads)
+  app.use((req, _res, next) => {
+    if (req.isAuthenticated?.() && isDemoUser(req.user)) {
+      if (!req.session.demoStoreId && req.session.demoPosSystem) {
+        const id = getDemoSessionStoreId(req.session);
+        if (id) req.session.demoStoreId = id;
+      }
+    }
+    next();
+  });
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {

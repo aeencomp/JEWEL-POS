@@ -69,6 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPending2FA(data as TwoFAResponse);
       } else {
         queryClient.setQueryData(["/api/user"], data);
+        // Avoid showing another POS system's cached inventory/categories after demo switch
+        queryClient.removeQueries({ queryKey: ["/api/categories"] });
+        queryClient.removeQueries({ queryKey: ["/api/inventory"] });
+        queryClient.removeQueries({ queryKey: ["/api/restaurant"] });
       }
     },
     onError: (error: Error) => {

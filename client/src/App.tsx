@@ -64,6 +64,7 @@ import RestaurantOrders from "@/pages/restaurant/restaurant-orders";
 import RestaurantQr from "@/pages/restaurant/restaurant-qr";
 import PublicOrderPage from "@/pages/public-order";
 import { Loader2 } from "lucide-react";
+import { resolveUserPosSystem } from "@/lib/pos-system";
 
 function AdminRouter() {
   return (
@@ -273,7 +274,7 @@ function AppContent() {
     return <LandingPage />;
   }
 
-  const posSystem = (user as { posSystem?: string })?.posSystem;
+  const posSystem = resolveUserPosSystem(user as { username?: string; posSystem?: string }, location);
   const home = storeHomePath(posSystem);
 
   if (location === "/oil-login") {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { UtensilsCrossed, User, Lock, Loader2, ChefHat, QrCode, ClipboardList, S
 const loginSchema = z.object({ username: z.string().min(1), password: z.string().min(1) });
 
 export default function RestaurantLogin() {
+  const [, navigate] = useLocation();
   const { language } = useLanguage();
   const isAr = language === "ar";
   const [error, setError] = useState("");
@@ -24,11 +26,16 @@ export default function RestaurantLogin() {
 
   useEffect(() => {
     if (!user || pending2FA) return;
-    if ((user as { posSystem?: string }).posSystem !== "restaurant") {
+    const ps = (user as { posSystem?: string }).posSystem;
+    if (ps === "restaurant") {
+      navigate("/restaurant");
+      return;
+    }
+    if (ps && ps !== "restaurant") {
       setError(isAr ? "هذا الحساب ليس مطعماً. غيّر نوع المتجر إلى RestoPOS من لوحة الإدارة." : "This account is not a restaurant. Set store type to RestoPOS in admin.");
       void apiRequest("POST", "/api/logout").then(() => queryClient.setQueryData(["/api/user"], null));
     }
-  }, [user, pending2FA, isAr]);
+  }, [user, pending2FA, isAr, navigate]);
 
   const features = [
     { icon: UtensilsCrossed, en: "Table management", ar: "إدارة الطاولات" },

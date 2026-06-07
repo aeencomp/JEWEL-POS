@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
-import { menuCategories, menuItems, restaurantTables } from "@shared/schema";
+import { menuCategories, menuItems, restaurantTables, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export const DEMO_USERNAME = "demo";
@@ -32,10 +32,33 @@ export function normalizeDemoPosSystem(value: unknown): DemoPosSystem {
   return "jewel";
 }
 
+const demoStoreIdBySystem: Partial<Record<DemoPosSystem, number>> = {};
+
 export async function resolveDemoStoreId(posSystem: DemoPosSystem): Promise<number | null> {
+  if (demoStoreIdBySystem[posSystem]) return demoStoreIdBySystem[posSystem]!;
   const stores = await storage.getStores();
   const store = stores.find((s) => s.name === DEMO_STORE_NAMES[posSystem] && s.posSystem === posSystem);
+  if (store) demoStoreIdBySystem[posSystem] = store.id;
   return store?.id ?? null;
+}
+
+export async function refreshDemoStoreIdCache() {
+  for (const ps of ["jewel", "fashion", "oil", "restaurant"] as DemoPosSystem[]) {
+    const id = await resolveDemoStoreId(ps);
+    if (id) demoStoreIdBySystem[ps] = id;
+  }
+}
+
+/** Resolve demo store from session — never fall back to users.store_id for demo. */
+export function getDemoSessionStoreId(session: {
+  demoStoreId?: number;
+  demoPosSystem?: DemoPosSystem;
+}): number | null {
+  if (session.demoStoreId) return session.demoStoreId;
+  if (session.demoPosSystem && demoStoreIdBySystem[session.demoPosSystem]) {
+    return demoStoreIdBySystem[session.demoPosSystem]!;
+  }
+  return null;
 }
 
 /** Effective store for API handlers (admin impersonation + universal demo user). */
@@ -52,8 +75,7 @@ export function getEffectiveStoreId(req: {
     return req.session.impersonatingStoreId;
   }
   if (isDemoUser(req.user)) {
-    if (req.session.demoStoreId) return req.session.demoStoreId;
-    // demoStoreId is set on login; demoPosSystem is a fallback marker only
+    return getDemoSessionStoreId(req.session);
   }
   return req.user.storeId ?? null;
 }
@@ -173,6 +195,8 @@ export async function seedDemoEnvironment() {
     await ensureDemoStore(ps);
   }
 
+  await refreshDemoStoreIdCache();
+
   const existing = await storage.getUserByUsername(DEMO_USERNAME);
   if (!existing) {
     await storage.createUser({
@@ -182,5 +206,8 @@ export async function seedDemoEnvironment() {
       storeId: null,
     });
     console.log(`[demo] Universal test login: ${DEMO_USERNAME} / ${DEMO_PASSWORD}`);
+  } else if (existing.storeId != null) {
+    await db.update(users).set({ storeId: null }).where(eq(users.username, DEMO_USERNAME));
+    console.log("[demo] Cleared storeId on demo user (must use session store per POS)");
   }
 }

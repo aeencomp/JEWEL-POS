@@ -1,5 +1,21 @@
 export type PosSystem = "jewel" | "oil" | "fashion" | "restaurant";
 
+export const DEMO_USERNAME = "demo";
+
+/** Demo user: infer POS from login URL when API omits posSystem. */
+export function resolveUserPosSystem(
+  user: { username?: string; posSystem?: string } | null | undefined,
+  pathname: string,
+): PosSystem | undefined {
+  const ps = user?.posSystem;
+  if (ps === "oil" || ps === "fashion" || ps === "restaurant" || ps === "jewel") return ps;
+  if (user?.username !== DEMO_USERNAME) return undefined;
+  if (pathname.startsWith("/restaurant")) return "restaurant";
+  if (pathname.startsWith("/fashion")) return "fashion";
+  if (pathname.startsWith("/oil")) return "oil";
+  return "jewel";
+}
+
 export const POS_SYSTEMS: PosSystem[] = ["jewel", "oil", "fashion", "restaurant"];
 
 export function normalizePosSystem(value: unknown): PosSystem {
