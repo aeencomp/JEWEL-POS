@@ -691,16 +691,21 @@ export async function registerRoutes(
     res.sendStatus(200);
   });
 
-  const DEFAULT_PRICING = {
-    jewel: { basic: 35000, standard: 55000, premium: 85000 },
-    oil: { basic: 50000, standard: 75000, premium: 110000 },
-    fashion: { basic: 30000, standard: 45000, premium: 65000 },
-  };
+  const DEFAULT_PRICING = { monthly: 45000 };
 
   app.get("/api/pricing", async (_req, res) => {
     try {
       const raw = await storage.getSetting("pricing");
-      res.json(raw ? JSON.parse(raw) : DEFAULT_PRICING);
+      if (!raw) return res.json(DEFAULT_PRICING);
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.monthly === "number") return res.json(parsed);
+      // Legacy tiered pricing — use standard plan or fall back to 45,000 IQD
+      const legacy =
+        parsed.jewel?.standard ??
+        parsed.fashion?.standard ??
+        parsed.oil?.standard ??
+        DEFAULT_PRICING.monthly;
+      res.json({ monthly: legacy });
     } catch {
       res.json(DEFAULT_PRICING);
     }

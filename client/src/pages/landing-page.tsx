@@ -166,12 +166,165 @@ type SignupForm = {
   notes: string;
 };
 
-type PricingPlan = { basic: number; standard: number; premium: number };
-type Pricing = { jewel: PricingPlan; oil: PricingPlan };
+type Pricing = { monthly: number };
 
-const DEFAULT_PRICING: Pricing = {
-  jewel: { basic: 35000, standard: 55000, premium: 85000 },
-  oil:   { basic: 50000, standard: 75000, premium: 110000 },
+const DEFAULT_PRICING: Pricing = { monthly: 45000 };
+
+type PosPricingPlan = {
+  id: "jewel" | "fashion" | "oil";
+  name: string;
+  nameAr: string;
+  subtitle: string;
+  subtitleAr: string;
+  icon: React.ElementType;
+  gradient: string;
+  accent: string;
+  features: string[];
+  featuresAr: string[];
+};
+
+const POS_PRICING_PLANS: PosPricingPlan[] = [
+  {
+    id: "jewel",
+    name: "JewelPOS",
+    nameAr: "نقطة مجوهرات",
+    subtitle: "Jewelry Stores",
+    subtitleAr: "محلات المجوهرات",
+    icon: Gem,
+    gradient: "from-amber-500 to-yellow-600",
+    accent: "text-amber-500",
+    features: [
+      "POS terminal with gold weight & karat pricing",
+      "Full inventory management (gold, silver, stones)",
+      "Customer profiles & purchase history",
+      "Sales orders & receipt printing (thermal + A4)",
+      "Repair order tracking",
+      "Layaway & installment plans",
+      "Purchases & supplier records",
+      "Debt & credit sales management",
+      "Stock audit & inventory counts",
+      "Custom store branding (logo & colors)",
+      "Cloud backup & data export",
+      "Bilingual interface (English / Arabic + RTL)",
+    ],
+    featuresAr: [
+      "نقطة بيع مع تسعير الوزن والعيار",
+      "إدارة مخزون كاملة (ذهب، فضة، أحجار)",
+      "ملفات العملاء وسجل المشتريات",
+      "طلبات البيع وطباعة الفواتير (حرارية + A4)",
+      "متابعة أوامر الإصلاح",
+      "نظام التقسيط والدفع المؤجل",
+      "المشتريات وسجل الموردين",
+      "إدارة الديون والمبيعات الآجلة",
+      "جرد المخزون والعد الدوري",
+      "علامة تجارية مخصصة (شعار وألوان)",
+      "نسخ احتياطي سحابي وتصدير البيانات",
+      "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
+    ],
+  },
+  {
+    id: "fashion",
+    name: "FashionPOS",
+    nameAr: "نقطة بيع الأزياء",
+    subtitle: "Clothing & Apparel Stores",
+    subtitleAr: "محلات الملابس والأزياء",
+    icon: Shirt,
+    gradient: "from-pink-500 to-purple-600",
+    accent: "text-pink-500",
+    features: [
+      "Fast POS with barcode & SKU scanning",
+      "Inventory with size, color, brand & style variants",
+      "Auto barcode & SKU generation",
+      "Customer management & loyalty points",
+      "Sales history & order tracking",
+      "Returns & refunds processing",
+      "Sales reports & analytics",
+      "Stock audit & inventory counts",
+      "Credit sales & debt tracking",
+      "Custom store branding (logo & colors)",
+      "Cloud backup & data export",
+      "Receipt printing (thermal + A4)",
+      "Bilingual interface (English / Arabic + RTL)",
+    ],
+    featuresAr: [
+      "نقطة بيع سريعة مع مسح الباركود و SKU",
+      "مخزون بمتغيرات الحجم واللون والماركة والموديل",
+      "توليد تلقائي للباركود و SKU",
+      "إدارة العملاء ونقاط الولاء",
+      "سجل المبيعات ومتابعة الطلبات",
+      "معالجة المرتجعات والاسترداد",
+      "تقارير المبيعات والتحليلات",
+      "جرد المخزون والعد الدوري",
+      "مبيعات آجلة ومتابعة الديون",
+      "علامة تجارية مخصصة (شعار وألوان)",
+      "نسخ احتياطي سحابي وتصدير البيانات",
+      "طباعة الفواتير (حرارية + A4)",
+      "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
+    ],
+  },
+  {
+    id: "oil",
+    name: "FactoryPOS",
+    nameAr: "نقطة بيع المصنع",
+    subtitle: "Oil Factories & Production",
+    subtitleAr: "مصانع الزيوت والإنتاج",
+    icon: Droplets,
+    gradient: "from-blue-600 to-cyan-600",
+    accent: "text-blue-500",
+    features: [
+      "Dashboard with business overview",
+      "POS sales terminal",
+      "Finished product inventory",
+      "Raw materials & supplies inventory",
+      "Sales management & invoicing",
+      "Purchase orders & supplier tracking",
+      "Production batch tracking",
+      "Customer management",
+      "Supplier management",
+      "Expense tracking & categorization",
+      "Debt management (payables & receivables)",
+      "Financial & sales reports",
+      "Delivery notes & dispatch records",
+      "Product batch records & traceability",
+      "Custom store branding (logo & colors)",
+      "Bilingual interface (English / Arabic + RTL)",
+    ],
+    featuresAr: [
+      "لوحة تحكم بنظرة شاملة على العمل",
+      "نقطة بيع للمبيعات",
+      "مخزون المنتجات النهائية",
+      "مخزون المواد الخام والمستلزمات",
+      "إدارة المبيعات والفواتير",
+      "أوامر الشراء ومتابعة الموردين",
+      "تتبع دفعات الإنتاج",
+      "إدارة العملاء",
+      "إدارة الموردين",
+      "تسجيل المصاريف وتصنيفها",
+      "إدارة الديون (لنا وعلينا)",
+      "تقارير مالية وتقارير المبيعات",
+      "وصولات التسليم وسجلات الإرسال",
+      "سجل دفعات المنتجات والتتبع",
+      "علامة تجارية مخصصة (شعار وألوان)",
+      "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
+    ],
+  },
+];
+
+const PLATFORM_INCLUDES = {
+  en: [
+    "Cloud-hosted — access from any device",
+    "Secure login with optional email verification (2FA)",
+    "Dedicated technical support",
+    "Free updates & new features",
+    "One flat monthly price — no hidden fees",
+  ],
+  ar: [
+    "استضافة سحابية — الوصول من أي جهاز",
+    "تسجيل دخول آمن مع تحقق بالبريد الإلكتروني (اختياري)",
+    "دعم فني مخصص",
+    "تحديثات مجانية وميزات جديدة",
+    "سعر شهري ثابت — بدون رسوم خفية",
+  ],
 };
 
 function fmtPrice(n: number) {
@@ -231,7 +384,7 @@ export default function LandingPage() {
     mutation.mutate(form);
   }
 
-  function handleOpen(preselect?: "jewel" | "oil") {
+  function handleOpen(preselect?: "jewel" | "oil" | "fashion") {
     setSubmitted(false);
     setErrors({});
     setForm({ name: "", businessName: "", phone: "", email: "", posSystem: preselect ?? "jewel", notes: "" });
@@ -352,7 +505,7 @@ export default function LandingPage() {
                       <Button
                         variant="outline"
                         className="w-full text-sm"
-                        onClick={() => handleOpen(product.id as "jewel" | "oil")}
+                        onClick={() => handleOpen(product.id as "jewel" | "oil" | "fashion")}
                         data-testid={`button-request-${product.id}`}
                       >
                         <UserPlus className="h-4 w-4 me-2" />
@@ -383,161 +536,105 @@ export default function LandingPage() {
             {isAr ? "الأسعار" : "Pricing"}
           </h2>
           <p className="text-3xl font-extrabold">
-            {isAr ? "اشتراك شهري يناسب عملك" : "Simple Monthly Pricing"}
+            {isAr ? "اشتراك شهري قياسي واحد" : "One Standard Monthly Plan"}
           </p>
-          <p className="text-muted-foreground mt-2 text-sm">
+          <p className="text-muted-foreground mt-2 text-sm max-w-xl mx-auto">
             {isAr
-              ? `تبدأ الأسعار من ${fmtPrice(pricing.jewel.basic)} د.ع / شهر حسب النظام المختار`
-              : `Starting from ${fmtPrice(pricing.jewel.basic)} IQD / month depending on the system`}
+              ? "سعر موحّد لجميع أنظمة نقاط البيع — اختر النظام المناسب لقطاعك واحصل على كل المزايا"
+              : "One flat price for every POS system — pick the right system for your industry and get full access"}
           </p>
         </div>
 
-        {/* JewelPOS Pricing */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
-              <Gem className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="font-bold text-lg">JewelPOS</h3>
-            <span className="text-sm text-muted-foreground">{isAr ? "— لمحلات المجوهرات" : "— Jewelry Stores"}</span>
+        {/* Unified price banner */}
+        <div
+          className="rounded-2xl border-2 border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 p-8 mb-10 text-center shadow-lg"
+          data-testid="pricing-standard-banner"
+        >
+          <Badge className="bg-amber-500 text-white px-3 py-0.5 text-[11px] mb-4">
+            <Star className="h-3 w-3 me-1" />
+            {isAr ? "الخطة القياسية" : "Standard Plan"}
+          </Badge>
+          <div className="flex items-end justify-center gap-2 mb-2">
+            <span className="text-5xl font-extrabold tracking-tight" data-testid="price-monthly">
+              {fmtPrice(pricing.monthly)}
+            </span>
+            <span className="text-lg text-muted-foreground mb-2">
+              {isAr ? "د.ع / شهر" : "IQD / month"}
+            </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Basic */}
-            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-jewel-basic">
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "أساسي" : "Basic"}</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold" data-testid="price-jewel-basic">{fmtPrice(pricing.jewel.basic)}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                {(isAr ? ["نقطة بيع واحدة","إدارة المخزون","سجل المبيعات","دعم فني"] : ["1 POS terminal","Inventory management","Sales history","Technical support"]).map(f => (
-                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />{f}</li>
-                ))}
-              </ul>
-              <Button variant="outline" className="w-full" onClick={() => handleOpen("jewel")} data-testid="button-pricing-jewel-basic">
-                {isAr ? "اطلب الآن" : "Get Started"}
-              </Button>
-            </div>
-
-            {/* Standard — Popular */}
-            <div className="rounded-2xl border-2 border-amber-500 bg-card p-6 flex flex-col gap-4 relative shadow-lg" data-testid="pricing-jewel-standard">
-              <div className="absolute -top-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
-                <Badge className="bg-amber-500 text-white px-3 py-0.5 text-[11px] flex items-center gap-1 whitespace-nowrap">
-                  <Star className="h-3 w-3" />{isAr ? "الأكثر طلباً" : "Most Popular"}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-1">{isAr ? "قياسي" : "Standard"}</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold" data-testid="price-jewel-standard">{fmtPrice(pricing.jewel.standard)}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                {(isAr ? ["كل مزايا الأساسي","طلبات الإصلاح","نظام التقسيط","النسخ الاحتياطي","تقارير مفصلة"] : ["Everything in Basic","Repair orders","Layaway system","Cloud backup","Detailed reports"]).map(f => (
-                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />{f}</li>
-                ))}
-              </ul>
-              <Button className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-0" onClick={() => handleOpen("jewel")} data-testid="button-pricing-jewel-standard">
-                {isAr ? "اطلب الآن" : "Get Started"}
-              </Button>
-            </div>
-
-            {/* Premium */}
-            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-jewel-premium">
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "مميز" : "Premium"}</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold" data-testid="price-jewel-premium">{fmtPrice(pricing.jewel.premium)}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                {(isAr ? ["كل مزايا القياسي","متعدد المستخدمين","إدارة الديون","دعم ذو أولوية","شعار مخصص"] : ["Everything in Standard","Multi-user access","Debt management","Priority support","Custom branding"]).map(f => (
-                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />{f}</li>
-                ))}
-              </ul>
-              <Button variant="outline" className="w-full" onClick={() => handleOpen("jewel")} data-testid="button-pricing-jewel-premium">
-                {isAr ? "اطلب الآن" : "Get Started"}
-              </Button>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground mb-5">
+            {isAr
+              ? "ينطبق على JewelPOS و FashionPOS و FactoryPOS وجميع الأنظمة القادمة"
+              : "Applies to JewelPOS, FashionPOS, FactoryPOS, and all upcoming systems"}
+          </p>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground max-w-3xl mx-auto text-start">
+            {(isAr ? PLATFORM_INCLUDES.ar : PLATFORM_INCLUDES.en).map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* FactoryPOS Pricing */}
-        <div>
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-              <Droplets className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="font-bold text-lg">FactoryPOS</h3>
-            <span className="text-sm text-muted-foreground">{isAr ? "— لمصانع الزيوت" : "— Oil Factories"}</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Basic */}
-            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-oil-basic">
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "أساسي" : "Basic"}</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold" data-testid="price-oil-basic">{fmtPrice(pricing.oil.basic)}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                {(isAr ? ["إدارة المنتجات","المبيعات الأساسية","إدارة المخزون","دعم فني"] : ["Product management","Basic sales","Inventory control","Technical support"]).map(f => (
-                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />{f}</li>
-                ))}
-              </ul>
-              <Button variant="outline" className="w-full" onClick={() => handleOpen("oil")} data-testid="button-pricing-oil-basic">
-                {isAr ? "اطلب الآن" : "Get Started"}
-              </Button>
-            </div>
+        {/* Per-system feature details */}
+        <h3 className="text-center text-lg font-bold mb-6">
+          {isAr ? "ما يشمله كل نظام" : "What's Included in Each System"}
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {POS_PRICING_PLANS.map((plan) => {
+            const Icon = plan.icon;
+            const features = isAr ? plan.featuresAr : plan.features;
+            return (
+              <div
+                key={plan.id}
+                className="rounded-2xl border bg-card overflow-hidden flex flex-col"
+                data-testid={`pricing-plan-${plan.id}`}
+              >
+                <div className={`h-2 w-full bg-gradient-to-r ${plan.gradient}`} />
+                <div className="p-6 flex flex-col flex-1 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${plan.gradient} shadow-sm`}>
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">{isAr ? plan.nameAr : plan.name}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {isAr ? plan.subtitleAr : plan.subtitle}
+                      </p>
+                    </div>
+                  </div>
 
-            {/* Standard — Popular */}
-            <div className="rounded-2xl border-2 border-blue-500 bg-card p-6 flex flex-col gap-4 relative shadow-lg" data-testid="pricing-oil-standard">
-              <div className="absolute -top-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
-                <Badge className="bg-blue-500 text-white px-3 py-0.5 text-[11px] flex items-center gap-1 whitespace-nowrap">
-                  <Star className="h-3 w-3" />{isAr ? "الأكثر طلباً" : "Most Popular"}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">{isAr ? "قياسي" : "Standard"}</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold" data-testid="price-oil-standard">{fmtPrice(pricing.oil.standard)}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                {(isAr ? ["كل مزايا الأساسي","إدارة المشتريات","إدارة العملاء","نظام المصاريف","تقارير مفصلة"] : ["Everything in Basic","Purchase management","Customer management","Expense tracking","Detailed reports"]).map(f => (
-                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />{f}</li>
-                ))}
-              </ul>
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0" onClick={() => handleOpen("oil")} data-testid="button-pricing-oil-standard">
-                {isAr ? "اطلب الآن" : "Get Started"}
-              </Button>
-            </div>
+                  <div className="flex items-end gap-1 py-2 border-y">
+                    <span className="text-2xl font-extrabold" data-testid={`price-${plan.id}`}>
+                      {fmtPrice(pricing.monthly)}
+                    </span>
+                    <span className="text-xs text-muted-foreground mb-1">
+                      {isAr ? "د.ع/شهر" : "IQD/mo"}
+                    </span>
+                  </div>
 
-            {/* Premium */}
-            <div className="rounded-2xl border bg-card p-6 flex flex-col gap-4" data-testid="pricing-oil-premium">
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{isAr ? "مميز" : "Premium"}</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold" data-testid="price-oil-premium">{fmtPrice(pricing.oil.premium)}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{isAr ? "د.ع/شهر" : "IQD/mo"}</span>
+                  <ul className="space-y-2 text-sm text-muted-foreground flex-1">
+                    {features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2">
+                        <CheckCircle className={`h-4 w-4 ${plan.accent} flex-shrink-0 mt-0.5`} />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button
+                    className={`w-full bg-gradient-to-r ${plan.gradient} text-white border-0`}
+                    onClick={() => handleOpen(plan.id)}
+                    data-testid={`button-pricing-${plan.id}`}
+                  >
+                    <UserPlus className="h-4 w-4 me-2" />
+                    {isAr ? "اطلب الاشتراك" : "Request Subscription"}
+                  </Button>
                 </div>
               </div>
-              <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                {(isAr ? ["كل مزايا القياسي","إدارة الإنتاج","محاسبة متكاملة","إدارة الديون","دعم ذو أولوية"] : ["Everything in Standard","Production management","Full accounting","Debt management","Priority support"]).map(f => (
-                  <li key={f} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />{f}</li>
-                ))}
-              </ul>
-              <Button variant="outline" className="w-full" onClick={() => handleOpen("oil")} data-testid="button-pricing-oil-premium">
-                {isAr ? "اطلب الآن" : "Get Started"}
-              </Button>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </section>
 
