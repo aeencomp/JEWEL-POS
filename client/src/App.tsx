@@ -19,6 +19,11 @@ import AdminStores from "@/pages/admin-stores";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import PosTerminal from "@/pages/pos-terminal";
 import InventoryManagement from "@/pages/inventory-management";
+import FashionReturns from "@/pages/fashion-returns";
+import FashionLogin from "@/pages/fashion/fashion-login";
+import FashionLayout from "@/pages/fashion/fashion-layout";
+import FashionDashboard from "@/pages/fashion/fashion-dashboard";
+import FashionPos from "@/pages/fashion/fashion-pos";
 import CustomersPage from "@/pages/customers-page";
 import OrdersHistory from "@/pages/orders-history";
 import RepairOrders from "@/pages/repair-orders";
@@ -78,6 +83,24 @@ function StoreRouter() {
       <Route path="/backup" component={StoreBackup} />
       <Route path="/stock-audit" component={StockAudit} />
       <Route path="/debts" component={DebtsPage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function FashionRouter() {
+  return (
+    <Switch>
+      <Route path="/fashion" component={FashionDashboard} />
+      <Route path="/fashion/pos" component={FashionPos} />
+      <Route path="/fashion/inventory" component={InventoryManagement} />
+      <Route path="/fashion/customers" component={CustomersPage} />
+      <Route path="/fashion/orders" component={OrdersHistory} />
+      <Route path="/fashion/returns" component={FashionReturns} />
+      <Route path="/fashion/stock-audit" component={StockAudit} />
+      <Route path="/fashion/debts" component={DebtsPage} />
+      <Route path="/fashion/branding" component={StoreBranding} />
+      <Route path="/fashion/backup" component={StoreBackup} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -148,6 +171,25 @@ function StoreLayout() {
   );
 }
 
+function FashionStoreLayout() {
+  const { isImpersonating, impersonatingStoreName, stopImpersonateMutation } = useAuth();
+  return (
+    <FashionLayout
+      isImpersonating={isImpersonating}
+      impersonatingStoreName={impersonatingStoreName}
+      onStopImpersonate={() => stopImpersonateMutation.mutate()}
+    >
+      <FashionRouter />
+    </FashionLayout>
+  );
+}
+
+function storeHomePath(posSystem?: string): string {
+  if (posSystem === "oil") return "/oil";
+  if (posSystem === "fashion") return "/fashion";
+  return "/";
+}
+
 function AppContent() {
   const { user, isLoading, isImpersonating } = useAuth();
   const [location] = useLocation();
@@ -167,32 +209,51 @@ function AppContent() {
     if (location === "/store-portal") {
       return <StorePortal />;
     }
+    if (location === "/fashion-login") {
+      return <FashionLogin />;
+    }
     if (location === "/oil-login") {
       return <OilLogin />;
     }
     if (location === "/oil" || location.startsWith("/oil/")) {
       return <Redirect to="/oil-login" />;
     }
+    if (location === "/fashion" || location.startsWith("/fashion/")) {
+      return <Redirect to="/fashion-login" />;
+    }
     return <LandingPage />;
   }
 
+  const posSystem = (user as { posSystem?: string })?.posSystem;
+  const home = storeHomePath(posSystem);
+
   if (location === "/oil-login") {
-    return <Redirect to="/oil" />;
+    return <Redirect to={posSystem === "oil" ? "/oil" : home} />;
+  }
+  if (location === "/fashion-login") {
+    return <Redirect to={posSystem === "fashion" ? "/fashion" : home} />;
   }
 
   if (location === "/auth" || location === "/store-portal") {
     sessionStorage.removeItem("selectedTerminalId");
-    return <Redirect to="/" />;
-  }
-
-  if (location === "/oil" || location.startsWith("/oil/")) {
-    return <OilRouter />;
+    return <Redirect to={home} />;
   }
 
   if (user?.role === "store" || isImpersonating) {
-    const posSystem = (user as any)?.posSystem;
-    if (posSystem === "oil" && !location.startsWith("/oil")) {
-      return <Redirect to="/oil" />;
+    if (posSystem === "oil") {
+      if (!location.startsWith("/oil")) {
+        return <Redirect to="/oil" />;
+      }
+      return <OilRouter />;
+    }
+    if (posSystem === "fashion") {
+      if (!location.startsWith("/fashion")) {
+        return <Redirect to="/fashion" />;
+      }
+      return <FashionStoreLayout />;
+    }
+    if (location.startsWith("/fashion") || location.startsWith("/oil")) {
+      return <Redirect to="/" />;
     }
   }
 

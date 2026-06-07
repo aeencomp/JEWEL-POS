@@ -151,6 +151,30 @@ type TranslationKeys = {
   "inventory.profit": string;
   "inventory.barcode": string;
   "inventory.viewBarcode": string;
+  "inventory.styleCode": string;
+  "inventory.addVariants": string;
+  "inventory.variantsTitle": string;
+  "inventory.baseName": string;
+  "inventory.sizesList": string;
+  "inventory.colorsList": string;
+  "inventory.perVariant": string;
+  "inventory.variantsCreated": string;
+
+  "loyalty.points": string;
+  "loyalty.redeem": string;
+  "loyalty.earn": string;
+  "loyalty.available": string;
+
+  "returns.title": string;
+  "returns.subtitle": string;
+  "returns.selectOrder": string;
+  "returns.searchOrder": string;
+  "returns.returnQty": string;
+  "returns.refundAmount": string;
+  "returns.processReturn": string;
+  "returns.success": string;
+  "returns.noItems": string;
+  "returns.fullyReturned": string;
 
   "purchases.title": string;
   "purchases.addPurchase": string;
@@ -602,6 +626,30 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.profit": "Profit",
     "inventory.barcode": "Barcode",
     "inventory.viewBarcode": "View Barcode",
+    "inventory.styleCode": "Style Code",
+    "inventory.addVariants": "Add Variants",
+    "inventory.variantsTitle": "Bulk Size/Color Variants",
+    "inventory.baseName": "Product Name",
+    "inventory.sizesList": "Sizes (comma-separated)",
+    "inventory.colorsList": "Colors (comma-separated)",
+    "inventory.perVariant": "per variant",
+    "inventory.variantsCreated": "Variants created",
+
+    "loyalty.points": "points",
+    "loyalty.redeem": "Redeem points",
+    "loyalty.earn": "will earn on this sale",
+    "loyalty.available": "Loyalty balance",
+
+    "returns.title": "Returns & Exchanges",
+    "returns.subtitle": "Process partial or full returns and restock inventory",
+    "returns.selectOrder": "Select order",
+    "returns.searchOrder": "Search by order # or customer",
+    "returns.returnQty": "Return qty",
+    "returns.refundAmount": "Refund amount",
+    "returns.processReturn": "Process return",
+    "returns.success": "Return processed",
+    "returns.noItems": "No items to return",
+    "returns.fullyReturned": "Fully returned",
 
     "purchases.title": "Buy Jewel",
     "purchases.addPurchase": "New Purchase",
@@ -1035,6 +1083,30 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.profit": "الربح",
     "inventory.barcode": "الباركود",
     "inventory.viewBarcode": "عرض الباركود",
+    "inventory.styleCode": "رمز الطراز",
+    "inventory.addVariants": "إضافة متغيرات",
+    "inventory.variantsTitle": "متغيرات المقاس واللون",
+    "inventory.baseName": "اسم المنتج",
+    "inventory.sizesList": "المقاسات (مفصولة بفاصلة)",
+    "inventory.colorsList": "الألوان (مفصولة بفاصلة)",
+    "inventory.perVariant": "لكل متغير",
+    "inventory.variantsCreated": "تم إنشاء المتغيرات",
+
+    "loyalty.points": "نقطة",
+    "loyalty.redeem": "استبدال النقاط",
+    "loyalty.earn": "ستكسب في هذا البيع",
+    "loyalty.available": "رصيد الولاء",
+
+    "returns.title": "المرتجعات والاستبدال",
+    "returns.subtitle": "معالجة المرتجعات الجزئية أو الكاملة وإعادة المخزون",
+    "returns.selectOrder": "اختر الطلب",
+    "returns.searchOrder": "بحث برقم الطلب أو العميل",
+    "returns.returnQty": "كمية الإرجاع",
+    "returns.refundAmount": "مبلغ الاسترداد",
+    "returns.processReturn": "تنفيذ الإرجاع",
+    "returns.success": "تمت معالجة الإرجاع",
+    "returns.noItems": "لا توجد عناصر للإرجاع",
+    "returns.fullyReturned": "مُرجَع بالكامل",
 
     "purchases.title": "شراء مجوهرات",
     "purchases.addPurchase": "عملية شراء جديدة",

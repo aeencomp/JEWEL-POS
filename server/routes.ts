@@ -7,6 +7,7 @@ import { insertStoreSchema, insertInventoryItemSchema, insertCustomerSchema, upd
 import { db } from "./db";
 import { categories, customers, inventoryItems, orders, orderItems, repairOrders, layawayPlans, layawayPayments, purchases, stores, debts, debtPayments, users, oilDeliveryNotes, oilDeliveryNoteItems, oilBatchRecords, oilBatchRecordItems, oilProducts, oilCustomers, oilSuppliers, oilSales, oilSaleItems, oilPurchases, oilPurchaseItems, oilProductionBatches, oilProductionInputs, oilDebts, oilDebtPayments } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
+import { calcLoyaltyEarned } from "@shared/loyalty";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -594,6 +595,13 @@ export async function registerRoutes(
         role: "store",
         storeId: store.id,
       });
+
+      if (store.posSystem === "fashion") {
+        const fashionCategories = ["Men", "Women", "Kids", "Accessories"];
+        for (let i = 0; i < fashionCategories.length; i++) {
+          await storage.createCategory({ storeId: store.id, name: fashionCategories[i], sortOrder: i });
+        }
+      }
 
       res.status(201).json(store);
     } catch (error: any) {
@@ -1227,6 +1235,7 @@ export async function registerRoutes(
     if (body.size === "") body.size = null;
     if (body.color === "") body.color = null;
     if (body.brand === "") body.brand = null;
+    if (body.styleCode === "") body.styleCode = null;
     if (!body.barcode) {
       body.barcode = `JWL${storeId}${Date.now().toString(36).toUpperCase()}`;
     }
@@ -1235,6 +1244,66 @@ export async function registerRoutes(
       storeId,
     });
     res.status(201).json(item);
+  });
+
+  app.post("/api/inventory/variants", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const store = await storage.getStore(storeId);
+    if (!store || store.posSystem !== "fashion") {
+      return res.status(400).json({ message: "Variants are for fashion stores only" });
+    }
+
+    const { baseName, brand, categoryId, costPrice, sellingPrice, styleCode, sizes, colors, defaultQuantity } = req.body;
+    if (!baseName || !categoryId || !costPrice || !sellingPrice) {
+      return res.status(400).json({ message: "baseName, categoryId, costPrice, and sellingPrice are required" });
+    }
+    const sizeList: string[] = Array.isArray(sizes)
+      ? sizes.map((s: string) => String(s).trim()).filter(Boolean)
+      : String(sizes || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const colorList: string[] = Array.isArray(colors)
+      ? colors.map((c: string) => String(c).trim()).filter(Boolean)
+      : String(colors || "").split(",").map((c) => c.trim()).filter(Boolean);
+    if (sizeList.length === 0 || colorList.length === 0) {
+      return res.status(400).json({ message: "At least one size and one color are required" });
+    }
+
+    const style = (styleCode || baseName.substring(0, 8)).toUpperCase().replace(/[^A-Z0-9]/g, "") || "STYLE";
+    const existingItems = await storage.getInventoryItems(storeId);
+    const defaultQty = Math.max(0, parseInt(String(defaultQuantity ?? 1), 10) || 0);
+    const created: Awaited<ReturnType<typeof storage.createInventoryItem>>[] = [];
+
+    for (const size of sizeList) {
+      for (const color of colorList) {
+        const colorCode = color.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 4) || "CLR";
+        let sku = `${style}-${size}-${colorCode}`;
+        let suffix = 1;
+        while (existingItems.some((i) => i.sku === sku) || created.some((c) => c.sku === sku)) {
+          sku = `${style}-${size}-${colorCode}-${suffix++}`;
+        }
+        const name = `${baseName} (${size} / ${color})`;
+        const barcode = `FSH${storeId}${Date.now().toString(36).toUpperCase()}${size}${colorCode}`;
+        const item = await storage.createInventoryItem({
+          storeId,
+          sku,
+          name,
+          categoryId: Number(categoryId),
+          metalType: "other",
+          costPrice: String(costPrice),
+          sellingPrice: String(sellingPrice),
+          quantity: defaultQty,
+          brand: brand || null,
+          size,
+          color,
+          styleCode: style,
+          barcode,
+        });
+        created.push(item);
+        existingItems.push(item);
+      }
+    }
+
+    res.status(201).json({ created, count: created.length });
   });
 
   app.patch("/api/inventory/:id", requireAuth, async (req, res) => {
@@ -1253,6 +1322,7 @@ export async function registerRoutes(
     if (body.size === "") body.size = null;
     if (body.color === "") body.color = null;
     if (body.brand === "") body.brand = null;
+    if (body.styleCode === "") body.styleCode = null;
     if (body.quantity !== undefined) {
       const qty = Number(body.quantity);
       if (!Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {
@@ -1332,10 +1402,25 @@ export async function registerRoutes(
     if (!storeId) return res.status(400).json({ message: "No store assigned" });
 
     const orderNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
-    const { items, ...orderData } = req.body;
+    const { items, loyaltyPointsRedeemed: loyaltyRedeemedRaw, ...orderData } = req.body;
+    const store = await storage.getStore(storeId);
 
     if (orderData.paymentMethod === "debit" && !orderData.customerId) {
       return res.status(400).json({ message: "Debit payment requires a customer" });
+    }
+
+    let loyaltyPointsRedeemed = 0;
+    let loyaltyPointsEarned = 0;
+    if (store?.posSystem === "fashion" && orderData.customerId) {
+      loyaltyPointsRedeemed = Math.max(0, parseInt(String(loyaltyRedeemedRaw || 0), 10) || 0);
+      const cust = await storage.getCustomer(orderData.customerId);
+      if (!cust || cust.storeId !== storeId) {
+        return res.status(400).json({ message: "Customer not found" });
+      }
+      if (loyaltyPointsRedeemed > (cust.loyaltyPoints || 0)) {
+        return res.status(400).json({ message: "Insufficient loyalty points" });
+      }
+      loyaltyPointsEarned = calcLoyaltyEarned(parseFloat(orderData.total || "0"));
     }
 
     const order = await storage.createOrder({
@@ -1343,6 +1428,8 @@ export async function registerRoutes(
       storeId,
       orderNumber,
       status: "completed",
+      loyaltyPointsEarned,
+      loyaltyPointsRedeemed,
     });
 
     const createdItems = [];
@@ -1376,6 +1463,14 @@ export async function registerRoutes(
       }
     }
 
+    if (store?.posSystem === "fashion" && orderData.customerId) {
+      const cust = await storage.getCustomer(orderData.customerId);
+      if (cust) {
+        const newPoints = Math.max(0, (cust.loyaltyPoints || 0) - loyaltyPointsRedeemed + loyaltyPointsEarned);
+        await storage.updateCustomer(cust.id, { loyaltyPoints: newPoints });
+      }
+    }
+
     res.status(201).json({ ...order, items: createdItems });
   });
 
@@ -1403,12 +1498,15 @@ export async function registerRoutes(
     const newStatus = req.body.status;
     if (newStatus === "cancelled" || newStatus === "refunded") {
       if (order.status === "completed") {
+        const store = await storage.getStore(storeId);
         const oi = await storage.getOrderItems(id);
         for (const item of oi) {
+          const returnableQty = item.quantity - (item.returnedQuantity || 0);
+          if (returnableQty <= 0) continue;
           const invItem = await storage.getInventoryItem(item.inventoryItemId);
           if (invItem) {
             await storage.updateInventoryItem(item.inventoryItemId, {
-              quantity: invItem.quantity + item.quantity,
+              quantity: invItem.quantity + returnableQty,
             });
           }
         }
@@ -1420,11 +1518,106 @@ export async function registerRoutes(
             await db.update(customers).set({ balance: newBalance.toFixed(2) }).where(eq(customers.id, cust.id));
           }
         }
+
+        if (store?.posSystem === "fashion" && order.customerId) {
+          const cust = await storage.getCustomer(order.customerId);
+          if (cust) {
+            const earned = order.loyaltyPointsEarned || 0;
+            const redeemed = order.loyaltyPointsRedeemed || 0;
+            const newPoints = Math.max(0, (cust.loyaltyPoints || 0) - earned + redeemed);
+            await storage.updateCustomer(cust.id, { loyaltyPoints: newPoints });
+          }
+        }
       }
     }
 
     const updated = await storage.updateOrder(id, { status: newStatus });
     res.json(updated);
+  });
+
+  app.post("/api/orders/:id/return", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const store = await storage.getStore(storeId);
+    if (!store || store.posSystem !== "fashion") {
+      return res.status(400).json({ message: "Returns are for fashion stores only" });
+    }
+
+    const order = await storage.getOrder(id);
+    if (!order || order.storeId !== storeId) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.status !== "completed") {
+      return res.status(400).json({ message: "Only completed orders can be returned" });
+    }
+
+    const { items: returnItems } = req.body;
+    if (!returnItems || !Array.isArray(returnItems) || returnItems.length === 0) {
+      return res.status(400).json({ message: "Items array required" });
+    }
+
+    const orderItemsList = await storage.getOrderItems(id);
+    let refundAmount = 0;
+    let pointsToReverse = 0;
+    const updatedItems = [];
+
+    for (const ri of returnItems) {
+      const orderItemId = parseInt(String(ri.orderItemId));
+      const qty = parseInt(String(ri.quantity), 10);
+      if (!orderItemId || !qty || qty <= 0) {
+        return res.status(400).json({ message: "Each item needs orderItemId and positive quantity" });
+      }
+      const oi = orderItemsList.find((x) => x.id === orderItemId);
+      if (!oi) return res.status(400).json({ message: `Order item ${orderItemId} not found` });
+      const remaining = oi.quantity - (oi.returnedQuantity || 0);
+      if (qty > remaining) {
+        return res.status(400).json({ message: `Cannot return more than ${remaining} for ${oi.name}` });
+      }
+
+      const lineRefund = parseFloat(oi.price) * qty;
+      refundAmount += lineRefund;
+      pointsToReverse += calcLoyaltyEarned(lineRefund);
+
+      const invItem = await storage.getInventoryItem(oi.inventoryItemId);
+      if (invItem) {
+        await storage.updateInventoryItem(oi.inventoryItemId, {
+          quantity: invItem.quantity + qty,
+        });
+      }
+
+      const updatedOi = await storage.updateOrderItem(orderItemId, {
+        returnedQuantity: (oi.returnedQuantity || 0) + qty,
+      });
+      if (updatedOi) updatedItems.push(updatedOi);
+    }
+
+    const allItems = await storage.getOrderItems(id);
+    const fullyReturned = allItems.every((oi) => (oi.returnedQuantity || 0) >= oi.quantity);
+    const earnedReversal = Math.min(pointsToReverse, order.loyaltyPointsEarned || 0);
+    const newEarned = Math.max(0, (order.loyaltyPointsEarned || 0) - earnedReversal);
+
+    if (order.customerId && earnedReversal > 0) {
+      const cust = await storage.getCustomer(order.customerId);
+      if (cust) {
+        await storage.updateCustomer(cust.id, {
+          loyaltyPoints: Math.max(0, (cust.loyaltyPoints || 0) - earnedReversal),
+        });
+      }
+    }
+
+    if (fullyReturned) {
+      await storage.updateOrder(id, { status: "refunded", loyaltyPointsEarned: newEarned });
+    } else {
+      await storage.updateOrder(id, { loyaltyPointsEarned: newEarned });
+    }
+
+    res.json({
+      refundAmount: refundAmount.toFixed(2),
+      loyaltyPointsReversed: earnedReversal,
+      fullyReturned,
+      items: updatedItems,
+    });
   });
 
   app.patch("/api/orders/:id/items", requireAuth, async (req, res) => {

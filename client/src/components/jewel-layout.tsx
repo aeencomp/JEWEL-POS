@@ -10,7 +10,7 @@ import {
   ShoppingCart, Package, Users, ClipboardList, Wrench,
   Clock, Palette, LogOut, Menu, X, Gem, ChevronRight,
   ShoppingBag, HandCoins, ClipboardCheck, HardDrive, ArrowLeft,
-  Wifi, Shirt,
+  Wifi, Shirt, RotateCcw,
 } from "lucide-react";
 import { isFashionStore, JEWEL_ONLY_PATHS, posSystemLabel, posSystemSubtitle } from "@/lib/pos-system";
 import { useMutation } from "@tanstack/react-query";
@@ -27,6 +27,7 @@ const navItems = [
   { path: "/inventory", icon: Package, label: "Inventory", labelAr: "المخزون" },
   { path: "/customers", icon: Users, label: "Customers", labelAr: "العملاء" },
   { path: "/orders", icon: ClipboardList, label: "Orders", labelAr: "الطلبات" },
+  { path: "/returns", icon: RotateCcw, label: "Returns", labelAr: "المرتجعات", fashionOnly: true },
   { path: "/repairs", icon: Wrench, label: "Repairs", labelAr: "الإصلاحات" },
   { path: "/purchases", icon: ShoppingBag, label: "Buy Jewel", labelAr: "شراء مجوهرات" },
   { path: "/layaway", icon: Clock, label: "Layaway", labelAr: "التقسيط" },
@@ -83,9 +84,13 @@ export default function JewelLayout({
   const posSystem = (user as { posSystem?: string })?.posSystem;
   const isFashion = isFashionStore(posSystem);
   const brandColor = branding?.brandColor || (isFashion ? "#db2777" : "#d4a574");
-  const visibleNavItems = isFashion
-    ? navItems.filter((item) => !JEWEL_ONLY_PATHS.includes(item.path))
-    : navItems;
+  const visibleNavItems = navItems.filter((item) => {
+    const fashionOnly = (item as { fashionOnly?: boolean }).fashionOnly;
+    if (fashionOnly && !isFashion) return false;
+    if (isFashion && JEWEL_ONLY_PATHS.includes(item.path)) return false;
+    if (!isFashion && fashionOnly) return false;
+    return true;
+  });
   const StoreIcon = isFashion ? Shirt : Gem;
 
   const isActive = (item: (typeof navItems)[0]) =>

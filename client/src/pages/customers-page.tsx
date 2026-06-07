@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
+import { isFashionStore } from "@/lib/pos-system";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Customer } from "@shared/schema";
@@ -51,6 +53,8 @@ type CustomerFormValues = z.infer<typeof customerFormSchema>;
 export default function CustomersPage() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -205,6 +209,7 @@ export default function CustomersPage() {
                 <TableHead>{t("customers.email")}</TableHead>
                 <TableHead>{t("customers.idNumber")}</TableHead>
                 <TableHead>{t("customers.balance")}</TableHead>
+                {isFashion && <TableHead>{t("loyalty.points")}</TableHead>}
                 <TableHead>{t("orders.date")}</TableHead>
                 <TableHead>{t("admin.actions")}</TableHead>
               </TableRow>
@@ -233,6 +238,11 @@ export default function CustomersPage() {
                         <span className="text-muted-foreground">0</span>
                       )}
                     </TableCell>
+                    {isFashion && (
+                      <TableCell data-testid={`text-customer-loyalty-${customer.id}`}>
+                        {(customer.loyaltyPoints || 0).toLocaleString()}
+                      </TableCell>
+                    )}
                     <TableCell>
                       {customer.createdAt
                         ? new Date(customer.createdAt).toLocaleDateString()

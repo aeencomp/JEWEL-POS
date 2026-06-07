@@ -132,7 +132,7 @@ const products: Product[] = [
     icon: Shirt,
     gradient: "from-pink-500 to-purple-600",
     available: true,
-    href: "/store-portal",
+    href: "/fashion-login",
     tags: ["Fashion", "Variants", "Loyalty"],
     tagsAr: ["أزياء", "متغيرات", "ولاء"],
   },

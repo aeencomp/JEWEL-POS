@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { isFashionStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category, Customer, Order, OrderItem, PosTerminal } from "@shared/schema";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,7 @@ import {
   Clock,
   ArrowLeft,
   Gem,
+  Shirt,
   Tag,
   Box,
   Star,
@@ -91,11 +94,14 @@ function TerminalIcon({ iconName, size = 20 }: { iconName: string; size?: number
   return <Icon style={{ width: size, height: size }} />;
 }
 
-export default function PosTerminal() {
+export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" | "fashion" }) {
   const { t } = useLanguage();
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isFashion = variant === "fashion" || isFashionStore((user as { posSystem?: string })?.posSystem);
+  const ItemIcon = isFashion ? Shirt : Gem;
   useLocation();
   const [match, params] = useRoute("/pos/:id");
   const terminalId = match && params?.id ? parseInt(params.id) : null;
@@ -120,6 +126,8 @@ export default function PosTerminal() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
+  const [loyaltyRedeem, setLoyaltyRedeem] = useState(0);
+  const [manualDiscount, setManualDiscount] = useState(0);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("walk-in");
   const [orderDialog, setOrderDialog] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderResponse | null>(null);
@@ -147,6 +155,7 @@ export default function PosTerminal() {
       total: string;
       paymentMethod: string;
       items: { inventoryItemId: number; name: string; sku: string; price: string; quantity: number }[];
+      loyaltyPointsRedeemed?: number;
     }) => {
       const res = await apiRequest("POST", "/api/orders", payload);
       return (await res.json()) as OrderResponse;
@@ -158,6 +167,8 @@ export default function PosTerminal() {
       setOrderDialog(true);
       setCart([]);
       setDiscount(0);
+      setManualDiscount(0);
+      setLoyaltyRedeem(0);
       setSelectedCustomerId("walk-in");
       toast({ title: t("pos.orderPlaced") });
     },
@@ -198,8 +209,23 @@ export default function PosTerminal() {
   }, [inventory, search, selectedCategory, effectiveTerminalConfig]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const selectedCustomer = customers.find((c) => c.id === Number(selectedCustomerId));
+  const maxLoyaltyRedeem = selectedCustomer?.loyaltyPoints || 0;
   const grandTotal = Math.max(0, subtotal - discount);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
+  const pointsToEarn = isFashion ? Math.floor(grandTotal / LOYALTY_EARN_PER_IQD) : 0;
+
+  function applyLoyaltyRedeem(points: number) {
+    const capped = Math.min(Math.max(0, points), maxLoyaltyRedeem);
+    setLoyaltyRedeem(capped);
+    setDiscount(manualDiscount + calcLoyaltyDiscount(capped));
+  }
+
+  function applyManualDiscount(value: number) {
+    const v = Math.max(0, value);
+    setManualDiscount(v);
+    setDiscount(v + calcLoyaltyDiscount(loyaltyRedeem));
+  }
 
   function addToCart(item: InventoryItem) {
     const existing = cart.find((c) => c.inventoryItemId === item.id);
@@ -235,14 +261,14 @@ export default function PosTerminal() {
       toast({ title: t("pos.debitRequiresCustomer"), variant: "destructive" });
       return;
     }
-    const customer = customers.find((c) => c.id === Number(selectedCustomerId));
     orderMutation.mutate({
-      customerId: customer ? customer.id : null,
-      customerName: customer ? customer.name : t("pos.walkIn"),
+      customerId: selectedCustomer ? selectedCustomer.id : null,
+      customerName: selectedCustomer ? selectedCustomer.name : t("pos.walkIn"),
       subtotal: subtotal.toString(),
       discount: discount.toString(),
       total: grandTotal.toString(),
       paymentMethod: method,
+      loyaltyPointsRedeemed: isFashion && loyaltyRedeem > 0 ? loyaltyRedeem : undefined,
       items: cart.map((c) => ({
         inventoryItemId: c.inventoryItemId,
         name: c.name,
@@ -417,7 +443,7 @@ export default function PosTerminal() {
                           className="w-full aspect-[4/3] flex items-center justify-center"
                           style={{ background: `linear-gradient(135deg, ${brandColor}20, ${brandColor}08)` }}
                         >
-                          <Gem className="h-8 w-8" style={{ color: brandColor + "80" }} />
+                          <ItemIcon className="h-8 w-8" style={{ color: brandColor + "80" }} />
                         </div>
                       )}
 
@@ -499,7 +525,14 @@ export default function PosTerminal() {
           {/* Customer selector */}
           <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+              <Select
+                value={selectedCustomerId}
+                onValueChange={(v) => {
+                  setSelectedCustomerId(v);
+                  setLoyaltyRedeem(0);
+                  setDiscount(manualDiscount);
+                }}
+              >
                 <SelectTrigger className="flex-1 h-9 text-sm" data-testid="select-customer">
                   <SelectValue placeholder={t("pos.selectCustomer")} />
                 </SelectTrigger>
@@ -523,6 +556,11 @@ export default function PosTerminal() {
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+            {isFashion && selectedCustomer && (
+              <p className="text-xs text-slate-500 mt-2" data-testid="text-loyalty-balance">
+                {t("loyalty.available")}: <span className="font-semibold text-foreground">{selectedCustomer.loyaltyPoints || 0}</span> {t("loyalty.points")}
+              </p>
+            )}
           </div>
 
           {/* Cart items */}
@@ -540,7 +578,7 @@ export default function PosTerminal() {
                   <div key={item.inventoryItemId} className="px-4 py-3" data-testid={`cart-item-${item.inventoryItemId}`}>
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: brandColor + "15" }}>
-                        <Gem className="h-4 w-4" style={{ color: brandColor }} />
+                        <ItemIcon className="h-4 w-4" style={{ color: brandColor }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm text-foreground leading-tight truncate">{item.name}</p>
@@ -603,12 +641,34 @@ export default function PosTerminal() {
                 <input
                   type="number"
                   min={0}
-                  value={discount || ""}
-                  onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                  value={manualDiscount || ""}
+                  onChange={(e) => applyManualDiscount(Number(e.target.value) || 0)}
                   className="flex-1 h-8 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm text-foreground focus:outline-none focus:ring-1 transition-all"
                   data-testid="input-discount"
                 />
               </div>
+              {isFashion && selectedCustomer && maxLoyaltyRedeem > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500 shrink-0">{t("loyalty.redeem")}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={maxLoyaltyRedeem}
+                    value={loyaltyRedeem || ""}
+                    onChange={(e) => applyLoyaltyRedeem(Number(e.target.value) || 0)}
+                    className="flex-1 h-8 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm text-foreground focus:outline-none focus:ring-1 transition-all"
+                    data-testid="input-loyalty-redeem"
+                  />
+                  <span className="text-xs text-slate-400 shrink-0">
+                    −{calcLoyaltyDiscount(loyaltyRedeem).toLocaleString()}
+                  </span>
+                </div>
+              )}
+              {isFashion && pointsToEarn > 0 && selectedCustomer && (
+                <p className="text-xs text-emerald-600" data-testid="text-loyalty-earn">
+                  +{pointsToEarn} {t("loyalty.points")} ({t("loyalty.earn")})
+                </p>
+              )}
               <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
                 <span className="font-bold text-base">{t("pos.grandTotal")}</span>
                 <span className="font-bold text-lg" style={{ color: brandColor }} data-testid="text-grand-total">

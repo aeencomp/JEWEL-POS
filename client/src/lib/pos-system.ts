@@ -28,6 +28,11 @@ export function defaultBrandColor(system: PosSystem): string {
 /** Jewel-only menu paths hidden for fashion stores */
 export const JEWEL_ONLY_PATHS = ["/repairs", "/purchases", "/layaway"];
 
+/** Fashion-only features */
+export const FASHION_ONLY_PATHS = ["/returns"];
+
+export { LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD, calcLoyaltyEarned, calcLoyaltyDiscount } from "@shared/loyalty";
+
 export function isFashionStore(posSystem: unknown): boolean {
   return posSystem === "fashion";
 }

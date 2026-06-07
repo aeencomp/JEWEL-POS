@@ -60,6 +60,7 @@ import {
   Barcode,
   Power,
   Gem,
+  Shirt,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
@@ -85,6 +86,7 @@ const inventoryFormSchema = z.object({
   size: z.string().optional(),
   color: z.string().optional(),
   brand: z.string().optional(),
+  styleCode: z.string().optional(),
 });
 
 type InventoryFormValues = z.infer<typeof inventoryFormSchema>;
@@ -130,6 +132,16 @@ export default function InventoryManagement() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [barcodeItem, setBarcodeItem] = useState<InventoryItem | null>(null);
+  const [variantsOpen, setVariantsOpen] = useState(false);
+  const [variantBaseName, setVariantBaseName] = useState("");
+  const [variantBrand, setVariantBrand] = useState("");
+  const [variantStyleCode, setVariantStyleCode] = useState("");
+  const [variantCategoryId, setVariantCategoryId] = useState<string>("");
+  const [variantCostPrice, setVariantCostPrice] = useState("");
+  const [variantSellingPrice, setVariantSellingPrice] = useState("");
+  const [variantSizes, setVariantSizes] = useState("S,M,L,XL");
+  const [variantColors, setVariantColors] = useState("Black,White");
+  const [variantDefaultQty, setVariantDefaultQty] = useState("1");
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkAdjustType, setBulkAdjustType] = useState<"increase" | "decrease">("increase");
   const [bulkPercentage, setBulkPercentage] = useState("");
@@ -159,7 +171,7 @@ export default function InventoryManagement() {
       name: "",
       description: "",
       categoryId: 0,
-      metalType: "gold",
+      metalType: isFashion ? "other" : "gold",
       purity: "",
       weightGrams: "",
       gemstone: "",
@@ -171,6 +183,28 @@ export default function InventoryManagement() {
       size: "",
       color: "",
       brand: "",
+      styleCode: "",
+    },
+  });
+
+  const variantsMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res = await apiRequest("POST", "/api/inventory/variants", data);
+      return res.json();
+    },
+    onSuccess: (data: { count: number }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setVariantsOpen(false);
+      setVariantBaseName("");
+      setVariantBrand("");
+      setVariantStyleCode("");
+      setVariantCategoryId("");
+      setVariantCostPrice("");
+      setVariantSellingPrice("");
+      toast({ title: t("inventory.variantsCreated"), description: String(data.count) });
+    },
+    onError: (err: Error) => {
+      toast({ title: err.message, variant: "destructive" });
     },
   });
 
@@ -345,7 +379,7 @@ export default function InventoryManagement() {
       name: "",
       description: "",
       categoryId: defaultCategoryId,
-      metalType: "gold",
+      metalType: isFashion ? "other" : "gold",
       purity: "",
       weightGrams: "",
       gemstone: "",
@@ -357,6 +391,7 @@ export default function InventoryManagement() {
       size: "",
       color: "",
       brand: "",
+      styleCode: "",
     });
     setItemDialogOpen(true);
   }
@@ -380,6 +415,7 @@ export default function InventoryManagement() {
       size: (item as InventoryItem & { size?: string }).size || "",
       color: (item as InventoryItem & { color?: string }).color || "",
       brand: (item as InventoryItem & { brand?: string }).brand || "",
+      styleCode: (item as InventoryItem & { styleCode?: string }).styleCode || "",
     });
     setItemDialogOpen(true);
   }
@@ -551,6 +587,17 @@ export default function InventoryManagement() {
             <Percent className="h-4 w-4 me-2" />
             {t("inventory.bulkPriceAdjust")}
           </Button>
+          {isFashion && (
+            <Button
+              variant="outline"
+              className="border-pink-200 text-pink-700 hover:bg-pink-50 shrink-0"
+              onClick={() => setVariantsOpen(true)}
+              data-testid="button-add-variants"
+            >
+              <Plus className="h-4 w-4 me-2" />
+              {t("inventory.addVariants")}
+            </Button>
+          )}
           <Button
             onClick={openAddItem}
             className="bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 shrink-0"
@@ -566,7 +613,7 @@ export default function InventoryManagement() {
       <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200 dark:border-border overflow-hidden">
         {filteredItems.length === 0 ? (
           <div className="text-center py-16">
-            <Gem className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            {isFashion ? <Shirt className="h-10 w-10 text-muted-foreground mx-auto mb-3" /> : <Gem className="h-10 w-10 text-muted-foreground mx-auto mb-3" />}
             <p className="text-muted-foreground text-sm" data-testid="text-no-items">{t("inventory.noItems")}</p>
           </div>
         ) : (
@@ -575,7 +622,9 @@ export default function InventoryManagement() {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-8"></TableHead>
                 <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">{t("inventory.name")}</TableHead>
-                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">{t("inventory.metalType")}</TableHead>
+                <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">
+                  {isFashion ? `${t("inventory.size")} / ${t("inventory.color")}` : t("inventory.metalType")}
+                </TableHead>
                 <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground text-end">{t("inventory.sellingPrice")}</TableHead>
                 <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground text-end">{t("inventory.quantity")}</TableHead>
                 <TableHead className="font-semibold text-slate-600 dark:text-muted-foreground">{t("admin.status")}</TableHead>
@@ -611,9 +660,15 @@ export default function InventoryManagement() {
                         </div>
                       </TableCell>
                       <TableCell className="py-3">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-muted text-slate-700 dark:text-muted-foreground" data-testid={`text-metal-${item.id}`}>
-                          {t(metalTypeLabels[item.metalType] as any)}
-                        </span>
+                        {isFashion ? (
+                          <span className="text-xs text-muted-foreground" data-testid={`text-variant-${item.id}`}>
+                            {[(item as InventoryItem & { size?: string }).size, (item as InventoryItem & { color?: string }).color].filter(Boolean).join(" · ") || "—"}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-muted text-slate-700 dark:text-muted-foreground" data-testid={`text-metal-${item.id}`}>
+                            {t(metalTypeLabels[item.metalType] as any)}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="py-3 text-end font-semibold tabular-nums" data-testid={`text-sell-${item.id}`}>
                         {sell.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">{t("common.currency")}</span>
@@ -642,18 +697,41 @@ export default function InventoryManagement() {
                                 <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                                   <div className="text-muted-foreground">{t("inventory.sku")}</div>
                                   <div className="font-mono font-medium" data-testid={`text-sku-${item.id}`}>{item.sku}</div>
-                                  {item.purity && <>
-                                    <div className="text-muted-foreground">{t("inventory.purity")}</div>
-                                    <div className="font-medium">{item.purity}</div>
-                                  </>}
-                                  {item.weightGrams && <>
-                                    <div className="text-muted-foreground">{t("inventory.weight")}</div>
-                                    <div className="font-medium">{parseFloat(item.weightGrams).toLocaleString()}g</div>
-                                  </>}
-                                  {item.gemstone && <>
-                                    <div className="text-muted-foreground">{t("inventory.gemstone")}</div>
-                                    <div className="font-medium">{item.gemstone}</div>
-                                  </>}
+                                  {isFashion ? (
+                                    <>
+                                      {(item as InventoryItem & { brand?: string }).brand && <>
+                                        <div className="text-muted-foreground">{t("inventory.brand")}</div>
+                                        <div className="font-medium">{(item as InventoryItem & { brand?: string }).brand}</div>
+                                      </>}
+                                      {(item as InventoryItem & { size?: string }).size && <>
+                                        <div className="text-muted-foreground">{t("inventory.size")}</div>
+                                        <div className="font-medium">{(item as InventoryItem & { size?: string }).size}</div>
+                                      </>}
+                                      {(item as InventoryItem & { color?: string }).color && <>
+                                        <div className="text-muted-foreground">{t("inventory.color")}</div>
+                                        <div className="font-medium">{(item as InventoryItem & { color?: string }).color}</div>
+                                      </>}
+                                      {(item as InventoryItem & { styleCode?: string }).styleCode && <>
+                                        <div className="text-muted-foreground">{t("inventory.styleCode")}</div>
+                                        <div className="font-medium">{(item as InventoryItem & { styleCode?: string }).styleCode}</div>
+                                      </>}
+                                    </>
+                                  ) : (
+                                    <>
+                                      {item.purity && <>
+                                        <div className="text-muted-foreground">{t("inventory.purity")}</div>
+                                        <div className="font-medium">{item.purity}</div>
+                                      </>}
+                                      {item.weightGrams && <>
+                                        <div className="text-muted-foreground">{t("inventory.weight")}</div>
+                                        <div className="font-medium">{parseFloat(item.weightGrams).toLocaleString()}g</div>
+                                      </>}
+                                      {item.gemstone && <>
+                                        <div className="text-muted-foreground">{t("inventory.gemstone")}</div>
+                                        <div className="font-medium">{item.gemstone}</div>
+                                      </>}
+                                    </>
+                                  )}
                                 </div>
                               </div>
 
@@ -814,6 +892,13 @@ export default function InventoryManagement() {
                 )} />
                 {isFashion ? (
                   <>
+                    <FormField control={itemForm.control} name="styleCode" render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>{t("inventory.styleCode")}</FormLabel>
+                        <FormControl><Input {...field} placeholder="DRS-2024" data-testid="input-item-style-code" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                     <FormField control={itemForm.control} name="brand" render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("inventory.brand")}</FormLabel>
@@ -967,10 +1052,14 @@ export default function InventoryManagement() {
               <Button variant="outline" size="sm" onClick={async () => {
                 const qrValue = barcodeItem.barcode || barcodeItem.sku;
                 const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } });
-                const weight = barcodeItem.weightGrams ? `${parseFloat(barcodeItem.weightGrams).toLocaleString()}g` : "";
+                const fashionItem = barcodeItem as InventoryItem & { size?: string; color?: string };
+                const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
                 const printWindow = window.open("", "_blank");
                 if (printWindow) {
-                  printWindow.document.write(`<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${weight}</div></div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`);
+                  const labelHtml = isFashion
+                    ? `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:50mm 30mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:2mm;width:50mm;height:30mm;display:flex;flex-direction:column;justify-content:space-between}.name{font-size:9pt;font-weight:700;line-height:1.2;max-height:2.4em;overflow:hidden}.meta{font-size:8pt;color:#333}.price{font-size:11pt;font-weight:800}.qr img{width:14mm;height:14mm;display:block}</style></head><body><div class="name">${barcodeItem.name}</div><div class="meta">${fashionItem.size || ""} ${fashionItem.color ? "· " + fashionItem.color : ""}</div><div class="price">${price}</div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`
+                    : `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${barcodeItem.weightGrams ? parseFloat(barcodeItem.weightGrams).toLocaleString() + "g" : ""}</div></div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`;
+                  printWindow.document.write(labelHtml);
                   printWindow.document.close();
                 }
               }} data-testid="button-print-barcode">
@@ -1051,6 +1140,85 @@ export default function InventoryManagement() {
             <Button onClick={confirmBulkPrice} disabled={bulkPriceMutation.isPending} data-testid="button-confirm-submit">
               {bulkPriceMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
               {t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Variants Dialog (Fashion) ── */}
+      <Dialog open={variantsOpen} onOpenChange={setVariantsOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle data-testid="text-variants-title">{t("inventory.variantsTitle")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">{t("inventory.baseName")}</label>
+              <Input value={variantBaseName} onChange={(e) => setVariantBaseName(e.target.value)} placeholder="Summer Dress" data-testid="input-variant-base-name" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{t("inventory.brand")}</label>
+                <Input value={variantBrand} onChange={(e) => setVariantBrand(e.target.value)} data-testid="input-variant-brand" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("inventory.styleCode")}</label>
+                <Input value={variantStyleCode} onChange={(e) => setVariantStyleCode(e.target.value)} placeholder="DRS01" data-testid="input-variant-style" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.category")}</label>
+              <Select value={variantCategoryId} onValueChange={setVariantCategoryId}>
+                <SelectTrigger data-testid="select-variant-category"><SelectValue placeholder={t("inventory.category")} /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{t("inventory.costPrice")}</label>
+                <Input type="number" value={variantCostPrice} onChange={(e) => setVariantCostPrice(e.target.value)} data-testid="input-variant-cost" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("inventory.sellingPrice")}</label>
+                <Input type="number" value={variantSellingPrice} onChange={(e) => setVariantSellingPrice(e.target.value)} data-testid="input-variant-price" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.sizesList")}</label>
+              <Input value={variantSizes} onChange={(e) => setVariantSizes(e.target.value)} placeholder="S,M,L,XL" data-testid="input-variant-sizes" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.colorsList")}</label>
+              <Input value={variantColors} onChange={(e) => setVariantColors(e.target.value)} placeholder="Black,White,Blue" data-testid="input-variant-colors" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("inventory.quantity")} ({t("inventory.perVariant")})</label>
+              <Input type="number" min={0} value={variantDefaultQty} onChange={(e) => setVariantDefaultQty(e.target.value)} data-testid="input-variant-qty" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVariantsOpen(false)}>{t("common.cancel")}</Button>
+            <Button
+              disabled={variantsMutation.isPending || !variantBaseName || !variantCategoryId || !variantCostPrice || !variantSellingPrice}
+              onClick={() => variantsMutation.mutate({
+                baseName: variantBaseName,
+                brand: variantBrand || null,
+                styleCode: variantStyleCode || null,
+                categoryId: parseInt(variantCategoryId),
+                costPrice: variantCostPrice,
+                sellingPrice: variantSellingPrice,
+                sizes: variantSizes.split(",").map((s) => s.trim()).filter(Boolean),
+                colors: variantColors.split(",").map((c) => c.trim()).filter(Boolean),
+                defaultQuantity: parseInt(variantDefaultQty) || 0,
+              })}
+              data-testid="button-save-variants"
+            >
+              {variantsMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("inventory.addVariants")}
             </Button>
           </DialogFooter>
         </DialogContent>

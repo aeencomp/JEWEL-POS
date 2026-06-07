@@ -111,6 +111,7 @@ export const inventoryItems = pgTable("inventory_items", {
   size: text("size"),
   color: text("color"),
   brand: text("brand"),
+  styleCode: text("style_code"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -135,6 +136,7 @@ export const customers = pgTable("customers", {
   idNumber: text("id_number"),
   notes: text("notes"),
   balance: decimal("balance").notNull().default("0"),
+  loyaltyPoints: integer("loyalty_points").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -160,6 +162,8 @@ export const orders = pgTable("orders", {
   total: decimal("total", { precision: 12, scale: 2 }).notNull(),
   paymentMethod: text("payment_method", { enum: ["cash", "card", "transfer"] }),
   notes: text("notes"),
+  loyaltyPointsEarned: integer("loyalty_points_earned").notNull().default(0),
+  loyaltyPointsRedeemed: integer("loyalty_points_redeemed").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -183,6 +187,7 @@ export const orderItems = pgTable("order_items", {
   sku: text("sku"),
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull().default(1),
+  returnedQuantity: integer("returned_quantity").notNull().default(0),
 });
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({

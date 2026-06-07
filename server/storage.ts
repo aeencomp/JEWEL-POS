@@ -78,6 +78,8 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, data: Partial<InsertOrder>): Promise<Order | undefined>;
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
+  getOrderItem(id: number): Promise<OrderItem | undefined>;
+  updateOrderItem(id: number, data: Partial<InsertOrderItem>): Promise<OrderItem | undefined>;
   getOrderItems(orderId: number): Promise<OrderItem[]>;
 
   getRepairOrders(storeId: number): Promise<RepairOrder[]>;
@@ -300,6 +302,16 @@ export class DatabaseStorage implements IStorage {
   async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
     const [created] = await db.insert(orderItems).values(item).returning();
     return created;
+  }
+
+  async getOrderItem(id: number): Promise<OrderItem | undefined> {
+    const [item] = await db.select().from(orderItems).where(eq(orderItems.id, id));
+    return item || undefined;
+  }
+
+  async updateOrderItem(id: number, data: Partial<InsertOrderItem>): Promise<OrderItem | undefined> {
+    const [updated] = await db.update(orderItems).set(data).where(eq(orderItems.id, id)).returning();
+    return updated || undefined;
   }
 
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
