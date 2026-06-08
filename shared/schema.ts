@@ -183,7 +183,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
 export const orderItems = pgTable("order_items", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull().references(() => orders.id),
-  inventoryItemId: integer("inventory_item_id").notNull().references(() => inventoryItems.id),
+  inventoryItemId: integer("inventory_item_id").references(() => inventoryItems.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   sku: text("sku"),
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
@@ -234,7 +234,7 @@ export const layawayPlans = pgTable("layaway_plans", {
   id: serial("id").primaryKey(),
   storeId: integer("store_id").notNull().references(() => stores.id),
   customerId: integer("customer_id").references(() => customers.id),
-  inventoryItemId: integer("inventory_item_id").notNull().references(() => inventoryItems.id),
+  inventoryItemId: integer("inventory_item_id").references(() => inventoryItems.id, { onDelete: "set null" }),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
   totalPrice: decimal("total_price", { precision: 12, scale: 2 }).notNull(),

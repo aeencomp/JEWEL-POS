@@ -5,6 +5,23 @@ export type LinearBarcodeOptions = {
   height?: number;
   displayValue?: boolean;
   fontSize?: number;
+  margin?: number;
+};
+
+export const LABEL_BARCODE_DEFAULTS: LinearBarcodeOptions = {
+  width: 3,
+  height: 80,
+  displayValue: true,
+  fontSize: 16,
+  margin: 12,
+};
+
+export const PRINT_BARCODE_DEFAULTS: LinearBarcodeOptions = {
+  width: 3.5,
+  height: 100,
+  displayValue: true,
+  fontSize: 18,
+  margin: 14,
 };
 
 export function renderLinearBarcode(
@@ -14,11 +31,11 @@ export function renderLinearBarcode(
 ) {
   JsBarcode(element, value, {
     format: "CODE128",
-    width: options.width ?? 2,
-    height: options.height ?? 50,
+    width: options.width ?? LABEL_BARCODE_DEFAULTS.width,
+    height: options.height ?? LABEL_BARCODE_DEFAULTS.height,
     displayValue: options.displayValue ?? true,
-    fontSize: options.fontSize ?? 12,
-    margin: 6,
+    fontSize: options.fontSize ?? LABEL_BARCODE_DEFAULTS.fontSize,
+    margin: options.margin ?? LABEL_BARCODE_DEFAULTS.margin,
   });
 }
 

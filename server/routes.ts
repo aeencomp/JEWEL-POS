@@ -1376,13 +1376,8 @@ export async function registerRoutes(
     if (!storeId) return res.status(403).json({ message: "Forbidden" });
     const items = await storage.getInventoryItems(storeId);
     if (!items.find((i) => i.id === id)) return res.status(404).json({ message: "Item not found" });
-    try {
-      await storage.deleteInventoryItem(id);
-      res.sendStatus(204);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to delete item";
-      res.status(409).json({ message });
-    }
+    await storage.deleteInventoryItem(id);
+    res.sendStatus(204);
   });
 
   app.get("/api/customers", requireAuth, async (req, res) => {

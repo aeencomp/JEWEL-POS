@@ -258,23 +258,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteInventoryItem(id: number): Promise<void> {
-    const [orderRef] = await db
-      .select({ id: orderItems.id })
-      .from(orderItems)
-      .where(eq(orderItems.inventoryItemId, id))
-      .limit(1);
-    if (orderRef) {
-      throw new Error("Cannot delete: this item was used in past sales. Deactivate it instead.");
-    }
+    // Past orders keep name/sku/price on order_items — safe to unlink inventory row.
+    await db.update(orderItems).set({ inventoryItemId: null }).where(eq(orderItems.inventoryItemId, id));
 
-    const [layawayRef] = await db
-      .select({ id: layawayPlans.id })
-      .from(layawayPlans)
-      .where(eq(layawayPlans.inventoryItemId, id))
-      .limit(1);
-    if (layawayRef) {
-      throw new Error("Cannot delete: this item is on a layaway plan.");
-    }
+    await db
+      .update(layawayPlans)
+      .set({ status: "cancelled", inventoryItemId: null })
+      .where(and(eq(layawayPlans.inventoryItemId, id), eq(layawayPlans.status, "active")));
+
+    await db.update(layawayPlans).set({ inventoryItemId: null }).where(eq(layawayPlans.inventoryItemId, id));
 
     await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
   }

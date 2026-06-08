@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { renderLinearBarcode } from "@/lib/linear-barcode";
+import { LABEL_BARCODE_DEFAULTS, renderLinearBarcode } from "@/lib/linear-barcode";
 
 type LinearBarcodeProps = {
   value: string;
@@ -11,8 +11,8 @@ type LinearBarcodeProps = {
 
 export function LinearBarcode({
   value,
-  width = 2,
-  height = 50,
+  width = LABEL_BARCODE_DEFAULTS.width,
+  height = LABEL_BARCODE_DEFAULTS.height,
   showValue = true,
   className,
 }: LinearBarcodeProps) {
