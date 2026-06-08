@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
@@ -32,6 +32,12 @@ export default function PublicOrderPage() {
   const [search, setSearch] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [orderError, setOrderError] = useState("");
+
+  useEffect(() => {
+    if (!tableNum) return;
+    setCustomerName((prev) => prev.trim() || (isAr ? `زبون طاولة ${tableNum}` : `Table ${tableNum} Guest`));
+  }, [tableNum, isAr]);
 
   const { data, isLoading, error } = useQuery<PublicMenu>({
     queryKey: [`/api/public/restaurant/${storeId}/menu`],
@@ -58,7 +64,9 @@ export default function PublicOrderPage() {
       setSubmitted(true);
       setOrderNumber(order.orderNumber);
       setCart([]);
+      setOrderError("");
     },
+    onError: (err: Error) => setOrderError(err.message),
   });
 
   const brandColor = data?.store.brandColor || "#ea580c";
@@ -121,7 +129,7 @@ export default function PublicOrderPage() {
         <LanguageToggle />
       </header>
 
-      <div className="max-w-lg mx-auto p-4 pb-36 space-y-5">
+      <div className="max-w-lg mx-auto p-4 pb-48 space-y-5">
         <div className="rounded-2xl p-5 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${brandColor}, #9a3412)` }}>
           <h1 className="text-lg font-bold">{isAr ? "اطلب من هاتفك" : "Order from your phone"}</h1>
           <p className="text-sm text-white/85 mt-1">{isAr ? "اختر أطباقك — يصل الطلب مباشرة للمطبخ" : "Browse the menu — orders go straight to the kitchen"}</p>
@@ -162,8 +170,8 @@ export default function PublicOrderPage() {
       </div>
 
       {cart.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 border-t bg-card/95 backdrop-blur-md p-4 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
-          <div className="max-w-lg mx-auto space-y-3">
+        <div className="fixed bottom-0 inset-x-0 z-50 border-t bg-card backdrop-blur-md p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
+          <div className="max-w-lg mx-auto space-y-3 max-h-[min(70vh,520px)] overflow-y-auto overscroll-contain">
             <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder={isAr ? "اسمك *" : "Your name *"} className="rounded-xl" />
             <Textarea value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder={isAr ? "ملاحظات (بدون بصل، إلخ)" : "Notes (no onions, etc.)"} rows={2} className="text-sm resize-none rounded-xl" />
             <div className="space-y-1.5 max-h-28 overflow-y-auto">
@@ -179,9 +187,18 @@ export default function PublicOrderPage() {
                 </div>
               ))}
             </div>
+            {!customerName.trim() && (
+              <p className="text-xs text-amber-700 dark:text-amber-400 text-center">
+                {isAr ? "أدخل اسمك لتفعيل زر الإرسال" : "Enter your name to enable Place Order"}
+              </p>
+            )}
+            {orderError && (
+              <p className="text-xs text-destructive text-center">{orderError}</p>
+            )}
             <Button
-              className="w-full h-12 text-white font-semibold rounded-xl shadow-md"
-              style={{ background: brandColor }}
+              type="button"
+              className="w-full h-12 text-white font-semibold rounded-xl shadow-md touch-manipulation cursor-pointer sticky bottom-0"
+              style={{ background: customerName.trim() ? brandColor : undefined }}
               disabled={!customerName.trim() || placeOrder.isPending}
               onClick={() => placeOrder.mutate()}
             >
