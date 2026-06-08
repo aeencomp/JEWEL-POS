@@ -66,7 +66,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
 import { generateInventoryBarcode } from "@/lib/barcode";
-import { linearBarcodeToDataUrl, getPrintBarcodeOptions } from "@/lib/linear-barcode";
+import { linearBarcodeToDataUrl, getPrintBarcodeOptions, buildFashionLabelPrintHtml } from "@/lib/linear-barcode";
 import { LinearBarcode } from "@/components/linear-barcode";
 import {
   AlertDialog,
@@ -1199,7 +1199,13 @@ export default function InventoryManagement() {
                 if (isFashion) {
                   const bcDataUrl = linearBarcodeToDataUrl(code, getPrintBarcodeOptions(code));
                   const meta = [fashionItem.size, fashionItem.color].filter(Boolean).join(" · ");
-                  labelHtml = `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:58mm 40mm;margin:1mm}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:1mm 2mm;height:38mm;display:flex;flex-direction:column;align-items:center;text-align:center}.bc-wrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:24mm;padding:1mm 0}.bc{height:24mm;width:auto;max-width:56mm;display:block}.text{flex-shrink:0;width:100%}.name{font-size:10pt;font-weight:700;line-height:1.15;max-height:2.4em;overflow:hidden}.meta{font-size:8pt;color:#444;margin-top:0.5mm}.price{font-size:12pt;font-weight:800;margin-top:0.5mm}</style></head><body><div class="bc-wrap"><img class="bc" src="${bcDataUrl}" onload="window.print();window.close()" /></div><div class="text"><div class="name">${barcodeItem.name}</div>${meta ? `<div class="meta">${meta}</div>` : ""}<div class="price">${price} ${currency}</div></div></body></html>`;
+                  labelHtml = buildFashionLabelPrintHtml({
+                    name: barcodeItem.name,
+                    meta: meta || undefined,
+                    price,
+                    currency,
+                    barcodeDataUrl: bcDataUrl,
+                  });
                 } else {
                   const qrDataUrl = await QRCode.toDataURL(code, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } });
                   labelHtml = `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${barcodeItem.weightGrams ? parseFloat(barcodeItem.weightGrams).toLocaleString() + "g" : ""}</div></div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`;
