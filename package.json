@@ -10,7 +10,11 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "db:diagnose": "tsx script/db-diagnose.ts",
-    "db:list-tables": "tsx script/db-list-tables.ts"
+    "db:list-tables": "tsx script/db-list-tables.ts",
+    "mobile:iq-order:install": "npm install --prefix mobile/iq-order",
+    "mobile:iq-order:sync": "npm run sync --prefix mobile/iq-order",
+    "mobile:iq-order:apk": "npm run build:debug --prefix mobile/iq-order",
+    "mobile:iq-order:aab": "npm run build:release --prefix mobile/iq-order"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

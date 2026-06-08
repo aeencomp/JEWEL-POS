@@ -152,6 +152,10 @@ type TranslationKeys = {
   "inventory.noItems": string;
   "inventory.profit": string;
   "inventory.barcode": string;
+  "inventory.searchPlaceholder": string;
+  "inventory.deleteConfirm": string;
+  "inventory.deleteConfirmDesc": string;
+  "inventory.deleteSuccess": string;
   "inventory.generateBarcode": string;
   "inventory.generateSku": string;
   "inventory.viewBarcode": string;
@@ -639,6 +643,10 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noItems": "No items in inventory",
     "inventory.profit": "Profit",
     "inventory.barcode": "Barcode",
+    "inventory.searchPlaceholder": "Search name, SKU, or barcode…",
+    "inventory.deleteConfirm": "Delete this item?",
+    "inventory.deleteConfirmDesc": "This permanently removes the product from inventory. Items used in past sales cannot be deleted — deactivate them instead.",
+    "inventory.deleteSuccess": "Item deleted",
     "inventory.generateBarcode": "Generate barcode",
     "inventory.generateSku": "Generate SKU",
     "inventory.viewBarcode": "View Barcode",
@@ -1108,6 +1116,10 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noItems": "لا توجد منتجات في المخزون",
     "inventory.profit": "الربح",
     "inventory.barcode": "الباركود",
+    "inventory.searchPlaceholder": "بحث بالاسم أو SKU أو الباركود…",
+    "inventory.deleteConfirm": "حذف هذا المنتج؟",
+    "inventory.deleteConfirmDesc": "سيُزال المنتج نهائياً من المخزون. المنتجات المستخدمة في مبيعات سابقة لا يمكن حذفها — عطّلها بدلاً من ذلك.",
+    "inventory.deleteSuccess": "تم حذف المنتج",
     "inventory.generateBarcode": "إنشاء باركود",
     "inventory.generateSku": "إنشاء رمز المنتج",
     "inventory.viewBarcode": "عرض الباركود",

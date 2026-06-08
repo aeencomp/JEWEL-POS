@@ -258,6 +258,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteInventoryItem(id: number): Promise<void> {
+    const [orderRef] = await db
+      .select({ id: orderItems.id })
+      .from(orderItems)
+      .where(eq(orderItems.inventoryItemId, id))
+      .limit(1);
+    if (orderRef) {
+      throw new Error("Cannot delete: this item was used in past sales. Deactivate it instead.");
+    }
+
+    const [layawayRef] = await db
+      .select({ id: layawayPlans.id })
+      .from(layawayPlans)
+      .where(eq(layawayPlans.inventoryItemId, id))
+      .limit(1);
+    if (layawayRef) {
+      throw new Error("Cannot delete: this item is on a layaway plan.");
+    }
+
     await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
   }
 

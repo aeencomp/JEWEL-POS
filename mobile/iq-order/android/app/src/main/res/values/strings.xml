@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">IQ Order</string>
+    <string name="title_activity_main">IQ Order</string>
+    <string name="package_name">com.iqpos.iqorder</string>
+    <string name="custom_url_scheme">com.iqpos.iqorder</string>
+</resources>

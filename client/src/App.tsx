@@ -71,6 +71,7 @@ import IqOrderStore from "@/pages/iq-order/iq-order-store";
 import IqOrderTrack from "@/pages/iq-order/iq-order-track";
 import DriverLogin from "@/pages/driver/driver-login";
 import DriverApp from "@/pages/driver/driver-app";
+import PrivacyPage from "@/pages/privacy";
 import { Loader2 } from "lucide-react";
 import { resolveUserPosSystem } from "@/lib/pos-system";
 
@@ -274,6 +275,9 @@ function AppContent() {
     if (location.startsWith("/order/")) {
       return <PublicOrderPage />;
     }
+    if (location === "/privacy") {
+      return <PrivacyPage />;
+    }
     if (location === "/auth") {
       return <AuthPage />;
     }
@@ -320,6 +324,9 @@ function AppContent() {
   }
   if (location.startsWith("/order/")) {
     return <PublicOrderPage />;
+  }
+  if (location === "/privacy") {
+    return <PrivacyPage />;
   }
 
   if (location === "/auth" || location === "/store-portal") {

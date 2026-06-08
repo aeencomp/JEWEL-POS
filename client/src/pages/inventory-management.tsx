@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, Fragment } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +7,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { isFashionStore } from "@/lib/pos-system";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, parseApiErrorMessage } from "@/lib/queryClient";
 import type { InventoryItem, Category } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,18 @@ import {
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
 import { generateInventoryBarcode } from "@/lib/barcode";
+import { linearBarcodeToDataUrl } from "@/lib/linear-barcode";
+import { LinearBarcode } from "@/components/linear-barcode";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const categoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -102,17 +114,20 @@ function generateSku(categories: Category[], categoryId: number, items: Inventor
   return `${prefix}-${num}`;
 }
 
-function BarcodeDisplay({ value }: { value: string }) {
+function BarcodeDisplay({ value, linear }: { value: string; linear?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    if (canvasRef.current && value) {
-      QRCode.toCanvas(canvasRef.current, value, {
-        width: 120,
-        margin: 1,
-        color: { dark: "#000000", light: "#ffffff" },
-      }).catch(() => {});
-    }
-  }, [value]);
+    if (linear || !canvasRef.current || !value) return;
+    QRCode.toCanvas(canvasRef.current, value, {
+      width: 120,
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+    }).catch(() => {});
+  }, [value, linear]);
+
+  if (linear) {
+    return <LinearBarcode value={value} className="max-w-full h-auto" />;
+  }
   return <canvas ref={canvasRef} data-testid="img-barcode" className="rounded" />;
 }
 
@@ -153,6 +168,7 @@ export default function InventoryManagement() {
   const [bulkCategoryId, setBulkCategoryId] = useState<number | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<InventoryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
@@ -294,6 +310,12 @@ export default function InventoryManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setDeleteTarget(null);
+      setExpandedRow(null);
+      toast({ title: t("inventory.deleteSuccess") });
+    },
+    onError: (err: Error) => {
+      toast({ title: parseApiErrorMessage(err), variant: "destructive" });
     },
   });
 
@@ -356,15 +378,27 @@ export default function InventoryManagement() {
   };
 
   const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return inventory.filter((item) => {
       const matchesCategory = selectedCategory ? item.categoryId === selectedCategory : true;
-      const matchesSearch = search
-        ? item.name.toLowerCase().includes(search.toLowerCase()) ||
-          item.sku.toLowerCase().includes(search.toLowerCase())
-        : true;
+      const matchesSearch = !q
+        ? true
+        : item.name.toLowerCase().includes(q) ||
+          item.sku.toLowerCase().includes(q) ||
+          (item.barcode || "").toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     });
   }, [inventory, selectedCategory, search]);
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter" || !search.trim()) return;
+    const q = search.trim().toLowerCase();
+    const exact = inventory.find((i) => (i.barcode || "").toLowerCase() === q);
+    if (exact) {
+      setExpandedRow(exact.id);
+      setSelectedCategory(null);
+    }
+  }
 
   // KPI stats
   const totalValue = inventory.reduce((s, i) => s + parseFloat(i.sellingPrice) * i.quantity, 0);
@@ -605,9 +639,10 @@ export default function InventoryManagement() {
           <div className="relative flex-1 sm:w-56">
             <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t("common.search")}
+              placeholder={t("inventory.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="ps-9 bg-slate-50 dark:bg-muted border-slate-200 dark:border-border"
               data-testid="input-search-inventory"
             />
@@ -675,9 +710,8 @@ export default function InventoryManagement() {
                 const isExpanded = expandedRow === item.id;
 
                 return (
-                  <>
+                  <Fragment key={item.id}>
                     <TableRow
-                      key={item.id}
                       className={`cursor-pointer transition-colors hover:bg-slate-50/80 dark:hover:bg-muted/20 ${isExpanded ? "bg-slate-50 dark:bg-muted/10 border-b-0" : ""}`}
                       onClick={() => setExpandedRow(isExpanded ? null : item.id)}
                       data-testid={`row-item-${item.id}`}
@@ -715,12 +749,25 @@ export default function InventoryManagement() {
                           {stock.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-3"></TableCell>
+                      <TableCell className="py-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(item);
+                          }}
+                          data-testid={`button-delete-row-${item.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
 
                     {/* Expanded Detail Row */}
                     {isExpanded && (
-                      <TableRow key={`${item.id}-detail`} className="bg-slate-50/50 dark:bg-muted/5 hover:bg-slate-50/50 border-t-0">
+                      <TableRow className="bg-slate-50/50 dark:bg-muted/5 hover:bg-slate-50/50 border-t-0">
                         <TableCell colSpan={7} className="p-0 border-b border-slate-200 dark:border-border">
                           <div className="px-8 py-5">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -837,7 +884,7 @@ export default function InventoryManagement() {
                                     variant="outline"
                                     size="sm"
                                     className="w-full justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-100 dark:border-rose-900/30"
-                                    onClick={(e) => { e.stopPropagation(); deleteItemMutation.mutate(item.id); }}
+                                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(item); }}
                                     data-testid={`button-delete-item-${item.id}`}
                                   >
                                     <Trash2 className="h-3.5 w-3.5 me-2" />
@@ -854,7 +901,7 @@ export default function InventoryManagement() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>
@@ -1131,22 +1178,34 @@ export default function InventoryManagement() {
           <DialogHeader><DialogTitle>{t("inventory.barcode")}</DialogTitle></DialogHeader>
           {barcodeItem && (
             <div className="flex flex-col items-center gap-3 py-4">
-              <p className="text-sm font-medium">{barcodeItem.name}</p>
-              <p className="text-xs text-muted-foreground">{barcodeItem.sku}</p>
-              <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} />
+              <BarcodeDisplay
+                value={barcodeItem.barcode || barcodeItem.sku}
+                linear={isFashion}
+              />
+              <p className="text-sm font-semibold text-center">{barcodeItem.name}</p>
+              <p className="text-base font-bold tabular-nums">
+                {parseFloat(barcodeItem.sellingPrice).toLocaleString()} {t("common.currency")}
+              </p>
+              <p className="text-xs text-muted-foreground font-mono">{barcodeItem.sku}</p>
               <Button variant="outline" size="sm" onClick={async () => {
-                const qrValue = barcodeItem.barcode || barcodeItem.sku;
-                const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } });
+                const code = barcodeItem.barcode || barcodeItem.sku;
                 const fashionItem = barcodeItem as InventoryItem & { size?: string; color?: string };
                 const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
+                const currency = t("common.currency");
                 const printWindow = window.open("", "_blank");
-                if (printWindow) {
-                  const labelHtml = isFashion
-                    ? `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:50mm 30mm;margin:0}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;padding:2mm;width:50mm;height:30mm;display:flex;flex-direction:column;justify-content:space-between}.name{font-size:9pt;font-weight:700;line-height:1.2;max-height:2.4em;overflow:hidden}.meta{font-size:8pt;color:#333}.price{font-size:11pt;font-weight:800}.qr img{width:14mm;height:14mm;display:block}</style></head><body><div class="name">${barcodeItem.name}</div><div class="meta">${fashionItem.size || ""} ${fashionItem.color ? "· " + fashionItem.color : ""}</div><div class="price">${price}</div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`
-                    : `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${barcodeItem.weightGrams ? parseFloat(barcodeItem.weightGrams).toLocaleString() + "g" : ""}</div></div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`;
-                  printWindow.document.write(labelHtml);
-                  printWindow.document.close();
+                if (!printWindow) return;
+
+                let labelHtml: string;
+                if (isFashion) {
+                  const bcDataUrl = linearBarcodeToDataUrl(code, { height: 42, displayValue: true, fontSize: 10 });
+                  const meta = [fashionItem.size, fashionItem.color].filter(Boolean).join(" · ");
+                  labelHtml = `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:50mm 32mm;margin:2mm}*{box-sizing:border-box;font-family:Arial,sans-serif}body{margin:0;text-align:center}.bc{width:46mm;height:auto;display:block;margin:0 auto}.name{font-size:8pt;font-weight:700;margin-top:1.5mm;line-height:1.15;max-height:2.3em;overflow:hidden}.meta{font-size:7pt;color:#444;margin-top:0.5mm}.price{font-size:10pt;font-weight:800;margin-top:1mm}</style></head><body><img class="bc" src="${bcDataUrl}" onload="window.print();window.close()" /><div class="name">${barcodeItem.name}</div>${meta ? `<div class="meta">${meta}</div>` : ""}<div class="price">${price} ${currency}</div></body></html>`;
+                } else {
+                  const qrDataUrl = await QRCode.toDataURL(code, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } });
+                  labelHtml = `<html><head><title>Label - ${barcodeItem.name}</title><style>@page{size:60mm 12mm;margin:0}*{box-sizing:border-box;font-family:'Courier New',Courier,monospace}body{margin:0;padding:0;width:60mm;height:12mm;overflow:hidden;position:relative}.info{position:absolute;left:0;top:0;width:48mm;height:12mm;padding:0.3mm 1mm;display:flex;flex-direction:column;justify-content:space-around;border-right:0.3mm solid #ddd}.name{font-size:11pt;font-weight:900;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.weight{font-size:12pt;font-weight:900}.qr{position:absolute;left:48mm;top:0;width:12mm;height:12mm}img{display:block;width:12mm;height:12mm}</style></head><body><div class="info"><div class="name">${barcodeItem.name}</div><div class="weight">${barcodeItem.weightGrams ? parseFloat(barcodeItem.weightGrams).toLocaleString() + "g" : ""}</div></div><div class="qr"><img src="${qrDataUrl}" onload="window.print();window.close()"></div></body></html>`;
                 }
+                printWindow.document.write(labelHtml);
+                printWindow.document.close();
               }} data-testid="button-print-barcode">
                 {t("receipt.print")}
               </Button>
@@ -1308,6 +1367,37 @@ export default function InventoryManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("inventory.deleteConfirm")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? (
+                <>
+                  <span className="font-medium text-foreground">{deleteTarget.name}</span>
+                  <span className="block mt-2">{t("inventory.deleteConfirmDesc")}</span>
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-item">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 hover:bg-rose-700"
+              disabled={deleteItemMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTarget) deleteItemMutation.mutate(deleteTarget.id);
+              }}
+              data-testid="button-confirm-delete-item"
+            >
+              {deleteItemMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

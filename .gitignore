@@ -11,3 +11,10 @@ uploads/
 .config/
 *.log
 .pm2/
+mobile/iq-order/node_modules/
+mobile/iq-order/android/.gradle/
+mobile/iq-order/android/app/build/
+mobile/iq-order/android/build/
+mobile/iq-order/android/local.properties
+mobile/iq-order/keystore.properties
+mobile/iq-order/keystore/
