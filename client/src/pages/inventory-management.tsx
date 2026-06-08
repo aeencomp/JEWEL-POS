@@ -979,12 +979,12 @@ export default function InventoryManagement() {
                         <Input
                           {...field}
                           className="flex-1 font-mono text-sm"
-                          readOnly={!!editingItem?.barcode}
+                          readOnly={!isFashion && !!editingItem?.barcode}
                           placeholder={t("inventory.generateBarcode")}
                           data-testid="input-item-barcode"
                         />
                       </FormControl>
-                      {(!editingItem || !editingItem.barcode) && (
+                      {(!editingItem || !editingItem.barcode || isFashion) && (
                         <Button
                           type="button"
                           variant="outline"
@@ -1205,6 +1205,7 @@ export default function InventoryManagement() {
                     price,
                     currency,
                     barcodeDataUrl: bcDataUrl,
+                    barcodeValue: code,
                   });
                 } else {
                   const qrDataUrl = await QRCode.toDataURL(code, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } });

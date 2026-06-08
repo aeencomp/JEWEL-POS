@@ -5,6 +5,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { isFashionStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
+import { normalizeBarcodeForScan } from "@/lib/barcode";
 import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category, Customer, Order, OrderItem, PosTerminal } from "@shared/schema";
@@ -227,11 +228,19 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     const trimmed = code.trim();
     if (!trimmed) return undefined;
     const lower = trimmed.toLowerCase();
+    const normalized = normalizeBarcodeForScan(trimmed);
+    const digitsOnly = trimmed.replace(/\D/g, "");
     return inventory.find((item) => {
       const barcode = (item as InventoryItem & { barcode?: string }).barcode;
+      if (item.sku.toLowerCase() === lower) return true;
+      if (!barcode) return false;
+      const bcLower = barcode.toLowerCase();
+      const bcDigits = barcode.replace(/\D/g, "");
       return (
-        item.sku.toLowerCase() === lower ||
-        (barcode && barcode.toLowerCase() === lower)
+        bcLower === lower ||
+        bcDigits === digitsOnly ||
+        bcDigits === normalized ||
+        normalizeBarcodeForScan(barcode) === normalized
       );
     });
   }
