@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { inferBarcodeFormat } from "@/lib/barcode";
 import { LABEL_BARCODE_DEFAULTS, renderLinearBarcode } from "@/lib/linear-barcode";
 
 type LinearBarcodeProps = {
