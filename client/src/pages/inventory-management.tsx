@@ -66,7 +66,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
 import { generateInventoryBarcode } from "@/lib/barcode";
-import { linearBarcodeToDataUrl, getPrintBarcodeOptions, buildFashionLabelPrintHtml } from "@/lib/linear-barcode";
+import { buildFashionLabelPrintHtml } from "@/lib/linear-barcode";
 import { LinearBarcode } from "@/components/linear-barcode";
 import {
   AlertDialog,
@@ -1197,11 +1197,9 @@ export default function InventoryManagement() {
 
                 let labelHtml: string;
                 if (isFashion) {
-                  const bcDataUrl = linearBarcodeToDataUrl(code, getPrintBarcodeOptions(code));
                   labelHtml = buildFashionLabelPrintHtml({
                     name: barcodeItem.name,
                     price,
-                    barcodeDataUrl: bcDataUrl,
                     barcodeValue: code,
                   });
                 } else {

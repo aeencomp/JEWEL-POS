@@ -1,11 +1,11 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { isFashionStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
-import { normalizeBarcodeForScan } from "@/lib/barcode";
+import { normalizeBarcodeForScan, scanCodeVariants } from "@/lib/barcode";
 import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem, Category, Customer, Order, OrderItem, PosTerminal } from "@shared/schema";
@@ -127,6 +127,7 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
 
   const [search, setSearch] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const scannerInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
@@ -224,56 +225,6 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     });
   }, [inventory, search, selectedCategory, effectiveTerminalConfig]);
 
-  function findItemByScanCode(code: string): InventoryItem | undefined {
-    const trimmed = code.trim();
-    if (!trimmed) return undefined;
-    const lower = trimmed.toLowerCase();
-    const normalized = normalizeBarcodeForScan(trimmed);
-    const digitsOnly = trimmed.replace(/\D/g, "");
-    return inventory.find((item) => {
-      const barcode = (item as InventoryItem & { barcode?: string }).barcode;
-      if (item.sku.toLowerCase() === lower) return true;
-      if (!barcode) return false;
-      const bcLower = barcode.toLowerCase();
-      const bcDigits = barcode.replace(/\D/g, "");
-      return (
-        bcLower === lower ||
-        bcDigits === digitsOnly ||
-        bcDigits === normalized ||
-        normalizeBarcodeForScan(barcode) === normalized
-      );
-    });
-  }
-
-  function handleBarcodeScan(code: string) {
-    const trimmed = code.trim();
-    if (!trimmed) return;
-    const item = findItemByScanCode(trimmed);
-    if (!item) {
-      toast({
-        title: isAr ? "لم يُعثر على المنتج" : "Item not found",
-        description: trimmed,
-        variant: "destructive",
-      });
-      setSearch("");
-      searchInputRef.current?.focus();
-      return;
-    }
-    if (!item.isAvailable || item.quantity <= 0) {
-      toast({
-        title: isAr ? "المنتج غير متوفر" : "Out of stock",
-        description: item.name,
-        variant: "destructive",
-      });
-      setSearch("");
-      searchInputRef.current?.focus();
-      return;
-    }
-    addToCart(item);
-    setSearch("");
-    searchInputRef.current?.focus();
-  }
-
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const selectedCustomer = customers.find((c) => c.id === Number(selectedCustomerId));
   const maxLoyaltyRedeem = selectedCustomer?.loyaltyPoints || 0;
@@ -303,6 +254,56 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       setCart([...cart, { inventoryItemId: item.id, name: item.name, sku: item.sku, price: parseFloat(item.sellingPrice), quantity: 1 }]);
     }
   }
+
+  const findItemByScanCode = useCallback((code: string): InventoryItem | undefined => {
+    const variants = scanCodeVariants(code);
+    if (variants.length === 0) return undefined;
+    return inventory.find((item) => {
+      const barcode = (item as InventoryItem & { barcode?: string }).barcode;
+      const sku = item.sku.toLowerCase();
+      if (variants.includes(sku)) return true;
+      if (!barcode) return false;
+      const bcVariants = scanCodeVariants(barcode);
+      return bcVariants.some((v) => variants.includes(v));
+    });
+  }, [inventory]);
+
+  function handleBarcodeScan(code: string) {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    const item = findItemByScanCode(trimmed);
+    if (!item) {
+      toast({
+        title: isAr ? "لم يُعثر على المنتج" : "Item not found",
+        description: normalizeBarcodeForScan(trimmed) || trimmed,
+        variant: "destructive",
+      });
+      setSearch("");
+      return;
+    }
+    if (!item.isAvailable || item.quantity <= 0) {
+      toast({
+        title: isAr ? "المنتج غير متوفر" : "Out of stock",
+        description: item.name,
+        variant: "destructive",
+      });
+      setSearch("");
+      return;
+    }
+    addToCart(item);
+    setSearch("");
+    toast({ title: isAr ? "تمت الإضافة" : "Added to cart", description: item.name });
+  }
+
+  const scannerCaptureActive = isFashion && !orderDialog && !newCustomerDialog;
+
+  useEffect(() => {
+    if (!scannerCaptureActive) return;
+    const refocus = () => scannerInputRef.current?.focus();
+    refocus();
+    const timer = window.setInterval(refocus, 800);
+    return () => clearInterval(timer);
+  }, [scannerCaptureActive]);
 
   function updateQty(inventoryItemId: number, delta: number) {
     setCart((prev) =>
@@ -502,6 +503,25 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
 
         {/* Product Grid */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-100 dark:bg-slate-950">
+          {isFashion && (
+            <input
+              ref={scannerInputRef}
+              type="text"
+              inputMode="none"
+              autoComplete="off"
+              aria-hidden
+              tabIndex={-1}
+              className="fixed top-0 left-0 w-px h-px opacity-0 pointer-events-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const v = (e.currentTarget as HTMLInputElement).value;
+                  (e.currentTarget as HTMLInputElement).value = "";
+                  handleBarcodeScan(v);
+                }
+              }}
+            />
+          )}
           {/* Search */}
           <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
             <div className="relative">
