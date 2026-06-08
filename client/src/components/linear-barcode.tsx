@@ -18,9 +18,10 @@ export function LinearBarcode({
   className,
 }: LinearBarcodeProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const isEan = inferBarcodeFormat(value) === "EAN13";
-  const barWidth = width ?? (isEan ? 2.2 : LABEL_BARCODE_DEFAULTS.width);
-  const barHeight = height ?? (isEan ? 90 : LABEL_BARCODE_DEFAULTS.height);
+  const digits = value.replace(/\D/g, "");
+  const isShort = digits.length > 0 && digits.length <= 8;
+  const barWidth = width ?? (isShort ? 3.5 : LABEL_BARCODE_DEFAULTS.width);
+  const barHeight = height ?? (isShort ? 70 : LABEL_BARCODE_DEFAULTS.height);
 
   useEffect(() => {
     if (!svgRef.current || !value) return;

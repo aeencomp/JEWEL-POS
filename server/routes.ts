@@ -55,26 +55,30 @@ function requireAdmin(req: any, res: any, next: any) {
   next();
 }
 
-function ean13CheckDigit(code12: string): string {
-  let sum = 0;
-  for (let i = 0; i < 12; i++) {
-    sum += parseInt(code12[i]!, 10) * (i % 2 === 0 ? 1 : 3);
-  }
-  return String((10 - (sum % 10)) % 10);
+function nextFashionBarcode(
+  storeId: number,
+  inventory: { barcode?: string | null }[] = [],
+): string {
+  const storeDigit = String(Math.min(Math.max(storeId, 1), 9));
+  const floor = parseInt(`${storeDigit}0000`, 10);
+  const nums = inventory
+    .map((i) => (i.barcode || "").replace(/\D/g, ""))
+    .filter((b) => b.length === 5 && b.startsWith(storeDigit))
+    .map((b) => parseInt(b, 10))
+    .filter((n) => Number.isFinite(n));
+  const next = (nums.length ? Math.max(...nums) : floor) + 1;
+  return String(next).padStart(5, "0");
 }
 
-function generateFashionEan13(storeId: number): string {
-  const store = String(storeId).padStart(2, "0").slice(-2);
-  const time = String(Date.now() % 10_000_000).padStart(7, "0");
-  const rand = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
-  const base12 = `${store}${time}${rand}`.slice(0, 12);
-  return base12 + ean13CheckDigit(base12);
-}
-
-function generateInventoryBarcode(storeId: number, posSystem: string | null | undefined, suffix = ""): string {
-  if (posSystem === "fashion") return generateFashionEan13(storeId);
+function generateInventoryBarcode(
+  storeId: number,
+  posSystem: string | null | undefined,
+  _suffix = "",
+  inventory: { barcode?: string | null }[] = [],
+): string {
+  if (posSystem === "fashion") return nextFashionBarcode(storeId, inventory);
   const prefix = posSystem === "oil" ? "OIL" : "JWL";
-  const tail = suffix.replace(/[^A-Z0-9]/gi, "").substring(0, 8).toUpperCase();
+  const tail = _suffix.replace(/[^A-Z0-9]/gi, "").substring(0, 8).toUpperCase();
   return `${prefix}${storeId}${Date.now().toString(36).toUpperCase()}${tail}`;
 }
 
@@ -1289,8 +1293,9 @@ export async function registerRoutes(
     if (body.brand === "") body.brand = null;
     if (body.styleCode === "") body.styleCode = null;
     const store = await storage.getStore(storeId);
+    const existingItems = await storage.getInventoryItems(storeId);
     if (!body.barcode || String(body.barcode).trim() === "") {
-      body.barcode = generateInventoryBarcode(storeId, store?.posSystem, body.sku || "");
+      body.barcode = generateInventoryBarcode(storeId, store?.posSystem, body.sku || "", existingItems);
     }
     const item = await storage.createInventoryItem({
       ...body,
@@ -1335,7 +1340,7 @@ export async function registerRoutes(
           sku = `${style}-${size}-${colorCode}-${suffix++}`;
         }
         const name = `${baseName} (${size} / ${color})`;
-        const barcode = generateInventoryBarcode(storeId, "fashion", `${size}${colorCode}`);
+        const barcode = generateInventoryBarcode(storeId, "fashion", `${size}${colorCode}`, [...existingItems, ...created]);
         const item = await storage.createInventoryItem({
           storeId,
           sku,

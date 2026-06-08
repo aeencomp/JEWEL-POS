@@ -1,5 +1,5 @@
 import JsBarcode from "jsbarcode";
-import { inferBarcodeFormat } from "@/lib/barcode";
+import { hasArabicText, inferBarcodeFormat } from "@/lib/barcode";
 
 export type LinearBarcodeOptions = {
   width?: number;
@@ -10,17 +10,20 @@ export type LinearBarcodeOptions = {
 };
 
 export const LABEL_BARCODE_DEFAULTS: LinearBarcodeOptions = {
-  width: 2.5,
-  height: 100,
-  displayValue: true,
-  fontSize: 16,
-  margin: 8,
+  width: 3,
+  height: 70,
+  displayValue: false,
+  fontSize: 14,
+  margin: 10,
 };
 
 const PRINT_SCALE = 4;
 
-/** Optimized for 50×30mm sticker + USB scanner (EAN-13). */
 export function getPrintBarcodeOptions(code: string): LinearBarcodeOptions {
+  const digits = code.replace(/\D/g, "");
+  if (digits.length <= 8) {
+    return { width: 4, height: 85, displayValue: false, margin: 14 };
+  }
   if (inferBarcodeFormat(code) === "EAN13") {
     return { width: 2.8, height: 140, displayValue: false, margin: 8 };
   }
@@ -44,13 +47,12 @@ export function renderLinearBarcode(
     format,
     width: options.width ?? LABEL_BARCODE_DEFAULTS.width,
     height: options.height ?? LABEL_BARCODE_DEFAULTS.height,
-    displayValue: options.displayValue ?? true,
+    displayValue: options.displayValue ?? false,
     fontSize: options.fontSize ?? LABEL_BARCODE_DEFAULTS.fontSize,
     margin: options.margin ?? LABEL_BARCODE_DEFAULTS.margin,
   });
 }
 
-/** High-resolution PNG for crisp thermal printing. */
 export function linearBarcodeToDataUrl(value: string, options: LinearBarcodeOptions = {}): string {
   const format = inferBarcodeFormat(value);
   const payload = format === "EAN13" ? value.replace(/\D/g, "").slice(0, 12) : value;
@@ -58,42 +60,43 @@ export function linearBarcodeToDataUrl(value: string, options: LinearBarcodeOpti
   const canvas = document.createElement("canvas");
   JsBarcode(canvas, payload, {
     format,
-    width: (base.width ?? 2.5) * PRINT_SCALE,
-    height: (base.height ?? 120) * PRINT_SCALE,
+    width: (base.width ?? 3) * PRINT_SCALE,
+    height: (base.height ?? 85) * PRINT_SCALE,
     displayValue: false,
-    margin: (base.margin ?? 6) * PRINT_SCALE,
+    margin: (base.margin ?? 10) * PRINT_SCALE,
   });
   return canvas.toDataURL("image/png");
 }
 
-/** One-page fashion label HTML (50mm × 30mm). */
+/**
+ * Reference label style: Arabic name top, wide barcode, ID under bars left, big serif price bottom.
+ */
 export function buildFashionLabelPrintHtml(opts: {
   name: string;
-  meta?: string;
   price: string;
-  currency: string;
   barcodeDataUrl: string;
   barcodeValue: string;
 }): string {
-  const { name, meta, price, currency, barcodeDataUrl, barcodeValue } = opts;
-  const digits = barcodeValue.replace(/\D/g, "");
-  const bcNum = digits.length >= 12 ? digits.slice(0, 13) : esc(barcodeValue);
+  const { name, price, barcodeDataUrl, barcodeValue } = opts;
+  const bcNum = esc(barcodeValue.replace(/\D/g, "") || barcodeValue);
+  const nameDir = hasArabicText(name) ? "rtl" : "ltr";
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Label</title><style>
 @page{size:50mm 30mm;margin:0}
 @media print{html,body{height:30mm;overflow:hidden}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:50mm;height:30mm;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
-body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:0.6mm 1mm}
-.bc{height:17mm;width:auto;max-width:48mm;display:block;flex-shrink:0;image-rendering:pixelated;image-rendering:crisp-edges}
-.bc-num{font-size:6.5pt;font-family:Consolas,Monaco,monospace;letter-spacing:0.5px;margin-top:0.2mm;line-height:1}
-.name{font-size:7pt;font-weight:700;line-height:1.05;max-height:2em;overflow:hidden;width:100%;margin-top:0.3mm}
-.meta{font-size:6pt;color:#222;line-height:1;margin-top:0.15mm}
-.price{font-size:9pt;font-weight:800;line-height:1;margin-top:0.25mm}
+html,body{width:50mm;height:30mm;overflow:hidden}
+body{display:flex;flex-direction:column;justify-content:space-between;padding:2mm 3.5mm 2.5mm;font-family:Arial,Helvetica,sans-serif}
+.name{font-size:10.5pt;line-height:1.15;text-align:center;max-height:2.4em;overflow:hidden;direction:${nameDir};flex-shrink:0}
+.mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:1mm 0}
+.bc{width:100%;height:11mm;display:block;object-fit:fill;image-rendering:pixelated;image-rendering:crisp-edges}
+.bc-num{font-size:8.5pt;text-align:left;padding-left:1.5mm;margin-top:0.6mm;line-height:1}
+.price{font-family:"Times New Roman",Times,serif;font-size:24pt;font-weight:bold;text-align:center;line-height:1;flex-shrink:0;padding-bottom:0.5mm}
 </style></head><body>
+<div class="name">${esc(name)}</div>
+<div class="mid">
 <img class="bc" src="${barcodeDataUrl}" alt="" onload="setTimeout(function(){window.print();window.close();},80)" />
 <div class="bc-num">${bcNum}</div>
-<div class="name">${esc(name)}</div>
-${meta ? `<div class="meta">${esc(meta)}</div>` : ""}
-<div class="price">${esc(price)} ${esc(currency)}</div>
+</div>
+<div class="price">${esc(price)}</div>
 </body></html>`;
 }

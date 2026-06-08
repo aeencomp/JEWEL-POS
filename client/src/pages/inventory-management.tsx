@@ -430,7 +430,7 @@ export default function InventoryManagement() {
     const storeId = user?.storeId;
     if (!storeId) return;
     const posSystem = (user as { posSystem?: string })?.posSystem;
-    itemForm.setValue("barcode", generateInventoryBarcode(storeId, posSystem, barcodeSuffix()));
+    itemForm.setValue("barcode", generateInventoryBarcode(storeId, posSystem, barcodeSuffix(), inventory));
   }
 
   function openAddItem() {
@@ -439,7 +439,7 @@ export default function InventoryManagement() {
     const sku = defaultCategoryId ? generateSku(categories, defaultCategoryId, inventory) : "";
     const storeId = user?.storeId;
     const posSystem = (user as { posSystem?: string })?.posSystem;
-    const barcode = storeId ? generateInventoryBarcode(storeId, posSystem, sku) : "";
+    const barcode = storeId ? generateInventoryBarcode(storeId, posSystem, sku, inventory) : "";
     itemForm.reset({
       sku,
       name: "",
@@ -1177,33 +1177,30 @@ export default function InventoryManagement() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{t("inventory.barcode")}</DialogTitle></DialogHeader>
           {barcodeItem && (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <BarcodeDisplay
-                value={barcodeItem.barcode || barcodeItem.sku}
-                linear={isFashion}
-              />
-              <p className="text-sm font-semibold text-center">{barcodeItem.name}</p>
-              <p className="text-base font-bold tabular-nums">
-                {parseFloat(barcodeItem.sellingPrice).toLocaleString()} {t("common.currency")}
+            <div className="flex flex-col items-stretch gap-2 py-4 px-2 w-full max-w-sm mx-auto">
+              <p className="text-sm text-center leading-snug" dir="auto">{barcodeItem.name}</p>
+              <div className="w-full">
+                <BarcodeDisplay
+                  value={barcodeItem.barcode || barcodeItem.sku}
+                  linear={isFashion}
+                />
+                <p className="text-xs text-left ps-1 mt-1 font-mono">{barcodeItem.barcode || barcodeItem.sku}</p>
+              </div>
+              <p className="text-3xl font-bold text-center tabular-nums" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                {parseFloat(barcodeItem.sellingPrice).toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground font-mono">{barcodeItem.sku}</p>
               <Button variant="outline" size="sm" onClick={async () => {
                 const code = barcodeItem.barcode || barcodeItem.sku;
-                const fashionItem = barcodeItem as InventoryItem & { size?: string; color?: string };
                 const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
-                const currency = t("common.currency");
                 const printWindow = window.open("", "_blank");
                 if (!printWindow) return;
 
                 let labelHtml: string;
                 if (isFashion) {
                   const bcDataUrl = linearBarcodeToDataUrl(code, getPrintBarcodeOptions(code));
-                  const meta = [fashionItem.size, fashionItem.color].filter(Boolean).join(" · ");
                   labelHtml = buildFashionLabelPrintHtml({
                     name: barcodeItem.name,
-                    meta: meta || undefined,
                     price,
-                    currency,
                     barcodeDataUrl: bcDataUrl,
                     barcodeValue: code,
                   });
