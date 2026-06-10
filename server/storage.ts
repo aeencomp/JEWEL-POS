@@ -1,5 +1,5 @@
 import {
-  users, stores, subscriptions, categories, inventoryItems, customers, orders, orderItems,
+  users, stores, subscriptions, categories, inventoryBrands, inventoryItems, customers, orders, orderItems,
   repairOrders, layawayPlans, layawayPayments, purchases, verificationCodes, debts, debtPayments,
   posTerminals,
   oilProducts, oilCustomers, oilSuppliers, oilSales, oilSaleItems,
@@ -9,6 +9,7 @@ import {
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
   type Category, type InsertCategory,
+  type InventoryBrand, type InsertInventoryBrand,
   type InventoryItem, type InsertInventoryItem,
   type Customer, type InsertCustomer,
   type Order, type InsertOrder,
@@ -61,6 +62,11 @@ export interface IStorage {
   getCategories(storeId: number): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
   deleteCategory(id: number): Promise<void>;
+
+  getInventoryBrands(storeId: number): Promise<InventoryBrand[]>;
+  createInventoryBrand(brand: InsertInventoryBrand): Promise<InventoryBrand>;
+  updateInventoryBrand(id: number, data: Partial<InsertInventoryBrand>): Promise<InventoryBrand | undefined>;
+  deleteInventoryBrand(id: number): Promise<void>;
 
   getInventoryItems(storeId: number): Promise<InventoryItem[]>;
   getInventoryItem(id: number): Promise<InventoryItem | undefined>;
@@ -236,6 +242,24 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCategory(id: number): Promise<void> {
     await db.delete(categories).where(eq(categories.id, id));
+  }
+
+  async getInventoryBrands(storeId: number): Promise<InventoryBrand[]> {
+    return db.select().from(inventoryBrands).where(eq(inventoryBrands.storeId, storeId)).orderBy(inventoryBrands.sortOrder, inventoryBrands.name);
+  }
+
+  async createInventoryBrand(brand: InsertInventoryBrand): Promise<InventoryBrand> {
+    const [created] = await db.insert(inventoryBrands).values(brand).returning();
+    return created;
+  }
+
+  async updateInventoryBrand(id: number, data: Partial<InsertInventoryBrand>): Promise<InventoryBrand | undefined> {
+    const [updated] = await db.update(inventoryBrands).set(data).where(eq(inventoryBrands.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteInventoryBrand(id: number): Promise<void> {
+    await db.delete(inventoryBrands).where(eq(inventoryBrands.id, id));
   }
 
   async getInventoryItems(storeId: number): Promise<InventoryItem[]> {

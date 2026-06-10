@@ -299,7 +299,11 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
 
   useEffect(() => {
     if (!scannerCaptureActive) return;
-    const refocus = () => scannerInputRef.current?.focus();
+    const refocus = () => {
+      const el = document.activeElement;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")) return;
+      scannerInputRef.current?.focus();
+    };
     refocus();
     const timer = window.setInterval(refocus, 800);
     return () => clearInterval(timer);

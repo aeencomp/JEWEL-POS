@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { isFashionStore } from "@/lib/pos-system";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, parseApiErrorMessage } from "@/lib/queryClient";
-import type { InventoryItem, Category } from "@shared/schema";
+import type { InventoryItem, Category, InventoryBrand } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,8 @@ import {
   Power,
   Gem,
   Shirt,
+  Building2,
+  Truck,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import QRCode from "qrcode";
@@ -145,7 +147,13 @@ export default function InventoryManagement() {
   const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
 
   const [search, setSearch] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [brandsDialogOpen, setBrandsDialogOpen] = useState(false);
+  const [brandName, setBrandName] = useState("");
+  const [brandShipping, setBrandShipping] = useState("");
+  const [editingBrand, setEditingBrand] = useState<InventoryBrand | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
@@ -173,6 +181,11 @@ export default function InventoryManagement() {
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+
+  const { data: brands = [] } = useQuery<InventoryBrand[]>({
+    queryKey: ["/api/inventory-brands"],
+    enabled: isFashion,
   });
 
   const { data: inventory = [], isLoading: loadingInventory } = useQuery<InventoryItem[]>({
@@ -263,6 +276,53 @@ export default function InventoryManagement() {
       toast({ title: error.message, variant: "destructive" });
     },
   });
+
+  const saveBrandMutation = useMutation({
+    mutationFn: async (data: { id?: number; name: string; shippingPrice: string }) => {
+      if (data.id) {
+        const res = await apiRequest("PATCH", `/api/inventory-brands/${data.id}`, {
+          name: data.name,
+          shippingPrice: data.shippingPrice,
+        });
+        return res.json();
+      }
+      const res = await apiRequest("POST", "/api/inventory-brands", {
+        name: data.name,
+        shippingPrice: data.shippingPrice,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory-brands"] });
+      setBrandName("");
+      setBrandShipping("");
+      setEditingBrand(null);
+      toast({ title: t("inventory.brandSaved") });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
+  const deleteBrandMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/inventory-brands/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory-brands"] });
+      if (selectedBrand) setSelectedBrand(null);
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
+  function brandShippingFor(item: InventoryItem): string | null {
+    const name = (item as InventoryItem & { brand?: string }).brand;
+    if (!name) return null;
+    const b = brands.find((br) => br.name.toLowerCase() === name.toLowerCase());
+    return b ? parseFloat(b.shippingPrice).toLocaleString() : null;
+  }
+
+  function countBrandItems(brandName: string) {
+    return inventory.filter((i) => (i.brand || "").toLowerCase() === brandName.toLowerCase()).length;
+  }
 
   const createItemMutation = useMutation({
     mutationFn: async (data: InventoryFormValues) => {
@@ -380,23 +440,29 @@ export default function InventoryManagement() {
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     return inventory.filter((item) => {
+      const itemBrand = (item as InventoryItem & { brand?: string }).brand || "";
       const matchesCategory = selectedCategory ? item.categoryId === selectedCategory : true;
+      const matchesBrand = selectedBrand ? itemBrand.toLowerCase() === selectedBrand.toLowerCase() : true;
       const matchesSearch = !q
         ? true
         : item.name.toLowerCase().includes(q) ||
           item.sku.toLowerCase().includes(q) ||
+          itemBrand.toLowerCase().includes(q) ||
+          ((item as InventoryItem & { styleCode?: string }).styleCode || "").toLowerCase().includes(q) ||
           (item.barcode || "").toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesBrand && matchesSearch;
     });
-  }, [inventory, selectedCategory, search]);
+  }, [inventory, selectedCategory, selectedBrand, search]);
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter" || !search.trim()) return;
-    const q = search.trim().toLowerCase();
+    if (e.key !== "Enter") return;
+    const q = e.currentTarget.value.trim().toLowerCase();
+    if (!q) return;
     const exact = inventory.find((i) => (i.barcode || "").toLowerCase() === q);
     if (exact) {
       setExpandedRow(exact.id);
       setSelectedCategory(null);
+      setSelectedBrand(null);
     }
   }
 
@@ -637,16 +703,32 @@ export default function InventoryManagement() {
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-56">
-            <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
             <Input
+              ref={searchInputRef}
+              type="text"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder={t("inventory.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              className="ps-9 bg-slate-50 dark:bg-muted border-slate-200 dark:border-border"
+              className="ps-9 bg-slate-50 dark:bg-muted border-slate-200 dark:border-border relative z-0"
               data-testid="input-search-inventory"
             />
           </div>
+          {isFashion && (
+            <Button
+              variant="outline"
+              className="border-violet-200 text-violet-700 hover:bg-violet-50 shrink-0"
+              onClick={() => { setEditingBrand(null); setBrandName(""); setBrandShipping(""); setBrandsDialogOpen(true); }}
+              data-testid="button-manage-brands"
+            >
+              <Building2 className="h-4 w-4 me-2" />
+              {t("inventory.brands")}
+            </Button>
+          )}
           <Button
             variant="outline"
             className="border-slate-200 dark:border-border text-slate-600 dark:text-muted-foreground hover:bg-slate-50 shrink-0"
@@ -677,6 +759,36 @@ export default function InventoryManagement() {
           </Button>
         </div>
       </div>
+
+      {isFashion && brands.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-card p-3 rounded-xl border border-slate-100 dark:border-border">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide me-1">
+            <Truck className="h-3.5 w-3.5 inline me-1" />
+            {t("inventory.brands")}:
+          </span>
+          <Badge
+            variant={selectedBrand === null ? "default" : "outline"}
+            className="cursor-pointer text-sm px-3 py-1"
+            onClick={() => setSelectedBrand(null)}
+          >
+            {t("inventory.allBrands")}
+          </Badge>
+          {brands.map((b) => (
+            <Badge
+              key={b.id}
+              variant={selectedBrand === b.name ? "default" : "outline"}
+              className="cursor-pointer text-sm px-3 py-1"
+              onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
+              data-testid={`badge-brand-${b.id}`}
+            >
+              {b.name}
+              <span className="ms-1.5 opacity-70 text-[10px]">
+                ({countBrandItems(b.name)} · {parseFloat(b.shippingPrice).toLocaleString()} {t("inventory.shippingShort")})
+              </span>
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {/* Expandable Table */}
       <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200 dark:border-border overflow-hidden">
@@ -783,6 +895,10 @@ export default function InventoryManagement() {
                                       {(item as InventoryItem & { brand?: string }).brand && <>
                                         <div className="text-muted-foreground">{t("inventory.brand")}</div>
                                         <div className="font-medium">{(item as InventoryItem & { brand?: string }).brand}</div>
+                                      </>}
+                                      {isFashion && brandShippingFor(item) && <>
+                                        <div className="text-muted-foreground">{t("inventory.shippingPrice")}</div>
+                                        <div className="font-medium">{brandShippingFor(item)} {t("common.currency")}</div>
                                       </>}
                                       {(item as InventoryItem & { size?: string }).size && <>
                                         <div className="text-muted-foreground">{t("inventory.size")}</div>
@@ -1034,7 +1150,21 @@ export default function InventoryManagement() {
                     <FormField control={itemForm.control} name="brand" render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("inventory.brand")}</FormLabel>
-                        <FormControl><Input {...field} placeholder="Nike, Zara..." data-testid="input-item-brand" /></FormControl>
+                        <Select value={field.value || "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)}>
+                          <FormControl>
+                            <SelectTrigger data-testid="input-item-brand">
+                              <SelectValue placeholder={t("inventory.selectBrand")} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="__none__">{t("inventory.noBrand")}</SelectItem>
+                            {brands.map((b) => (
+                              <SelectItem key={b.id} value={b.name}>
+                                {b.name} — {parseFloat(b.shippingPrice).toLocaleString()} {t("inventory.shippingShort")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -1291,6 +1421,84 @@ export default function InventoryManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* ── Brands Dialog (Fashion) ── */}
+      <Dialog open={brandsDialogOpen} onOpenChange={setBrandsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("inventory.manageBrands")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{t("inventory.brand")}</label>
+                <Input
+                  value={brandName}
+                  onChange={(e) => setBrandName(e.target.value)}
+                  placeholder="Adidas, Nike..."
+                  data-testid="input-brand-name"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("inventory.shippingPrice")}</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={brandShipping}
+                  onChange={(e) => setBrandShipping(e.target.value)}
+                  placeholder="5000"
+                  data-testid="input-brand-shipping"
+                />
+              </div>
+            </div>
+            <Button
+              className="w-full"
+              disabled={!brandName.trim() || saveBrandMutation.isPending}
+              onClick={() => saveBrandMutation.mutate({
+                id: editingBrand?.id,
+                name: brandName.trim(),
+                shippingPrice: brandShipping || "0",
+              })}
+              data-testid="button-save-brand"
+            >
+              {saveBrandMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              {editingBrand ? t("common.save") : t("inventory.addBrand")}
+            </Button>
+            {brands.length > 0 && (
+              <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                {brands.map((b) => (
+                  <div key={b.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{b.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {countBrandItems(b.name)} {t("inventory.itemsLabel")} · {parseFloat(b.shippingPrice).toLocaleString()} {t("inventory.shippingShort")}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => { setEditingBrand(b); setBrandName(b.name); setBrandShipping(b.shippingPrice); }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-rose-600"
+                        onClick={() => deleteBrandMutation.mutate(b.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Variants Dialog (Fashion) ── */}
       <Dialog open={variantsOpen} onOpenChange={setVariantsOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -1305,7 +1513,13 @@ export default function InventoryManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium">{t("inventory.brand")}</label>
-                <Input value={variantBrand} onChange={(e) => setVariantBrand(e.target.value)} data-testid="input-variant-brand" />
+                <Select value={variantBrand || "__none__"} onValueChange={(v) => setVariantBrand(v === "__none__" ? "" : v)}>
+                  <SelectTrigger data-testid="input-variant-brand"><SelectValue placeholder={t("inventory.selectBrand")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{t("inventory.noBrand")}</SelectItem>
+                    {brands.map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-sm font-medium">{t("inventory.styleCode")}</label>

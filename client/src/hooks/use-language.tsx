@@ -167,6 +167,16 @@ type TranslationKeys = {
   "inventory.colorsList": string;
   "inventory.perVariant": string;
   "inventory.variantsCreated": string;
+  "inventory.brands": string;
+  "inventory.addBrand": string;
+  "inventory.brandSaved": string;
+  "inventory.manageBrands": string;
+  "inventory.shippingPrice": string;
+  "inventory.shippingShort": string;
+  "inventory.allBrands": string;
+  "inventory.noBrand": string;
+  "inventory.selectBrand": string;
+  "inventory.itemsLabel": string;
 
   "loyalty.points": string;
   "loyalty.redeem": string;
@@ -643,7 +653,7 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noItems": "No items in inventory",
     "inventory.profit": "Profit",
     "inventory.barcode": "Barcode",
-    "inventory.searchPlaceholder": "Search name, SKU, or barcode…",
+    "inventory.searchPlaceholder": "Search name, SKU, brand, or barcode…",
     "inventory.deleteConfirm": "Delete this item?",
     "inventory.deleteConfirmDesc": "This permanently removes the product from inventory. Past sales history is kept; only the stock record is removed.",
     "inventory.deleteSuccess": "Item deleted",
@@ -658,6 +668,16 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.colorsList": "Colors (comma-separated)",
     "inventory.perVariant": "per variant",
     "inventory.variantsCreated": "Variants created",
+    "inventory.brands": "Brands",
+    "inventory.addBrand": "Add Brand",
+    "inventory.brandSaved": "Brand saved",
+    "inventory.manageBrands": "Manage Brands & Shipping",
+    "inventory.shippingPrice": "Shipping Price",
+    "inventory.shippingShort": "ship",
+    "inventory.allBrands": "All Brands",
+    "inventory.noBrand": "No brand",
+    "inventory.selectBrand": "Select brand",
+    "inventory.itemsLabel": "items",
 
     "loyalty.points": "points",
     "loyalty.redeem": "Redeem points",
@@ -1116,7 +1136,7 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noItems": "لا توجد منتجات في المخزون",
     "inventory.profit": "الربح",
     "inventory.barcode": "الباركود",
-    "inventory.searchPlaceholder": "بحث بالاسم أو SKU أو الباركود…",
+    "inventory.searchPlaceholder": "بحث بالاسم أو SKU أو العلامة أو الباركود…",
     "inventory.deleteConfirm": "حذف هذا المنتج؟",
     "inventory.deleteConfirmDesc": "سيُزال المنتج نهائياً من المخزون. سجل المبيعات السابقة يبقى محفوظاً.",
     "inventory.deleteSuccess": "تم حذف المنتج",
@@ -1131,6 +1151,16 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.colorsList": "الألوان (مفصولة بفاصلة)",
     "inventory.perVariant": "لكل متغير",
     "inventory.variantsCreated": "تم إنشاء المتغيرات",
+    "inventory.brands": "العلامات",
+    "inventory.addBrand": "إضافة علامة",
+    "inventory.brandSaved": "تم حفظ العلامة",
+    "inventory.manageBrands": "إدارة العلامات والشحن",
+    "inventory.shippingPrice": "سعر الشحن",
+    "inventory.shippingShort": "شحن",
+    "inventory.allBrands": "كل العلامات",
+    "inventory.noBrand": "بدون علامة",
+    "inventory.selectBrand": "اختر العلامة",
+    "inventory.itemsLabel": "منتج",
 
     "loyalty.points": "نقطة",
     "loyalty.redeem": "استبدال النقاط",

@@ -1222,6 +1222,60 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/inventory-brands", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.json([]);
+    res.json(await storage.getInventoryBrands(storeId));
+  });
+
+  app.post("/api/inventory-brands", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const name = String(req.body.name || "").trim();
+    if (!name) return res.status(400).json({ message: "Brand name is required" });
+    const shippingPrice = req.body.shippingPrice != null ? String(req.body.shippingPrice) : "0";
+    const existing = await storage.getInventoryBrands(storeId);
+    if (existing.some((b) => b.name.toLowerCase() === name.toLowerCase())) {
+      return res.status(400).json({ message: "Brand already exists" });
+    }
+    const brand = await storage.createInventoryBrand({
+      storeId,
+      name,
+      shippingPrice,
+      sortOrder: existing.length,
+    });
+    res.status(201).json(brand);
+  });
+
+  app.patch("/api/inventory-brands/:id", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const id = parseInt(req.params.id);
+    const brands = await storage.getInventoryBrands(storeId);
+    const existing = brands.find((b) => b.id === id);
+    if (!existing) return res.status(404).json({ message: "Brand not found" });
+    const updates: Record<string, unknown> = {};
+    if (req.body.name != null) updates.name = String(req.body.name).trim();
+    if (req.body.shippingPrice != null) updates.shippingPrice = String(req.body.shippingPrice);
+    const updated = await storage.updateInventoryBrand(id, updates);
+    res.json(updated);
+  });
+
+  app.delete("/api/inventory-brands/:id", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const id = parseInt(req.params.id);
+    const brands = await storage.getInventoryBrands(storeId);
+    const brand = brands.find((b) => b.id === id);
+    if (!brand) return res.status(404).json({ message: "Brand not found" });
+    const items = await storage.getInventoryItems(storeId);
+    if (items.some((i) => i.brand?.toLowerCase() === brand.name.toLowerCase())) {
+      return res.status(400).json({ message: "Cannot delete brand with assigned items" });
+    }
+    await storage.deleteInventoryBrand(id);
+    res.sendStatus(204);
+  });
+
   app.get("/api/inventory", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.json([]);

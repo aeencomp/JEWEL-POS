@@ -90,6 +90,22 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   items: many(inventoryItems),
 }));
 
+export const inventoryBrands = pgTable("inventory_brands", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  shippingPrice: decimal("shipping_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const inventoryBrandsRelations = relations(inventoryBrands, ({ one }) => ({
+  store: one(stores, {
+    fields: [inventoryBrands.storeId],
+    references: [stores.id],
+  }),
+}));
+
 export const inventoryItems = pgTable("inventory_items", {
   id: serial("id").primaryKey(),
   storeId: integer("store_id").notNull().references(() => stores.id),
@@ -388,6 +404,11 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
 });
 
+export const insertInventoryBrandSchema = createInsertSchema(inventoryBrands).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({
   id: true,
   createdAt: true,
@@ -446,6 +467,8 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type InventoryBrand = typeof inventoryBrands.$inferSelect;
+export type InsertInventoryBrand = z.infer<typeof insertInventoryBrandSchema>;
 export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
 export type Customer = typeof customers.$inferSelect;
