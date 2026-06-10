@@ -1261,6 +1261,40 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.patch("/api/inventory/bulk-brand", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(403).json({ message: "Forbidden" });
+    const brand = String(req.body.brand || "").trim();
+    if (!brand) return res.status(400).json({ message: "Brand name is required" });
+
+    const storeBrands = await storage.getInventoryBrands(storeId);
+    const brandRecord = storeBrands.find((b) => b.name.toLowerCase() === brand.toLowerCase());
+    if (!brandRecord) {
+      return res.status(400).json({ message: "Create the brand first (Brands & Shipping)" });
+    }
+
+    const itemIds: number[] | undefined = Array.isArray(req.body.itemIds)
+      ? req.body.itemIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isFinite(id))
+      : undefined;
+    const categoryId = req.body.categoryId != null ? Number(req.body.categoryId) : undefined;
+
+    let rows = await storage.getInventoryItems(storeId);
+    if (itemIds?.length) {
+      rows = rows.filter((i) => itemIds.includes(i.id));
+    } else if (categoryId) {
+      rows = rows.filter((i) => i.categoryId === categoryId);
+    } else {
+      return res.status(400).json({ message: "Provide itemIds or categoryId" });
+    }
+
+    let updatedCount = 0;
+    for (const row of rows) {
+      await storage.updateInventoryItem(row.id, { brand: brandRecord.name });
+      updatedCount++;
+    }
+    res.json({ updatedCount, brand: brandRecord.name, shippingPrice: brandRecord.shippingPrice });
+  });
+
   app.delete("/api/inventory-brands/:id", requireAuth, async (req, res) => {
     const storeId = getEffectiveStoreId(req);
     if (!storeId) return res.status(403).json({ message: "Forbidden" });

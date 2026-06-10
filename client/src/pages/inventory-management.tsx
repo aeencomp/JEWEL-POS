@@ -324,6 +324,21 @@ export default function InventoryManagement() {
     return inventory.filter((i) => (i.brand || "").toLowerCase() === brandName.toLowerCase()).length;
   }
 
+  const bulkAssignBrandMutation = useMutation({
+    mutationFn: async (data: { brand: string; categoryId?: number; itemIds?: number[] }) => {
+      const res = await apiRequest("PATCH", "/api/inventory/bulk-brand", data);
+      return res.json() as Promise<{ updatedCount: number; brand: string; shippingPrice: string }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      toast({
+        title: t("inventory.bulkBrandAssigned"),
+        description: `${data.updatedCount} → ${data.brand} (${parseFloat(data.shippingPrice).toLocaleString()} ${t("inventory.shippingShort")})`,
+      });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
   const createItemMutation = useMutation({
     mutationFn: async (data: InventoryFormValues) => {
       const res = await apiRequest("POST", "/api/inventory", { ...data, isAvailable: true });
@@ -454,6 +469,24 @@ export default function InventoryManagement() {
     });
   }, [inventory, selectedCategory, selectedBrand, search]);
 
+  const fashionBrandGroups = useMemo(() => {
+    if (!isFashion || selectedBrand) return null;
+    const groups: { brand: InventoryBrand | null; label: string; shipping: string | null; items: InventoryItem[] }[] = [];
+    for (const b of brands) {
+      const items = filteredItems.filter((i) => (i.brand || "").toLowerCase() === b.name.toLowerCase());
+      if (items.length > 0) {
+        groups.push({ brand: b, label: b.name, shipping: b.shippingPrice, items });
+      }
+    }
+    const unassigned = filteredItems.filter(
+      (i) => !i.brand || !brands.some((b) => b.name.toLowerCase() === (i.brand || "").toLowerCase()),
+    );
+    if (unassigned.length > 0) {
+      groups.push({ brand: null, label: t("inventory.unassignedBrand"), shipping: null, items: unassigned });
+    }
+    return groups;
+  }, [isFashion, brands, filteredItems, selectedBrand, t]);
+
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
     const q = e.currentTarget.value.trim().toLowerCase();
@@ -499,13 +532,14 @@ export default function InventoryManagement() {
     itemForm.setValue("barcode", generateInventoryBarcode(storeId, posSystem, barcodeSuffix(), inventory));
   }
 
-  function openAddItem() {
+  function openAddItem(brandOverride?: string) {
     setEditingItem(null);
-    const defaultCategoryId = categories.length > 0 ? categories[0].id : 0;
+    const defaultCategoryId = selectedCategory ?? (categories.length > 0 ? categories[0].id : 0);
     const sku = defaultCategoryId ? generateSku(categories, defaultCategoryId, inventory) : "";
     const storeId = user?.storeId;
     const posSystem = (user as { posSystem?: string })?.posSystem;
     const barcode = storeId ? generateInventoryBarcode(storeId, posSystem, sku, inventory) : "";
+    const defaultBrand = brandOverride || selectedBrand || "";
     itemForm.reset({
       sku,
       name: "",
@@ -522,11 +556,30 @@ export default function InventoryManagement() {
       imageUrl: "",
       size: "",
       color: "",
-      brand: "",
+      brand: defaultBrand,
       styleCode: "",
       barcode,
     });
     setItemDialogOpen(true);
+  }
+
+  function assignCategoryToBrand(brandName: string) {
+    if (!selectedCategory) {
+      toast({ title: t("inventory.pickCategoryFirst"), variant: "destructive" });
+      return;
+    }
+    bulkAssignBrandMutation.mutate({ brand: brandName, categoryId: selectedCategory });
+  }
+
+  function assignVisibleUnbrandedToBrand(brandName: string) {
+    const ids = filteredItems
+      .filter((i) => !i.brand || !brands.some((b) => b.name.toLowerCase() === (i.brand || "").toLowerCase()))
+      .map((i) => i.id);
+    if (ids.length === 0) {
+      toast({ title: t("inventory.noUnassignedItems"), variant: "destructive" });
+      return;
+    }
+    bulkAssignBrandMutation.mutate({ brand: brandName, itemIds: ids });
   }
 
   function openEditItem(item: InventoryItem) {
@@ -572,6 +625,26 @@ export default function InventoryManagement() {
   }
 
   const isSubmitting = createItemMutation.isPending || updateItemMutation.isPending;
+
+  type TableRowEntry =
+    | { kind: "header"; label: string; shipping: string | null; count: number; brandName?: string }
+    | { kind: "item"; item: InventoryItem };
+
+  const tableRows: TableRowEntry[] = useMemo(() => {
+    if (!isFashion || selectedBrand || !fashionBrandGroups?.length) {
+      return filteredItems.map((item) => ({ kind: "item" as const, item }));
+    }
+    return fashionBrandGroups.flatMap((g) => [
+      {
+        kind: "header" as const,
+        label: g.label,
+        shipping: g.shipping,
+        count: g.items.length,
+        brandName: g.brand?.name,
+      },
+      ...g.items.map((item) => ({ kind: "item" as const, item })),
+    ]);
+  }, [isFashion, selectedBrand, fashionBrandGroups, filteredItems]);
 
   if (loadingCategories || loadingInventory) {
     return (
@@ -760,33 +833,107 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      {isFashion && brands.length > 0 && (
-        <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-card p-3 rounded-xl border border-slate-100 dark:border-border">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide me-1">
-            <Truck className="h-3.5 w-3.5 inline me-1" />
-            {t("inventory.brands")}:
-          </span>
-          <Badge
-            variant={selectedBrand === null ? "default" : "outline"}
-            className="cursor-pointer text-sm px-3 py-1"
-            onClick={() => setSelectedBrand(null)}
-          >
-            {t("inventory.allBrands")}
-          </Badge>
-          {brands.map((b) => (
-            <Badge
-              key={b.id}
-              variant={selectedBrand === b.name ? "default" : "outline"}
-              className="cursor-pointer text-sm px-3 py-1"
-              onClick={() => setSelectedBrand(selectedBrand === b.name ? null : b.name)}
-              data-testid={`badge-brand-${b.id}`}
+      {isFashion && (
+        <div className="bg-white dark:bg-card rounded-xl border border-violet-100 dark:border-border p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Truck className="h-4 w-4 text-violet-600" />
+                {t("inventory.brandShippingGroups")}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("inventory.brandShippingHint")}</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-violet-200 text-violet-700"
+              onClick={() => { setEditingBrand(null); setBrandName(""); setBrandShipping(""); setBrandsDialogOpen(true); }}
             >
-              {b.name}
-              <span className="ms-1.5 opacity-70 text-[10px]">
-                ({countBrandItems(b.name)} · {parseFloat(b.shippingPrice).toLocaleString()} {t("inventory.shippingShort")})
-              </span>
-            </Badge>
-          ))}
+              <Plus className="h-3.5 w-3.5 me-1" />
+              {t("inventory.addBrand")}
+            </Button>
+          </div>
+          {brands.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
+              {t("inventory.noBrandsYet")}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {brands.map((b) => {
+                const count = countBrandItems(b.name);
+                const active = selectedBrand === b.name;
+                return (
+                  <Card
+                    key={b.id}
+                    className={`transition-shadow hover:shadow-md ${active ? "ring-2 ring-violet-500 border-violet-300" : "border-slate-200"}`}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-bold text-base truncate flex items-center gap-1.5">
+                            <Building2 className="h-4 w-4 text-violet-600 shrink-0" />
+                            {b.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {count} {t("inventory.itemsLabel")} · {t("inventory.shippingPrice")}:{" "}
+                            <span className="font-semibold text-foreground">
+                              {parseFloat(b.shippingPrice).toLocaleString()} {t("common.currency")}
+                            </span>
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => { setEditingBrand(b); setBrandName(b.name); setBrandShipping(b.shippingPrice); setBrandsDialogOpen(true); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Button size="sm" variant={active ? "default" : "outline"} className="h-8 text-xs" onClick={() => setSelectedBrand(active ? null : b.name)}>
+                          {active ? t("inventory.showAll") : t("inventory.viewItems")}
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openAddItem(b.name)}>
+                          <Plus className="h-3 w-3 me-1" />
+                          {t("inventory.addToBrand")}
+                        </Button>
+                        {selectedCategory != null && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs border-violet-200 text-violet-700"
+                            disabled={bulkAssignBrandMutation.isPending}
+                            onClick={() => assignCategoryToBrand(b.name)}
+                          >
+                            {t("inventory.assignCategory")}
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs"
+                          disabled={bulkAssignBrandMutation.isPending}
+                          onClick={() => assignVisibleUnbrandedToBrand(b.name)}
+                        >
+                          {t("inventory.assignVisible")}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+          {selectedBrand && (
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="secondary">{t("inventory.filtering")}: {selectedBrand}</Badge>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedBrand(null)}>
+                <X className="h-3 w-3 me-1" />
+                {t("inventory.showAll")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -813,7 +960,41 @@ export default function InventoryManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.map((item) => {
+              {tableRows.map((row, rowIdx) => {
+                if (row.kind === "header") {
+                  return (
+                    <TableRow key={`hdr-${row.label}-${rowIdx}`} className="bg-violet-50/80 dark:bg-violet-950/20 hover:bg-violet-50/80">
+                      <TableCell colSpan={7} className="py-2.5 px-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold">
+                            <Building2 className="h-4 w-4 text-violet-600" />
+                            <span>{row.label}</span>
+                            <span className="text-muted-foreground font-normal">
+                              · {row.count} {t("inventory.itemsLabel")}
+                              {row.shipping != null && (
+                                <> · {t("inventory.shippingPrice")}: {parseFloat(row.shipping).toLocaleString()} {t("common.currency")}</>
+                              )}
+                            </span>
+                          </div>
+                          {row.brandName && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              disabled={bulkAssignBrandMutation.isPending}
+                              onClick={() => openAddItem(row.brandName)}
+                            >
+                              <Plus className="h-3 w-3 me-1" />
+                              {t("inventory.addToBrand")}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+
+                const item = row.item;
                 const cost = parseFloat(item.costPrice);
                 const sell = parseFloat(item.sellingPrice);
                 const margin = cost > 0 ? Math.round(((sell - cost) / cost) * 100) : 0;

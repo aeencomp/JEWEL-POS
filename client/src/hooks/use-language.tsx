@@ -177,6 +177,19 @@ type TranslationKeys = {
   "inventory.noBrand": string;
   "inventory.selectBrand": string;
   "inventory.itemsLabel": string;
+  "inventory.brandShippingGroups": string;
+  "inventory.brandShippingHint": string;
+  "inventory.noBrandsYet": string;
+  "inventory.viewItems": string;
+  "inventory.addToBrand": string;
+  "inventory.assignCategory": string;
+  "inventory.assignVisible": string;
+  "inventory.filtering": string;
+  "inventory.showAll": string;
+  "inventory.bulkBrandAssigned": string;
+  "inventory.unassignedBrand": string;
+  "inventory.pickCategoryFirst": string;
+  "inventory.noUnassignedItems": string;
 
   "loyalty.points": string;
   "loyalty.redeem": string;
@@ -678,6 +691,19 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noBrand": "No brand",
     "inventory.selectBrand": "Select brand",
     "inventory.itemsLabel": "items",
+    "inventory.brandShippingGroups": "Brands & bulk shipping",
+    "inventory.brandShippingHint": "Create a brand with one shipping price, then add or bulk-assign items under it.",
+    "inventory.noBrandsYet": "No brands yet. Add one (e.g. Adidas) and set its shipping cost.",
+    "inventory.viewItems": "View items",
+    "inventory.addToBrand": "Add item",
+    "inventory.assignCategory": "Assign category",
+    "inventory.assignVisible": "Assign visible",
+    "inventory.filtering": "Showing",
+    "inventory.showAll": "Show all",
+    "inventory.bulkBrandAssigned": "Items assigned to brand",
+    "inventory.unassignedBrand": "No brand",
+    "inventory.pickCategoryFirst": "Select a category above first",
+    "inventory.noUnassignedItems": "No unassigned items in current view",
 
     "loyalty.points": "points",
     "loyalty.redeem": "Redeem points",
@@ -1161,6 +1187,19 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.noBrand": "بدون علامة",
     "inventory.selectBrand": "اختر العلامة",
     "inventory.itemsLabel": "منتج",
+    "inventory.brandShippingGroups": "العلامات والشحن الجماعي",
+    "inventory.brandShippingHint": "أنشئ علامة بسعر شحن واحد، ثم أضف أو عيّن المنتجات تحتها دفعة واحدة.",
+    "inventory.noBrandsYet": "لا توجد علامات بعد. أضف علامة (مثل أديداس) وحدد سعر الشحن.",
+    "inventory.viewItems": "عرض المنتجات",
+    "inventory.addToBrand": "إضافة منتج",
+    "inventory.assignCategory": "تعيين الفئة",
+    "inventory.assignVisible": "تعيين الظاهر",
+    "inventory.filtering": "عرض",
+    "inventory.showAll": "عرض الكل",
+    "inventory.bulkBrandAssigned": "تم تعيين المنتجات للعلامة",
+    "inventory.unassignedBrand": "بدون علامة",
+    "inventory.pickCategoryFirst": "اختر فئة من الأعلى أولاً",
+    "inventory.noUnassignedItems": "لا توجد منتجات غير معيّنة في العرض الحالي",
 
     "loyalty.points": "نقطة",
     "loyalty.redeem": "استبدال النقاط",
