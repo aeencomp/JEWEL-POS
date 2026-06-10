@@ -1495,13 +1495,13 @@ export default function InventoryManagement() {
           {barcodeItem && (
             <div className="flex flex-col items-stretch gap-1 py-3 px-2 w-full max-w-[50mm] mx-auto border border-dashed rounded-lg bg-white">
               <p className="text-[9px] font-semibold text-center truncate leading-tight" dir="auto">{barcodeItem.name}</p>
-              <div className="w-full min-h-[44px] flex items-center justify-center">
+              <div className="w-full min-h-[56px] flex items-center justify-center">
                 <BarcodeDisplay
                   value={barcodeItem.barcode || barcodeItem.sku}
                   linear={isFashion}
                 />
               </div>
-              <p className="text-xl font-bold text-center tabular-nums leading-none" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <p className="text-sm font-bold text-center tabular-nums leading-none" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
                 {parseFloat(barcodeItem.sellingPrice).toLocaleString()}
               </p>
               {isFashion && (
