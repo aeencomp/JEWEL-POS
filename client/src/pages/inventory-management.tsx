@@ -1493,7 +1493,10 @@ export default function InventoryManagement() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{t("inventory.barcode")}</DialogTitle></DialogHeader>
           {barcodeItem && (
-            <div className="flex flex-col items-stretch gap-1 py-3 px-2 w-full max-w-[50mm] mx-auto border border-dashed rounded-lg bg-white">
+            <div
+              className="flex flex-col items-stretch gap-1 py-3 px-2 mx-auto border border-dashed rounded-lg bg-white overflow-hidden"
+              style={{ width: "50mm", height: "25mm", maxWidth: "50mm", maxHeight: "25mm" }}
+            >
               <p className="text-[9px] font-semibold text-center truncate leading-tight" dir="auto">{barcodeItem.name}</p>
               <div className="w-full min-h-[56px] flex items-center justify-center">
                 <BarcodeDisplay
@@ -1505,7 +1508,7 @@ export default function InventoryManagement() {
                 {parseFloat(barcodeItem.sellingPrice).toLocaleString()}
               </p>
               {isFashion && (
-                <p className="text-[9px] text-center text-muted-foreground">50×25 mm</p>
+                <p className="text-[8px] text-center text-muted-foreground leading-none">{t("inventory.labelSize")}</p>
               )}
               <Button variant="outline" size="sm" onClick={async () => {
                 const code = barcodeItem.barcode || barcodeItem.sku;

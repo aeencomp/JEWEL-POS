@@ -17,6 +17,7 @@ export const LABEL_BARCODE_DEFAULTS: LinearBarcodeOptions = {
   margin: 12,
 };
 
+/** Thermal label: 50 mm عرض (width) × 25 mm طول (length). */
 export const FASHION_LABEL_MM = { width: 50, height: 25 } as const;
 
 export function getPrintBarcodeOptions(code: string): LinearBarcodeOptions {
@@ -97,9 +98,13 @@ export function buildFashionLabelPrintHtml(opts: {
   const { width, height } = FASHION_LABEL_MM;
   const bcSvg = linearBarcodeToPrintSvg(barcodeValue, getFashionLabelBarcodeOptions(barcodeValue));
   const nameDir = hasArabicText(name) ? "rtl" : "ltr";
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Label</title><style>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Label ${width}×${height}</title><style>
 @page{size:${width}mm ${height}mm;margin:0}
-@media print{html,body{height:${height}mm;overflow:hidden}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{
+@page{size:${width}mm ${height}mm;margin:0}
+html,body{width:${width}mm!important;height:${height}mm!important;max-width:${width}mm;max-height:${height}mm;overflow:hidden;margin:0!important;padding:0!important}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:${width}mm;height:${height}mm;overflow:hidden}
 body{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:0.8mm 1.5mm 0.6mm;font-family:Arial,Helvetica,sans-serif}

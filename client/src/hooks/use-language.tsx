@@ -191,6 +191,7 @@ type TranslationKeys = {
   "inventory.pickCategoryFirst": string;
   "inventory.noUnassignedItems": string;
   "inventory.barcodeStoreMissing": string;
+  "inventory.labelSize": string;
 
   "loyalty.points": string;
   "loyalty.redeem": string;
@@ -706,6 +707,7 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.pickCategoryFirst": "Select a category above first",
     "inventory.noUnassignedItems": "No unassigned items in current view",
     "inventory.barcodeStoreMissing": "Could not determine store. Please log in again.",
+    "inventory.labelSize": "50 mm wide × 25 mm long",
 
     "loyalty.points": "points",
     "loyalty.redeem": "Redeem points",
@@ -1203,6 +1205,7 @@ const translations: Record<Language, TranslationKeys> = {
     "inventory.pickCategoryFirst": "اختر فئة من الأعلى أولاً",
     "inventory.noUnassignedItems": "لا توجد منتجات غير معيّنة في العرض الحالي",
     "inventory.barcodeStoreMissing": "تعذر تحديد المتجر. يرجى تسجيل الدخول مرة أخرى.",
+    "inventory.labelSize": "50 عرض × 25 طول مم",
 
     "loyalty.points": "نقطة",
     "loyalty.redeem": "استبدال النقاط",
