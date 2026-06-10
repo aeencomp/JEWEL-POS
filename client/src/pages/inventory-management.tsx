@@ -1493,18 +1493,20 @@ export default function InventoryManagement() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{t("inventory.barcode")}</DialogTitle></DialogHeader>
           {barcodeItem && (
-            <div className="flex flex-col items-stretch gap-2 py-4 px-2 w-full max-w-sm mx-auto">
-              <p className="text-sm text-center leading-snug" dir="auto">{barcodeItem.name}</p>
-              <div className="w-full">
+            <div className="flex flex-col items-stretch gap-1 py-3 px-2 w-full max-w-[50mm] mx-auto border border-dashed rounded-lg bg-white">
+              <p className="text-[9px] font-semibold text-center truncate leading-tight" dir="auto">{barcodeItem.name}</p>
+              <div className="w-full min-h-[44px] flex items-center justify-center">
                 <BarcodeDisplay
                   value={barcodeItem.barcode || barcodeItem.sku}
                   linear={isFashion}
                 />
-                <p className="text-xs text-left ps-1 mt-1 font-mono">{barcodeItem.barcode || barcodeItem.sku}</p>
               </div>
-              <p className="text-3xl font-bold text-center tabular-nums" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <p className="text-xl font-bold text-center tabular-nums leading-none" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
                 {parseFloat(barcodeItem.sellingPrice).toLocaleString()}
               </p>
+              {isFashion && (
+                <p className="text-[9px] text-center text-muted-foreground">50×25 mm</p>
+              )}
               <Button variant="outline" size="sm" onClick={async () => {
                 const code = barcodeItem.barcode || barcodeItem.sku;
                 const price = parseFloat(barcodeItem.sellingPrice).toLocaleString();
