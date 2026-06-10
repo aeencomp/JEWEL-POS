@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 type UserWithImpersonation = SelectUser & {
   impersonatingStoreId?: number;
   impersonatingStoreName?: string;
+  demoStoreId?: number;
+  demoStoreName?: string;
 };
 
 type TwoFAResponse = {

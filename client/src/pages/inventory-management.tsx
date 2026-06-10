@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
-import { isFashionStore } from "@/lib/pos-system";
+import { getEffectiveStoreId, isFashionStore, resolveUserPosSystem } from "@/lib/pos-system";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, parseApiErrorMessage } from "@/lib/queryClient";
 import type { InventoryItem, Category, InventoryBrand } from "@shared/schema";
@@ -144,7 +145,9 @@ export default function InventoryManagement() {
   const isAr = language === "ar";
   const { toast } = useToast();
   const { user } = useAuth();
-  const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
+  const [location] = useLocation();
+  const posSystem = resolveUserPosSystem(user as { username?: string; posSystem?: string }, location);
+  const isFashion = isFashionStore(posSystem);
 
   const [search, setSearch] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -526,18 +529,20 @@ export default function InventoryManagement() {
   }
 
   function handleGenerateBarcode() {
-    const storeId = user?.storeId;
-    if (!storeId) return;
-    const posSystem = (user as { posSystem?: string })?.posSystem;
-    itemForm.setValue("barcode", generateInventoryBarcode(storeId, posSystem, barcodeSuffix(), inventory));
+    const storeId = getEffectiveStoreId(user);
+    if (!storeId) {
+      toast({ title: t("inventory.barcodeStoreMissing"), variant: "destructive" });
+      return;
+    }
+    const code = generateInventoryBarcode(storeId, posSystem, barcodeSuffix(), inventory);
+    itemForm.setValue("barcode", code, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   }
 
   function openAddItem(brandOverride?: string) {
     setEditingItem(null);
     const defaultCategoryId = selectedCategory ?? (categories.length > 0 ? categories[0].id : 0);
     const sku = defaultCategoryId ? generateSku(categories, defaultCategoryId, inventory) : "";
-    const storeId = user?.storeId;
-    const posSystem = (user as { posSystem?: string })?.posSystem;
+    const storeId = getEffectiveStoreId(user);
     const barcode = storeId ? generateInventoryBarcode(storeId, posSystem, sku, inventory) : "";
     const defaultBrand = brandOverride || selectedBrand || "";
     itemForm.reset({

@@ -60,6 +60,19 @@ export function isFashionStore(posSystem: unknown): boolean {
   return posSystem === "fashion";
 }
 
+/** storeId for real users; demoStoreId / impersonation for demo & admin. */
+export function getEffectiveStoreId(
+  user: {
+    storeId?: number | null;
+    demoStoreId?: number;
+    impersonatingStoreId?: number;
+  } | null | undefined,
+): number | undefined {
+  if (!user) return undefined;
+  const id = user.impersonatingStoreId ?? user.demoStoreId ?? user.storeId ?? undefined;
+  return id != null && id > 0 ? id : undefined;
+}
+
 export function isJewelStore(posSystem: unknown): boolean {
   return posSystem !== "oil" && posSystem !== "fashion" && posSystem !== "restaurant";
 }
