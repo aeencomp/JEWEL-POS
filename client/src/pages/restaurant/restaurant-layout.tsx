@@ -172,6 +172,26 @@ export default function RestaurantLayout({
               {currentPage ? (isAr ? currentPage.labelAr : currentPage.label) : "RestoPOS"}
             </h2>
           </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/30 h-8 text-xs"
+              onClick={() => { window.open("/app", "_blank"); }}
+            >
+              <Bike className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{isAr ? "طلب IQ" : "IQ Order"}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-sky-600 hover:text-sky-700 hover:bg-sky-50 dark:hover:bg-sky-950/30 h-8 text-xs"
+              onClick={() => { window.open("/driver-login", "_blank"); }}
+            >
+              <span className="hidden sm:inline">{isAr ? "تطبيق السائق" : "Driver App"}</span>
+              <span className="sm:hidden">{isAr ? "السائق" : "Driver"}</span>
+            </Button>
+          </div>
           {pending > 0 && (
             <Link href="/restaurant/kitchen">
               <Button variant="outline" size="sm" className="gap-2 border-orange-200 text-orange-700 hover:bg-orange-50">

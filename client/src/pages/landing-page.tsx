@@ -43,7 +43,6 @@ import {
   Phone,
   Mail,
   Loader2,
-  Bike,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -507,23 +506,6 @@ export default function LandingPage() {
               onClick={() => document.getElementById("industries")?.scrollIntoView({ behavior: "smooth" })}
             >
               {isAr ? "الأنظمة" : "Systems"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden sm:inline-flex gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50"
-              onClick={() => { window.location.href = "/app"; }}
-            >
-              <Bike className="h-3.5 w-3.5" />
-              {isAr ? "طلب IQ" : "IQ Order"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden md:inline-flex gap-1.5 text-sky-600"
-              onClick={() => { window.location.href = "/driver-login"; }}
-            >
-              {isAr ? "تطبيق السائق" : "Driver App"}
             </Button>
             <Button
               size="sm"
