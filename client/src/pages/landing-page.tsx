@@ -985,20 +985,23 @@ export default function LandingPage() {
 
       {/* Sign-up Request Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden border shadow-2xl" dir={isAr ? "rtl" : "ltr"}>
+        <DialogContent
+          className="max-w-md w-[calc(100%-1.5rem)] p-0 gap-0 overflow-hidden border shadow-2xl max-h-[min(90dvh,640px)] !flex flex-col"
+          dir={isAr ? "rtl" : "ltr"}
+        >
           {!submitted ? (
             <>
-              <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 px-6 py-5">
-                <DialogHeader className="space-y-1 text-start">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
-                      <UserPlus className="h-5 w-5 text-white" />
+              <div className="shrink-0 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 px-4 py-3">
+                <DialogHeader className="space-y-0.5 text-start">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                      <UserPlus className="h-4 w-4 text-white" />
                     </div>
-                    <div>
-                      <DialogTitle className="text-white text-lg font-bold">
+                    <div className="min-w-0">
+                      <DialogTitle className="text-white text-base font-bold leading-tight">
                         {isAr ? "طلب الاشتراك في IQ-POS" : "Request Access to IQ-POS"}
                       </DialogTitle>
-                      <DialogDescription className="text-amber-100/85 text-sm mt-0.5">
+                      <DialogDescription className="text-amber-100/85 text-xs mt-0.5 line-clamp-2">
                         {isAr
                           ? "أرسل طلبك وسيتواصل معك فريقنا في أقرب وقت."
                           : "Submit your request and our team will get back to you shortly."}
@@ -1008,154 +1011,157 @@ export default function LandingPage() {
                 </DialogHeader>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-card">
-                <div className="space-y-2.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {SIGNUP_POS_OPTIONS.map((opt) => {
-                      const Icon = opt.icon;
-                      const isSelected = form.posSystem === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => setForm((f) => ({ ...f, posSystem: opt.id }))}
-                          data-testid={`pos-select-${opt.id}`}
-                          className={`relative flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200 ${
-                            isSelected
-                              ? `${opt.activeBorder} ${opt.activeBg} shadow-md ring-2 ring-offset-2 ring-offset-background ${
-                                  opt.id === "jewel" ? "ring-amber-500/40" : opt.id === "fashion" ? "ring-pink-500/40" : "ring-blue-500/40"
-                                }`
-                              : `border-border bg-background ${opt.hoverBorder} hover:shadow-sm`
-                          }`}
-                        >
-                          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${opt.gradient} flex items-center justify-center shadow-sm`}>
-                            <Icon className="h-5 w-5 text-white" />
-                          </div>
-                          <span className="text-xs font-bold leading-tight">{opt.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{isAr ? opt.subAr : opt.subEn}</span>
-                        </button>
-                      );
-                    })}
+              <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 bg-card overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}
+                    </Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {SIGNUP_POS_OPTIONS.map((opt) => {
+                        const Icon = opt.icon;
+                        const isSelected = form.posSystem === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setForm((f) => ({ ...f, posSystem: opt.id }))}
+                            data-testid={`pos-select-${opt.id}`}
+                            className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all duration-200 ${
+                              isSelected
+                                ? `${opt.activeBorder} ${opt.activeBg} shadow-sm ring-1 ring-offset-1 ring-offset-background ${
+                                    opt.id === "jewel" ? "ring-amber-500/40" : opt.id === "fashion" ? "ring-pink-500/40" : opt.id === "restaurant" ? "ring-orange-500/40" : "ring-blue-500/40"
+                                  }`
+                                : `border-border bg-background ${opt.hoverBorder} hover:shadow-sm`
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${opt.gradient} flex items-center justify-center shadow-sm`}>
+                              <Icon className="h-4 w-4 text-white" />
+                            </div>
+                            <span className="text-[10px] font-bold leading-tight text-center">{opt.label}</span>
+                            <span className="text-[9px] text-muted-foreground">{isAr ? opt.subAr : opt.subEn}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="req-name" className="text-xs font-medium">
+                        {isAr ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <User className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          id="req-name"
+                          data-testid="input-signup-name"
+                          value={form.name}
+                          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                          placeholder={isAr ? "محمد علي" : "John Smith"}
+                          className={`h-9 ps-9 text-sm rounded-lg ${errors.name ? "border-destructive" : ""}`}
+                        />
+                      </div>
+                      {errors.name && <p className="text-[11px] text-destructive">{errors.name}</p>}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="req-business" className="text-xs font-medium">
+                        {isAr ? "اسم المحل / الشركة" : "Business Name"} <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Building2 className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          id="req-business"
+                          data-testid="input-signup-business"
+                          value={form.businessName}
+                          onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+                          placeholder={isAr ? "مجوهرات النور" : "Golden Jewelers"}
+                          className={`h-9 ps-9 text-sm rounded-lg ${errors.businessName ? "border-destructive" : ""}`}
+                        />
+                      </div>
+                      {errors.businessName && <p className="text-[11px] text-destructive">{errors.businessName}</p>}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="req-phone" className="text-xs font-medium">
+                        {isAr ? "رقم الهاتف" : "Phone Number"} <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          id="req-phone"
+                          data-testid="input-signup-phone"
+                          value={form.phone}
+                          onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                          placeholder="+964 7xx xxx xxxx"
+                          dir="ltr"
+                          className={`h-9 ps-9 text-sm rounded-lg ${errors.phone ? "border-destructive" : ""}`}
+                        />
+                      </div>
+                      {errors.phone && <p className="text-[11px] text-destructive">{errors.phone}</p>}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="req-email" className="text-xs font-medium">
+                        {isAr ? "البريد الإلكتروني" : "Email Address"} <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Mail className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          id="req-email"
+                          data-testid="input-signup-email"
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                          placeholder="you@example.com"
+                          dir="ltr"
+                          className={`h-9 ps-9 text-sm rounded-lg ${errors.email ? "border-destructive" : ""}`}
+                        />
+                      </div>
+                      {errors.email && <p className="text-[11px] text-destructive">{errors.email}</p>}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="req-notes" className="text-xs font-medium">
+                      {isAr ? "ملاحظات" : "Additional Notes"}{" "}
+                      <span className="text-muted-foreground font-normal">({isAr ? "اختياري" : "optional"})</span>
+                    </Label>
+                    <Textarea
+                      id="req-notes"
+                      data-testid="input-signup-notes"
+                      value={form.notes}
+                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                      placeholder={isAr ? "أي تفاصيل إضافية..." : "Any additional details..."}
+                      rows={2}
+                      className="rounded-lg resize-none text-sm min-h-[4rem]"
+                    />
                   </div>
                 </div>
 
-                <div className="h-px bg-border" />
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="req-name" className="text-sm font-medium">
-                      {isAr ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <Input
-                        id="req-name"
-                        data-testid="input-signup-name"
-                        value={form.name}
-                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                        placeholder={isAr ? "محمد علي" : "John Smith"}
-                        className={`h-11 ps-10 rounded-xl ${errors.name ? "border-destructive" : ""}`}
-                      />
-                    </div>
-                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="req-business" className="text-sm font-medium">
-                      {isAr ? "اسم المحل / الشركة" : "Business Name"} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Building2 className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <Input
-                        id="req-business"
-                        data-testid="input-signup-business"
-                        value={form.businessName}
-                        onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
-                        placeholder={isAr ? "مجوهرات النور" : "Golden Jewelers"}
-                        className={`h-11 ps-10 rounded-xl ${errors.businessName ? "border-destructive" : ""}`}
-                      />
-                    </div>
-                    {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="req-phone" className="text-sm font-medium">
-                      {isAr ? "رقم الهاتف" : "Phone Number"} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Phone className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <Input
-                        id="req-phone"
-                        data-testid="input-signup-phone"
-                        value={form.phone}
-                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                        placeholder="+964 7xx xxx xxxx"
-                        dir="ltr"
-                        className={`h-11 ps-10 rounded-xl ${errors.phone ? "border-destructive" : ""}`}
-                      />
-                    </div>
-                    {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="req-email" className="text-sm font-medium">
-                      {isAr ? "البريد الإلكتروني" : "Email Address"} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <Input
-                        id="req-email"
-                        data-testid="input-signup-email"
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                        placeholder="you@example.com"
-                        dir="ltr"
-                        className={`h-11 ps-10 rounded-xl ${errors.email ? "border-destructive" : ""}`}
-                      />
-                    </div>
-                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                  </div>
+                <div className="shrink-0 border-t border-border bg-card p-3 pt-2">
+                  <Button
+                    type="submit"
+                    className="w-full h-10 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-md shadow-amber-500/20 border-0 text-sm"
+                    disabled={mutation.isPending}
+                    data-testid="button-signup-submit"
+                  >
+                    {mutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                        {isAr ? "جاري الإرسال..." : "Sending..."}
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 me-2" />
+                        {isAr ? "إرسال الطلب" : "Send Request"}
+                      </>
+                    )}
+                  </Button>
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="req-notes" className="text-sm font-medium">
-                    {isAr ? "ملاحظات" : "Additional Notes"}{" "}
-                    <span className="text-muted-foreground text-xs font-normal">({isAr ? "اختياري" : "optional"})</span>
-                  </Label>
-                  <Textarea
-                    id="req-notes"
-                    data-testid="input-signup-notes"
-                    value={form.notes}
-                    onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                    placeholder={isAr ? "أي تفاصيل إضافية..." : "Any additional details..."}
-                    rows={3}
-                    className="rounded-xl resize-none"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg shadow-amber-500/20 border-0"
-                  disabled={mutation.isPending}
-                  data-testid="button-signup-submit"
-                >
-                  {mutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                      {isAr ? "جاري الإرسال..." : "Sending..."}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 me-2" />
-                      {isAr ? "إرسال الطلب" : "Send Request"}
-                    </>
-                  )}
-                </Button>
               </form>
             </>
           ) : (
