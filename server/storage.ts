@@ -4,7 +4,10 @@ import {
   posTerminals,
   oilProducts, oilCustomers, oilSuppliers, oilSales, oilSaleItems,
   oilPurchases, oilPurchaseItems, oilProductionBatches, oilProductionInputs,
-  oilExpenses, oilDebts, oilDebtPayments,
+  oilExpenses, oilDebts, oilDebtPayments, oilDeliveryNotes, oilDeliveryNoteItems,
+  oilBatchRecords, oilBatchRecordItems,
+  restaurantTables, menuCategories, menuItems, restaurantOrders, restaurantOrderItems,
+  deliveryDrivers,
   type User, type InsertUser,
   type Store, type InsertStore,
   type Subscription, type InsertSubscription,
@@ -189,22 +192,93 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteStore(id: number): Promise<void> {
-    await db.delete(layawayPayments).where(
-      inArray(layawayPayments.layawayId, db.select({ id: layawayPlans.id }).from(layawayPlans).where(eq(layawayPlans.storeId, id)))
-    );
-    await db.delete(layawayPlans).where(eq(layawayPlans.storeId, id));
-    await db.delete(orderItems).where(
-      inArray(orderItems.orderId, db.select({ id: orders.id }).from(orders).where(eq(orders.storeId, id)))
-    );
-    await db.delete(orders).where(eq(orders.storeId, id));
-    await db.delete(repairOrders).where(eq(repairOrders.storeId, id));
-    await db.delete(purchases).where(eq(purchases.storeId, id));
-    await db.delete(customers).where(eq(customers.storeId, id));
-    await db.delete(inventoryItems).where(eq(inventoryItems.storeId, id));
-    await db.delete(categories).where(eq(categories.storeId, id));
-    await db.delete(subscriptions).where(eq(subscriptions.storeId, id));
-    await db.delete(users).where(eq(users.storeId, id));
-    await db.delete(stores).where(eq(stores.id, id));
+    await db.transaction(async (tx) => {
+      // Jewel / Fashion: layaway → orders → debts → repairs → purchases
+      await tx.delete(layawayPayments).where(
+        inArray(layawayPayments.layawayId, tx.select({ id: layawayPlans.id }).from(layawayPlans).where(eq(layawayPlans.storeId, id))),
+      );
+      await tx.delete(layawayPlans).where(eq(layawayPlans.storeId, id));
+      await tx.delete(orderItems).where(
+        inArray(orderItems.orderId, tx.select({ id: orders.id }).from(orders).where(eq(orders.storeId, id))),
+      );
+      await tx.delete(orders).where(eq(orders.storeId, id));
+
+      const debtIds = (await tx.select({ id: debts.id }).from(debts).where(eq(debts.storeId, id))).map((r) => r.id);
+      if (debtIds.length) {
+        await tx.delete(debtPayments).where(inArray(debtPayments.debtId, debtIds));
+      }
+      await tx.delete(debts).where(eq(debts.storeId, id));
+
+      await tx.delete(repairOrders).where(eq(repairOrders.storeId, id));
+      await tx.delete(purchases).where(eq(purchases.storeId, id));
+
+      // Restaurant
+      const restOrderIds = (await tx.select({ id: restaurantOrders.id }).from(restaurantOrders).where(eq(restaurantOrders.storeId, id))).map((r) => r.id);
+      if (restOrderIds.length) {
+        await tx.delete(restaurantOrderItems).where(inArray(restaurantOrderItems.orderId, restOrderIds));
+      }
+      await tx.delete(restaurantOrders).where(eq(restaurantOrders.storeId, id));
+      await tx.delete(menuItems).where(eq(menuItems.storeId, id));
+      await tx.delete(menuCategories).where(eq(menuCategories.storeId, id));
+      await tx.delete(restaurantTables).where(eq(restaurantTables.storeId, id));
+      await tx.delete(deliveryDrivers).where(eq(deliveryDrivers.storeId, id));
+
+      // Oil / Factory
+      const batchIds = (await tx.select({ id: oilProductionBatches.id }).from(oilProductionBatches).where(eq(oilProductionBatches.storeId, id))).map((r) => r.id);
+      if (batchIds.length) {
+        await tx.delete(oilProductionInputs).where(inArray(oilProductionInputs.batchId, batchIds));
+      }
+      await tx.delete(oilProductionBatches).where(eq(oilProductionBatches.storeId, id));
+
+      const saleIds = (await tx.select({ id: oilSales.id }).from(oilSales).where(eq(oilSales.storeId, id))).map((r) => r.id);
+      if (saleIds.length) {
+        await tx.delete(oilSaleItems).where(inArray(oilSaleItems.saleId, saleIds));
+      }
+      await tx.delete(oilSales).where(eq(oilSales.storeId, id));
+
+      const purchaseIds = (await tx.select({ id: oilPurchases.id }).from(oilPurchases).where(eq(oilPurchases.storeId, id))).map((r) => r.id);
+      if (purchaseIds.length) {
+        await tx.delete(oilPurchaseItems).where(inArray(oilPurchaseItems.purchaseId, purchaseIds));
+      }
+      await tx.delete(oilPurchases).where(eq(oilPurchases.storeId, id));
+
+      const oilDebtIds = (await tx.select({ id: oilDebts.id }).from(oilDebts).where(eq(oilDebts.storeId, id))).map((r) => r.id);
+      if (oilDebtIds.length) {
+        await tx.delete(oilDebtPayments).where(inArray(oilDebtPayments.debtId, oilDebtIds));
+      }
+      await tx.delete(oilDebts).where(eq(oilDebts.storeId, id));
+
+      const noteIds = (await tx.select({ id: oilDeliveryNotes.id }).from(oilDeliveryNotes).where(eq(oilDeliveryNotes.storeId, id))).map((r) => r.id);
+      if (noteIds.length) {
+        await tx.delete(oilDeliveryNoteItems).where(inArray(oilDeliveryNoteItems.noteId, noteIds));
+      }
+      await tx.delete(oilDeliveryNotes).where(eq(oilDeliveryNotes.storeId, id));
+
+      const recordIds = (await tx.select({ id: oilBatchRecords.id }).from(oilBatchRecords).where(eq(oilBatchRecords.storeId, id))).map((r) => r.id);
+      if (recordIds.length) {
+        await tx.delete(oilBatchRecordItems).where(inArray(oilBatchRecordItems.recordId, recordIds));
+      }
+      await tx.delete(oilBatchRecords).where(eq(oilBatchRecords.storeId, id));
+
+      await tx.delete(oilExpenses).where(eq(oilExpenses.storeId, id));
+      await tx.delete(oilProducts).where(eq(oilProducts.storeId, id));
+      await tx.delete(oilCustomers).where(eq(oilCustomers.storeId, id));
+      await tx.delete(oilSuppliers).where(eq(oilSuppliers.storeId, id));
+
+      // Inventory & POS
+      await tx.delete(inventoryItems).where(eq(inventoryItems.storeId, id));
+      await tx.delete(inventoryBrands).where(eq(inventoryBrands.storeId, id));
+      await tx.delete(categories).where(eq(categories.storeId, id));
+      await tx.delete(customers).where(eq(customers.storeId, id));
+      await tx.delete(posTerminals).where(eq(posTerminals.storeId, id));
+
+      await tx.delete(subscriptions).where(eq(subscriptions.storeId, id));
+      await tx.delete(verificationCodes).where(
+        inArray(verificationCodes.userId, tx.select({ id: users.id }).from(users).where(eq(users.storeId, id))),
+      );
+      await tx.delete(users).where(eq(users.storeId, id));
+      await tx.delete(stores).where(eq(stores.id, id));
+    });
   }
 
   async getSubscriptions(): Promise<Subscription[]> {
