@@ -24,44 +24,43 @@ export function FashionLabelPreview({ name, price, barcodeValue, className }: Fa
         height: `${height}mm`,
         maxWidth: `${width}mm`,
         maxHeight: `${height}mm`,
-        padding: "2mm 3.5mm 2.5mm",
+        padding: "1.5mm 2.5mm 1.2mm",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
       <p
-        className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-center leading-[1.15]"
-        style={{ fontSize: "10.5pt", direction: nameDir }}
+        className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-center leading-[1.1] mb-[0.4mm]"
+        style={{ fontSize: "9pt", direction: nameDir }}
         dir="auto"
       >
         {name}
       </p>
-      <div className="flex min-h-0 flex-1 flex-col justify-center py-[0.5mm]">
-        <div className="flex h-[12mm] w-full items-center justify-center overflow-hidden">
+      <div className="flex w-full shrink-0 flex-col">
+        <div className="flex w-full items-center justify-center overflow-hidden">
           <LinearBarcode
             value={barcodeValue}
             width={bcOpts.width}
             height={bcOpts.height}
             showValue={false}
-            className="h-full w-full max-h-[12mm]"
+            className="block h-auto w-full max-w-[45mm]"
           />
         </div>
         <p
-          className="mt-[0.5mm] leading-none"
-          style={{ fontSize: "8.5pt", textAlign: "left", paddingLeft: "1.5mm", fontFamily: "Arial, sans-serif" }}
+          className="mt-[0.3mm] leading-none"
+          style={{ fontSize: "7.5pt", textAlign: "left", paddingLeft: "1mm", fontFamily: "Arial, sans-serif" }}
         >
           {bcNum}
         </p>
       </div>
       <p
-        className="shrink-0 text-center leading-none"
+        className="mt-[0.6mm] shrink-0 text-center leading-none"
         style={{
           fontFamily: '"Times New Roman", Times, serif',
-          fontSize: "24pt",
+          fontSize: "14pt",
           fontWeight: "bold",
-          paddingBottom: "0.5mm",
         }}
       >
         {price}
