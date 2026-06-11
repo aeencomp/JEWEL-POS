@@ -2,6 +2,16 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -25,6 +35,7 @@ export default function AdminSubscriptions() {
   const { t, language } = useLanguage();
   const [editingPrice, setEditingPrice] = useState<number | null>(null);
   const [priceValue, setPriceValue] = useState("");
+  const [renewTarget, setRenewTarget] = useState<{ id: number; storeName: string } | null>(null);
 
   const { data: stores, isLoading: loadingStores } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
@@ -80,6 +91,7 @@ export default function AdminSubscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      setRenewTarget(null);
       toast({ title: t("admin.renew") });
     },
     onError: (error: Error) => {
@@ -277,7 +289,9 @@ export default function AdminSubscriptions() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => renewMutation.mutate(sub.id)}
+                            onClick={() =>
+                              setRenewTarget({ id: sub.id, storeName: getStoreName(sub.storeId) })
+                            }
                             disabled={renewMutation.isPending}
                             data-testid={`button-renew-${sub.id}`}
                           >
@@ -300,6 +314,28 @@ export default function AdminSubscriptions() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!renewTarget} onOpenChange={(open) => !open && setRenewTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("admin.renew")} — {renewTarget?.storeName}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t("admin.renewConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-renew">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => renewTarget && renewMutation.mutate(renewTarget.id)}
+              disabled={renewMutation.isPending}
+              data-testid="button-confirm-renew"
+            >
+              {renewMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t("admin.renew")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

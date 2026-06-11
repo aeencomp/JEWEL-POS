@@ -84,6 +84,7 @@ type TranslationKeys = {
   "admin.selectPlan": string;
   "admin.subscriptions": string;
   "admin.renew": string;
+  "admin.renewConfirm": string;
   "admin.daysLeft": string;
 
   "pos.terminal": string;
@@ -587,6 +588,7 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.selectPlan": "Select Plan",
     "admin.subscriptions": "Subscriptions",
     "admin.renew": "Renew",
+    "admin.renewConfirm": "Renew this subscription for one more month? The end date will be extended and the renewal request will be cleared.",
     "admin.daysLeft": "Days Left",
 
     "pos.terminal": "POS Terminal",
@@ -1085,6 +1087,7 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.selectPlan": "اختر الخطة",
     "admin.subscriptions": "الاشتراكات",
     "admin.renew": "تجديد",
+    "admin.renewConfirm": "هل تريد تجديد هذا الاشتراك لمدة شهر إضافي؟ سيتم تمديد تاريخ الانتهاء وإزالة طلب التجديد.",
     "admin.daysLeft": "أيام متبقية",
 
     "pos.terminal": "نقطة البيع",
