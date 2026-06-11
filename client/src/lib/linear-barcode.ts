@@ -31,16 +31,16 @@ export function getPrintBarcodeOptions(code: string): LinearBarcodeOptions {
   return { width: 2, height: 100, displayValue: false, margin: 8 };
 }
 
-/** Compact barcode tuned for 50×25 mm thermal labels. */
+/** Barcode sizing for 50×25 mm reference labels (CODE39 short codes). */
 export function getFashionLabelBarcodeOptions(code: string): LinearBarcodeOptions {
   const format = inferBarcodeFormat(code);
   if (format === "CODE39") {
-    return { width: 1.85, height: 44, displayValue: false, margin: 2 };
+    return { width: 2.05, height: 36, displayValue: false, margin: 10 };
   }
   if (format === "EAN13") {
-    return { width: 1.9, height: 40, displayValue: false, margin: 2 };
+    return { width: 2.2, height: 34, displayValue: false, margin: 8 };
   }
-  return { width: 1.6, height: 42, displayValue: false, margin: 2 };
+  return { width: 1.8, height: 36, displayValue: false, margin: 8 };
 }
 
 function esc(s: string) {
@@ -97,6 +97,7 @@ export function buildFashionLabelPrintHtml(opts: {
   const { name, price, barcodeValue } = opts;
   const { width, height } = FASHION_LABEL_MM;
   const bcSvg = linearBarcodeToPrintSvg(barcodeValue, getFashionLabelBarcodeOptions(barcodeValue));
+  const bcNum = esc(barcodePayload(barcodeValue));
   const nameDir = hasArabicText(name) ? "rtl" : "ltr";
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Label ${width}×${height}</title><style>
 @page{size:${width}mm ${height}mm;margin:0}
@@ -107,14 +108,19 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:${width}mm;height:${height}mm;overflow:hidden}
-body{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:0.8mm 1.5mm 0.6mm;font-family:Arial,Helvetica,sans-serif}
-.name{width:100%;font-size:6.5pt;font-weight:600;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:${nameDir};flex-shrink:0}
-.bc-box{width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0.2mm 0}
-.bc-box svg{width:100%!important;height:auto!important;max-height:15mm}
-.price{width:100%;font-family:"Times New Roman",Times,serif;font-size:10pt;font-weight:bold;text-align:center;line-height:1;flex-shrink:0}
+body{display:flex;flex-direction:column;justify-content:space-between;padding:2mm 3.5mm 2.5mm;font-family:Arial,Helvetica,sans-serif}
+.name{font-size:10.5pt;line-height:1.15;text-align:center;max-height:2.4em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;direction:${nameDir};flex-shrink:0}
+.mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0.5mm 0;min-height:0}
+.bc-box{width:100%;height:12mm;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.bc-box svg{width:100%!important;height:100%!important;max-height:12mm}
+.bc-num{font-size:8.5pt;text-align:left;padding-left:1.5mm;margin-top:0.5mm;line-height:1;font-family:Arial,sans-serif}
+.price{font-family:"Times New Roman",Times,serif;font-size:24pt;font-weight:bold;text-align:center;line-height:1;flex-shrink:0;padding-bottom:0.5mm}
 </style></head><body>
 <div class="name">${esc(name)}</div>
+<div class="mid">
 <div class="bc-box">${bcSvg}</div>
+<div class="bc-num">${bcNum}</div>
+</div>
 <div class="price">${esc(price)}</div>
 <script>setTimeout(function(){window.print();window.close();},120)</script>
 </body></html>`;

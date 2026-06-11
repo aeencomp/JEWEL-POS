@@ -71,6 +71,7 @@ import QRCode from "qrcode";
 import { generateInventoryBarcode } from "@/lib/barcode";
 import { buildFashionLabelPrintHtml } from "@/lib/linear-barcode";
 import { LinearBarcode } from "@/components/linear-barcode";
+import { FashionLabelPreview } from "@/components/fashion-label-preview";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1493,22 +1494,22 @@ export default function InventoryManagement() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{t("inventory.barcode")}</DialogTitle></DialogHeader>
           {barcodeItem && (
-            <div
-              className="flex flex-col items-stretch gap-1 py-3 px-2 mx-auto border border-dashed rounded-lg bg-white overflow-hidden"
-              style={{ width: "50mm", height: "25mm", maxWidth: "50mm", maxHeight: "25mm" }}
-            >
-              <p className="text-[9px] font-semibold text-center truncate leading-tight" dir="auto">{barcodeItem.name}</p>
-              <div className="w-full min-h-[56px] flex items-center justify-center">
-                <BarcodeDisplay
-                  value={barcodeItem.barcode || barcodeItem.sku}
-                  linear={isFashion}
+            <div className="flex flex-col items-center gap-3">
+              {isFashion ? (
+                <FashionLabelPreview
+                  className="mx-auto rounded-lg border border-dashed border-slate-300 shadow-sm"
+                  name={barcodeItem.name}
+                  price={parseFloat(barcodeItem.sellingPrice).toLocaleString()}
+                  barcodeValue={barcodeItem.barcode || barcodeItem.sku}
                 />
-              </div>
-              <p className="text-sm font-bold text-center tabular-nums leading-none" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                {parseFloat(barcodeItem.sellingPrice).toLocaleString()}
-              </p>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <p className="text-sm text-center leading-snug" dir="auto">{barcodeItem.name}</p>
+                  <BarcodeDisplay value={barcodeItem.barcode || barcodeItem.sku} linear={false} />
+                </div>
+              )}
               {isFashion && (
-                <p className="text-[8px] text-center text-muted-foreground leading-none">{t("inventory.labelSize")}</p>
+                <p className="text-[10px] text-center text-muted-foreground">{t("inventory.labelSize")}</p>
               )}
               <Button variant="outline" size="sm" onClick={async () => {
                 const code = barcodeItem.barcode || barcodeItem.sku;
