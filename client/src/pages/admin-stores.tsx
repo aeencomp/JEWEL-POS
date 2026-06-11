@@ -74,9 +74,17 @@ import {
   Utensils,
   ShieldCheck,
   RotateCcw,
+  ChevronDown,
+  FlaskConical,
 } from "lucide-react";
 import { posSystemLabel, type PosSystem } from "@/lib/pos-system";
 import { useQueryParam } from "@/hooks/use-query-param";
+import { isDemoStore } from "@/lib/demo-stores";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const POS_TYPE_OPTIONS = [
   { value: "jewel" as const, label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
@@ -156,6 +164,15 @@ export default function AdminStores() {
     if (statusFilter === "inactive") return stores.filter((s) => !s.isActive);
     return stores;
   }, [stores, statusFilter]);
+
+  const { liveStores, demoStores } = useMemo(() => {
+    const live: StoreWithUsername[] = [];
+    const demo: StoreWithUsername[] = [];
+    for (const store of displayedStores) {
+      (isDemoStore(store) ? demo : live).push(store);
+    }
+    return { liveStores: live, demoStores: demo };
+  }, [displayedStores]);
 
   const form = useForm<CreateStoreValues>({
     resolver: zodResolver(createStoreSchema),
@@ -309,6 +326,177 @@ export default function AdminStores() {
       toast({ title: "Failed to clear data", description: error.message, variant: "destructive" });
     },
   });
+
+  const renderStoreCard = (store: StoreWithUsername) => (
+    <Card
+      key={store.id}
+      className="hover-elevate"
+      data-testid={`card-store-${store.id}`}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-3">
+            {(() => {
+              const meta = storePosMeta(store.posSystem);
+              const Icon = meta.Icon;
+              return (
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: meta.color + "20" }}
+                >
+                  <Icon className="h-5 w-5" style={{ color: meta.color }} />
+                </div>
+              );
+            })()}
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-semibold text-sm" data-testid={`text-store-name-${store.id}`}>
+                  {store.name}
+                </h3>
+                <span
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                  style={{
+                    backgroundColor: storePosMeta(store.posSystem).color + "15",
+                    color: storePosMeta(store.posSystem).color,
+                  }}
+                >
+                  {posSystemLabel(store.posSystem as PosSystem, false)}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground" data-testid={`text-store-owner-${store.id}`}>
+                {store.ownerName}
+              </p>
+            </div>
+          </div>
+          <Badge variant={store.isActive ? "default" : "secondary"} data-testid={`badge-store-status-${store.id}`}>
+            {store.isActive ? t("common.active") : t("common.inactive")}
+          </Badge>
+        </div>
+
+        <div className="space-y-1.5 mb-4">
+          {store.phone && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Phone className="h-3 w-3" />
+              <span data-testid={`text-store-phone-${store.id}`}>{store.phone}</span>
+            </div>
+          )}
+          {store.email && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Mail className="h-3 w-3" />
+              <span data-testid={`text-store-email-${store.id}`}>{store.email}</span>
+            </div>
+          )}
+          {store.address && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>{store.address}</span>
+            </div>
+          )}
+          {store.storeUsername && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <User className="h-3 w-3" />
+              <span data-testid={`text-store-username-${store.id}`}>
+                {t("auth.username")}: <span className="font-medium text-foreground">{store.storeUsername}</span>
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant={store.isActive ? "outline" : "default"}
+            className="flex-1"
+            size="sm"
+            onClick={() => toggleMutation.mutate({ id: store.id, isActive: !store.isActive })}
+            disabled={toggleMutation.isPending}
+            data-testid={`button-toggle-${store.id}`}
+          >
+            {store.isActive ? (
+              <>
+                <PowerOff className="h-3 w-3 me-2" />
+                {t("common.inactive")}
+              </>
+            ) : (
+              <>
+                <Power className="h-3 w-3 me-2" />
+                {t("common.active")}
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() => impersonateMutation.mutate(store.id)}
+            disabled={impersonateMutation.isPending}
+            data-testid={`button-impersonate-store-${store.id}`}
+            title={t("admin.viewStore")}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() => openEditDialog(store)}
+            data-testid={`button-edit-store-${store.id}`}
+            title={t("admin.editStore")}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-200 dark:border-amber-800"
+            onClick={() => { setResetPasswordStore(store); setNewPassword(""); }}
+            data-testid={`button-reset-password-${store.id}`}
+            title={t("admin.resetPassword")}
+          >
+            <KeyRound className="h-4 w-4" />
+          </Button>
+          {store.posSystem === "oil" && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="flex-shrink-0 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800"
+              onClick={() => {
+                const existing = store.features;
+                const parsed = existing ? JSON.parse(existing) as string[] : OIL_FEATURES.map(f => f.key);
+                setSelectedFeatures(parsed);
+                setPermissionsStore(store);
+              }}
+              data-testid={`button-permissions-${store.id}`}
+              title="Module Permissions"
+            >
+              <ShieldCheck className="h-4 w-4" />
+            </Button>
+          )}
+          {store.posSystem === "oil" && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="flex-shrink-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/30 border-orange-200 dark:border-orange-800"
+              onClick={() => setClearDataTarget(store)}
+              data-testid={`button-clear-data-${store.id}`}
+              title="Clear All Store Data"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="icon"
+            className="text-destructive flex-shrink-0"
+            onClick={() => setDeleteTarget(store)}
+            data-testid={`button-delete-store-${store.id}`}
+            title={t("common.delete")}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (isLoading) {
     return (
@@ -540,7 +728,7 @@ export default function AdminStores() {
         </div>
       )}
 
-      {displayedStores.length === 0 ? (
+      {liveStores.length === 0 && demoStores.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <StoreIcon className="h-12 w-12 text-muted-foreground/40 mb-4" />
@@ -551,195 +739,45 @@ export default function AdminStores() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {displayedStores.map((store) => (
-            <Card
-              key={store.id}
-              className="hover-elevate"
-              data-testid={`card-store-${store.id}`}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-2 mb-3">
+          {liveStores.map(renderStoreCard)}
+        </div>
+      )}
+
+      {demoStores.length > 0 && (
+        <Collapsible defaultOpen={false}>
+          <Card className="border-dashed bg-muted/30">
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="w-full text-start"
+                data-testid="button-toggle-demo-stores"
+              >
+                <CardContent className="flex items-center justify-between gap-3 p-5">
                   <div className="flex items-center gap-3">
-                    {(() => {
-                      const meta = storePosMeta(store.posSystem);
-                      const Icon = meta.Icon;
-                      return (
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: meta.color + "20" }}
-                    >
-                      <Icon className="h-5 w-5" style={{ color: meta.color }} />
-                    </div>
-                      );
-                    })()}
+                    <FlaskConical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
-                      <div className="flex items-center gap-1.5">
-                        <h3
-                          className="font-semibold text-sm"
-                          data-testid={`text-store-name-${store.id}`}
-                        >
-                          {store.name}
-                        </h3>
-                        <span
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
-                          style={{
-                            backgroundColor: storePosMeta(store.posSystem).color + "15",
-                            color: storePosMeta(store.posSystem).color,
-                          }}
-                        >
-                          {posSystemLabel(store.posSystem as PosSystem, false)}
-                        </span>
-                      </div>
-                      <p
-                        className="text-xs text-muted-foreground"
-                        data-testid={`text-store-owner-${store.id}`}
-                      >
-                        {store.ownerName}
+                      <p className="font-semibold text-sm">{t("admin.demoAccounts")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("admin.demoAccountsHint")}
                       </p>
                     </div>
                   </div>
-                  <Badge
-                    variant={store.isActive ? "default" : "secondary"}
-                    data-testid={`badge-store-status-${store.id}`}
-                  >
-                    {store.isActive ? t("common.active") : t("common.inactive")}
-                  </Badge>
-                </div>
-
-                <div className="space-y-1.5 mb-4">
-                  {store.phone && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      <span data-testid={`text-store-phone-${store.id}`}>
-                        {store.phone}
-                      </span>
-                    </div>
-                  )}
-                  {store.email && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      <span data-testid={`text-store-email-${store.id}`}>
-                        {store.email}
-                      </span>
-                    </div>
-                  )}
-                  {store.address && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      <span>{store.address}</span>
-                    </div>
-                  )}
-                  {(store as StoreWithUsername).storeUsername && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <User className="h-3 w-3" />
-                      <span data-testid={`text-store-username-${store.id}`}>
-                        {t("auth.username")}: <span className="font-medium text-foreground">{(store as StoreWithUsername).storeUsername}</span>
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={store.isActive ? "outline" : "default"}
-                    className="flex-1"
-                    size="sm"
-                    onClick={() =>
-                      toggleMutation.mutate({
-                        id: store.id,
-                        isActive: !store.isActive,
-                      })
-                    }
-                    disabled={toggleMutation.isPending}
-                    data-testid={`button-toggle-${store.id}`}
-                  >
-                    {store.isActive ? (
-                      <>
-                        <PowerOff className="h-3 w-3 me-2" />
-                        {t("common.inactive")}
-                      </>
-                    ) : (
-                      <>
-                        <Power className="h-3 w-3 me-2" />
-                        {t("common.active")}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="flex-shrink-0"
-                    onClick={() => impersonateMutation.mutate(store.id)}
-                    disabled={impersonateMutation.isPending}
-                    data-testid={`button-impersonate-store-${store.id}`}
-                    title={t("admin.viewStore")}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="flex-shrink-0"
-                    onClick={() => openEditDialog(store)}
-                    data-testid={`button-edit-store-${store.id}`}
-                    title={t("admin.editStore")}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="flex-shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-200 dark:border-amber-800"
-                    onClick={() => { setResetPasswordStore(store); setNewPassword(""); }}
-                    data-testid={`button-reset-password-${store.id}`}
-                    title={t("admin.resetPassword")}
-                  >
-                    <KeyRound className="h-4 w-4" />
-                  </Button>
-                  {store.posSystem === "oil" && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="flex-shrink-0 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800"
-                      onClick={() => {
-                        const existing = store.features;
-                        const parsed = existing ? JSON.parse(existing) as string[] : OIL_FEATURES.map(f => f.key);
-                        setSelectedFeatures(parsed);
-                        setPermissionsStore(store);
-                      }}
-                      data-testid={`button-permissions-${store.id}`}
-                      title="Module Permissions"
-                    >
-                      <ShieldCheck className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {store.posSystem === "oil" && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="flex-shrink-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/30 border-orange-200 dark:border-orange-800"
-                      onClick={() => setClearDataTarget(store)}
-                      data-testid={`button-clear-data-${store.id}`}
-                      title="Clear All Store Data"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="text-destructive flex-shrink-0"
-                    onClick={() => setDeleteTarget(store)}
-                    data-testid={`button-delete-store-${store.id}`}
-                    title={t("common.delete")}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{demoStores.length}</Badge>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+                  </div>
+                </CardContent>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {demoStores.map(renderStoreCard)}
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       )}
 
       <Dialog open={!!editStore} onOpenChange={(v) => !v && setEditStore(null)}>

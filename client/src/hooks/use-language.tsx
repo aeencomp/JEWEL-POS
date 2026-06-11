@@ -85,6 +85,8 @@ type TranslationKeys = {
   "admin.subscriptions": string;
   "admin.renew": string;
   "admin.renewConfirm": string;
+  "admin.demoAccounts": string;
+  "admin.demoAccountsHint": string;
   "admin.daysLeft": string;
 
   "pos.terminal": string;
@@ -589,6 +591,8 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.subscriptions": "Subscriptions",
     "admin.renew": "Renew",
     "admin.renewConfirm": "Renew this subscription for one more month? The end date will be extended and the renewal request will be cleared.",
+    "admin.demoAccounts": "Demo Accounts",
+    "admin.demoAccountsHint": "Platform demo stores — kept separate so they don't mix with real customers.",
     "admin.daysLeft": "Days Left",
 
     "pos.terminal": "POS Terminal",
@@ -1088,6 +1092,8 @@ const translations: Record<Language, TranslationKeys> = {
     "admin.subscriptions": "الاشتراكات",
     "admin.renew": "تجديد",
     "admin.renewConfirm": "هل تريد تجديد هذا الاشتراك لمدة شهر إضافي؟ سيتم تمديد تاريخ الانتهاء وإزالة طلب التجديد.",
+    "admin.demoAccounts": "حسابات تجريبية",
+    "admin.demoAccountsHint": "متاجر العرض التجريبي — منفصلة حتى لا تختلط مع العملاء الحقيقيين.",
     "admin.daysLeft": "أيام متبقية",
 
     "pos.terminal": "نقطة البيع",

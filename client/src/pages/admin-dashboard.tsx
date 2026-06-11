@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Store as StoreIcon, Users, DollarSign, AlertTriangle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 import type { Store, Subscription } from "@shared/schema";
+import { isDemoStore } from "@/lib/demo-stores";
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
@@ -20,15 +21,21 @@ export default function AdminDashboard() {
 
   const isLoading = loadingStores || loadingSubs;
 
-  const totalStores = stores?.length || 0;
-  const activeStores = stores?.filter((s) => s.isActive).length || 0;
+  const realStores = stores?.filter((s) => !isDemoStore(s)) ?? [];
+  const isRealSubscription = (sub: Subscription) => {
+    const store = stores?.find((s) => s.id === sub.storeId);
+    return !store || !isDemoStore(store);
+  };
+
+  const totalStores = realStores.length;
+  const activeStores = realStores.filter((s) => s.isActive).length;
   const monthlyRevenue =
     subscriptions
-      ?.filter((s) => s.status === "active")
+      ?.filter((s) => s.status === "active" && isRealSubscription(s))
       .reduce((sum, s) => sum + parseFloat(s.pricePerMonth), 0) || 0;
   const expiringSoon =
     subscriptions?.filter((s) => {
-      if (!s.endDate) return false;
+      if (!s.endDate || !isRealSubscription(s)) return false;
       const daysLeft = Math.ceil(
         (new Date(s.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
@@ -118,7 +125,7 @@ export default function AdminDashboard() {
           <Badge variant="secondary">{totalStores}</Badge>
         </CardHeader>
         <CardContent>
-          {stores?.length === 0 ? (
+          {realStores.length === 0 ? (
             <div className="text-center py-8">
               <StoreIcon className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
               <p className="text-sm text-muted-foreground">{t("common.noData")}</p>
@@ -134,7 +141,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stores?.slice(0, 10).map((store) => (
+                  {realStores.slice(0, 10).map((store) => (
                     <TableRow key={store.id} data-testid={`row-store-${store.id}`}>
                       <TableCell className="font-medium" data-testid={`text-store-name-${store.id}`}>
                         {store.name}

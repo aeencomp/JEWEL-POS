@@ -26,9 +26,15 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
-import { CreditCard, RefreshCcw, Loader2, Check, Pencil, Bell } from "lucide-react";
+import { CreditCard, RefreshCcw, Loader2, Check, Pencil, Bell, ChevronDown, FlaskConical } from "lucide-react";
 import type { Store, Subscription } from "@shared/schema";
 import { useQueryParam } from "@/hooks/use-query-param";
+import { isDemoStore } from "@/lib/demo-stores";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export default function AdminSubscriptions() {
   const { toast } = useToast();
@@ -61,6 +67,17 @@ export default function AdminSubscriptions() {
       return daysLeft <= 7 && daysLeft > 0;
     });
   }, [subscriptions, filter]);
+
+  const { liveSubscriptions, demoSubscriptions } = useMemo(() => {
+    const live: Subscription[] = [];
+    const demo: Subscription[] = [];
+    for (const sub of displayedSubscriptions) {
+      const store = stores?.find((s) => s.id === sub.storeId);
+      if (store && isDemoStore(store)) demo.push(sub);
+      else live.push(sub);
+    }
+    return { liveSubscriptions: live, demoSubscriptions: demo };
+  }, [displayedSubscriptions, stores]);
 
   const priceMutation = useMutation({
     mutationFn: async ({ id, pricePerMonth }: { id: number; pricePerMonth: string }) => {
@@ -124,6 +141,139 @@ export default function AdminSubscriptions() {
     return days > 0 ? days : 0;
   };
 
+  const renderSubscriptionRows = (list: Subscription[]) =>
+    list.map((sub) => {
+      const daysLeft = getDaysRemaining(sub.endDate);
+      return (
+        <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
+          <TableCell className="font-medium" data-testid={`text-sub-store-${sub.id}`}>
+            {getStoreName(sub.storeId)}
+          </TableCell>
+          <TableCell>
+            <Badge variant="outline" data-testid={`badge-plan-${sub.id}`}>
+              {t("common.standard")}
+            </Badge>
+          </TableCell>
+          <TableCell data-testid={`text-sub-price-${sub.id}`}>
+            {editingPrice === sub.id ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  value={priceValue}
+                  onChange={(e) => setPriceValue(e.target.value)}
+                  className="w-28"
+                  data-testid={`input-price-${sub.id}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && priceValue) {
+                      priceMutation.mutate({ id: sub.id, pricePerMonth: priceValue });
+                    }
+                    if (e.key === "Escape") setEditingPrice(null);
+                  }}
+                  autoFocus
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    if (priceValue) priceMutation.mutate({ id: sub.id, pricePerMonth: priceValue });
+                  }}
+                  disabled={priceMutation.isPending || !priceValue}
+                  data-testid={`button-save-price-${sub.id}`}
+                >
+                  {priceMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <button
+                className="flex items-center gap-1.5 hover:underline cursor-pointer text-start group"
+                onClick={() => {
+                  setEditingPrice(sub.id);
+                  setPriceValue(parseInt(sub.pricePerMonth).toString());
+                }}
+                data-testid={`button-edit-price-${sub.id}`}
+              >
+                {parseInt(sub.pricePerMonth).toLocaleString()} {t("common.currency")}
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </button>
+            )}
+          </TableCell>
+          <TableCell>
+            <Badge
+              variant={sub.status === "active" ? "default" : "secondary"}
+              data-testid={`badge-sub-status-${sub.id}`}
+            >
+              {sub.status === "active" ? t("common.active") : t("common.expired")}
+            </Badge>
+          </TableCell>
+          <TableCell className="text-sm text-muted-foreground" data-testid={`text-start-date-${sub.id}`}>
+            {formatDate(sub.startDate)}
+          </TableCell>
+          <TableCell className="text-sm text-muted-foreground" data-testid={`text-end-date-${sub.id}`}>
+            {formatDate(sub.endDate)}
+          </TableCell>
+          <TableCell data-testid={`text-days-left-${sub.id}`}>{daysLeft}</TableCell>
+          <TableCell data-testid={`text-renewal-req-${sub.id}`}>
+            {(sub as any).renewalRequestedAt ? (
+              <div className="space-y-0.5">
+                <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50 dark:bg-amber-950/30 gap-1 text-[11px]">
+                  <Bell className="h-3 w-3" />
+                  {language === "ar" ? "طلب مُرسَل" : "Requested"}
+                </Badge>
+                <p className="text-[10px] text-muted-foreground">
+                  {formatDate((sub as any).renewalRequestedAt)}
+                </p>
+              </div>
+            ) : (
+              <span className="text-muted-foreground text-xs">—</span>
+            )}
+          </TableCell>
+          <TableCell className="text-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRenewTarget({ id: sub.id, storeName: getStoreName(sub.storeId) })}
+              disabled={renewMutation.isPending}
+              data-testid={`button-renew-${sub.id}`}
+            >
+              {renewMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <>
+                  <RefreshCcw className="h-3 w-3 me-1" />
+                  {t("admin.renew")}
+                </>
+              )}
+            </Button>
+          </TableCell>
+        </TableRow>
+      );
+    });
+
+  const subscriptionTableHeader = (
+    <TableHeader>
+      <TableRow>
+        <TableHead>{t("admin.storeName")}</TableHead>
+        <TableHead>{t("admin.plan")}</TableHead>
+        <TableHead>{t("admin.revenue")}</TableHead>
+        <TableHead>{t("admin.status")}</TableHead>
+        <TableHead>Start</TableHead>
+        <TableHead>End</TableHead>
+        <TableHead>{t("admin.daysLeft")}</TableHead>
+        <TableHead>
+          <div className="flex items-center gap-1">
+            <Bell className="h-3.5 w-3.5" />
+            {language === "ar" ? "طلب التجديد" : "Renewal Request"}
+          </div>
+        </TableHead>
+        <TableHead className="text-end">{t("admin.actions")}</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -150,10 +300,10 @@ export default function AdminSubscriptions() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
           <CardTitle className="text-base">{t("admin.subscriptions")}</CardTitle>
-          <Badge variant="secondary">{displayedSubscriptions.length}</Badge>
+          <Badge variant="secondary">{liveSubscriptions.length}</Badge>
         </CardHeader>
         <CardContent>
-          {displayedSubscriptions.length === 0 ? (
+          {liveSubscriptions.length === 0 ? (
             <div className="text-center py-12">
               <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
               <p className="text-lg font-medium text-muted-foreground">
@@ -163,157 +313,53 @@ export default function AdminSubscriptions() {
           ) : (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.storeName")}</TableHead>
-                    <TableHead>{t("admin.plan")}</TableHead>
-                    <TableHead>{t("admin.revenue")}</TableHead>
-                    <TableHead>{t("admin.status")}</TableHead>
-                    <TableHead>Start</TableHead>
-                    <TableHead>End</TableHead>
-                    <TableHead>{t("admin.daysLeft")}</TableHead>
-                    <TableHead>
-                      <div className="flex items-center gap-1">
-                        <Bell className="h-3.5 w-3.5" />
-                        {language === "ar" ? "طلب التجديد" : "Renewal Request"}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-end">{t("admin.actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayedSubscriptions.map((sub) => {
-                    const daysLeft = getDaysRemaining(sub.endDate);
-                    return (
-                      <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
-                        <TableCell
-                          className="font-medium"
-                          data-testid={`text-sub-store-${sub.id}`}
-                        >
-                          {getStoreName(sub.storeId)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" data-testid={`badge-plan-${sub.id}`}>
-                            {t("common.standard")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell data-testid={`text-sub-price-${sub.id}`}>
-                          {editingPrice === sub.id ? (
-                            <div className="flex items-center gap-1">
-                              <Input
-                                type="number"
-                                value={priceValue}
-                                onChange={(e) => setPriceValue(e.target.value)}
-                                className="w-28"
-                                data-testid={`input-price-${sub.id}`}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && priceValue) {
-                                    priceMutation.mutate({ id: sub.id, pricePerMonth: priceValue });
-                                  }
-                                  if (e.key === "Escape") setEditingPrice(null);
-                                }}
-                                autoFocus
-                              />
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (priceValue) priceMutation.mutate({ id: sub.id, pricePerMonth: priceValue });
-                                }}
-                                disabled={priceMutation.isPending || !priceValue}
-                                data-testid={`button-save-price-${sub.id}`}
-                              >
-                                {priceMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Check className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          ) : (
-                            <button
-                              className="flex items-center gap-1.5 hover:underline cursor-pointer text-start group"
-                              onClick={() => {
-                                setEditingPrice(sub.id);
-                                setPriceValue(parseInt(sub.pricePerMonth).toString());
-                              }}
-                              data-testid={`button-edit-price-${sub.id}`}
-                            >
-                              {parseInt(sub.pricePerMonth).toLocaleString()}{" "}
-                              {t("common.currency")}
-                              <Pencil className="h-3 w-3 text-muted-foreground" />
-                            </button>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={sub.status === "active" ? "default" : "secondary"}
-                            data-testid={`badge-sub-status-${sub.id}`}
-                          >
-                            {sub.status === "active"
-                              ? t("common.active")
-                              : t("common.expired")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell
-                          className="text-sm text-muted-foreground"
-                          data-testid={`text-start-date-${sub.id}`}
-                        >
-                          {formatDate(sub.startDate)}
-                        </TableCell>
-                        <TableCell
-                          className="text-sm text-muted-foreground"
-                          data-testid={`text-end-date-${sub.id}`}
-                        >
-                          {formatDate(sub.endDate)}
-                        </TableCell>
-                        <TableCell data-testid={`text-days-left-${sub.id}`}>
-                          {daysLeft}
-                        </TableCell>
-                        <TableCell data-testid={`text-renewal-req-${sub.id}`}>
-                          {(sub as any).renewalRequestedAt ? (
-                            <div className="space-y-0.5">
-                              <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50 dark:bg-amber-950/30 gap-1 text-[11px]">
-                                <Bell className="h-3 w-3" />
-                                {language === "ar" ? "طلب مُرسَل" : "Requested"}
-                              </Badge>
-                              <p className="text-[10px] text-muted-foreground">
-                                {formatDate((sub as any).renewalRequestedAt)}
-                              </p>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              setRenewTarget({ id: sub.id, storeName: getStoreName(sub.storeId) })
-                            }
-                            disabled={renewMutation.isPending}
-                            data-testid={`button-renew-${sub.id}`}
-                          >
-                            {renewMutation.isPending ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <>
-                                <RefreshCcw className="h-3 w-3 me-1" />
-                                {t("admin.renew")}
-                              </>
-                            )}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
+                {subscriptionTableHeader}
+                <TableBody>{renderSubscriptionRows(liveSubscriptions)}</TableBody>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {demoSubscriptions.length > 0 && (
+        <Collapsible defaultOpen={false}>
+          <Card className="border-dashed bg-muted/30">
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="w-full text-start"
+                data-testid="button-toggle-demo-subscriptions"
+              >
+                <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <CardTitle className="text-base">{t("admin.demoAccounts")}</CardTitle>
+                      <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                        {t("admin.demoAccountsHint")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{demoSubscriptions.length}</Badge>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
+                  </div>
+                </CardHeader>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    {subscriptionTableHeader}
+                    <TableBody>{renderSubscriptionRows(demoSubscriptions)}</TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
 
       <AlertDialog open={!!renewTarget} onOpenChange={(open) => !open && setRenewTarget(null)}>
         <AlertDialogContent>
