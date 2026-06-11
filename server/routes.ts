@@ -573,7 +573,7 @@ export async function registerRoutes(
 
   app.post("/api/stores", requireAdmin, async (req, res) => {
     try {
-      const { username, password, plan, ...storeData } = req.body;
+      const { username, password, ...storeData } = req.body;
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -605,19 +605,15 @@ export async function registerRoutes(
                 : "#d4a574",
       });
 
-      const planPrices: Record<string, string> = {
-        basic: "35000",
-        standard: "75000",
-        premium: "125000",
-      };
+      const standardPrice = String(await getStandardMonthlyPrice());
 
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + 30);
 
       await storage.createSubscription({
         storeId: store.id,
-        plan: plan || "basic",
-        pricePerMonth: planPrices[plan || "basic"],
+        plan: "standard",
+        pricePerMonth: standardPrice,
         status: "active",
         startDate: new Date(),
         endDate,
@@ -738,6 +734,23 @@ export async function registerRoutes(
 
   const DEFAULT_PRICING = { monthly: 45000 };
 
+  async function getStandardMonthlyPrice(): Promise<number> {
+    try {
+      const raw = await storage.getSetting("pricing");
+      if (!raw) return DEFAULT_PRICING.monthly;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.monthly === "number") return parsed.monthly;
+      const legacy =
+        parsed.jewel?.standard ??
+        parsed.fashion?.standard ??
+        parsed.oil?.standard ??
+        DEFAULT_PRICING.monthly;
+      return legacy;
+    } catch {
+      return DEFAULT_PRICING.monthly;
+    }
+  }
+
   app.get("/api/pricing", async (_req, res) => {
     try {
       const raw = await storage.getSetting("pricing");
@@ -791,11 +804,15 @@ export async function registerRoutes(
 
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
+    const standardPrice = String(await getStandardMonthlyPrice());
 
     const updated = await storage.updateSubscription(id, {
       status: "active",
+      plan: "standard",
+      pricePerMonth: standardPrice,
       endDate,
       lastPaymentDate: new Date(),
+      renewalRequestedAt: null,
     });
     res.json(updated);
   });

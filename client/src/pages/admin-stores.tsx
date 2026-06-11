@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { posSystemLabel, type PosSystem } from "@/lib/pos-system";
+import { useQueryParam } from "@/hooks/use-query-param";
 
 const POS_TYPE_OPTIONS = [
   { value: "jewel" as const, label: "JewelPOS", sub: "Jewelry store", Icon: Gem, color: "#d4a574" },
@@ -110,7 +112,6 @@ const createStoreSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   email: z.string().email("Invalid email").or(z.literal("")).optional(),
   address: z.string().optional(),
-  plan: z.enum(["basic", "standard", "premium"]),
   posSystem: z.enum(["jewel", "oil", "fashion", "restaurant"]),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -143,9 +144,18 @@ export default function AdminStores() {
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [clearDataTarget, setClearDataTarget] = useState<Store | null>(null);
 
+  const statusFilter = useQueryParam("status");
+
   const { data: stores, isLoading } = useQuery<StoreWithUsername[]>({
     queryKey: ["/api/stores"],
   });
+
+  const displayedStores = useMemo(() => {
+    if (!stores) return [];
+    if (statusFilter === "active") return stores.filter((s) => s.isActive);
+    if (statusFilter === "inactive") return stores.filter((s) => !s.isActive);
+    return stores;
+  }, [stores, statusFilter]);
 
   const form = useForm<CreateStoreValues>({
     resolver: zodResolver(createStoreSchema),
@@ -155,7 +165,6 @@ export default function AdminStores() {
       phone: "",
       email: "",
       address: "",
-      plan: "basic",
       posSystem: "jewel",
       username: "",
       password: "",
@@ -422,37 +431,6 @@ export default function AdminStores() {
                 />
                 <FormField
                   control={form.control}
-                  name="plan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("admin.selectPlan")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-plan">
-                            <SelectValue placeholder={t("admin.selectPlan")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="basic">
-                            {t("common.basic")} - 35,000 {t("common.currency")}
-                          </SelectItem>
-                          <SelectItem value="standard">
-                            {t("common.standard")} - 75,000 {t("common.currency")}
-                          </SelectItem>
-                          <SelectItem value="premium">
-                            {t("common.premium")} - 125,000 {t("common.currency")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="posSystem"
                   render={({ field }) => (
                     <FormItem>
@@ -549,7 +527,20 @@ export default function AdminStores() {
         </Dialog>
       </div>
 
-      {stores?.length === 0 ? (
+      {statusFilter && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">
+            {statusFilter === "active"
+              ? (t("admin.activeStores"))
+              : (t("common.inactive"))}
+          </Badge>
+          <Link href="/restaurants" className="text-sm text-primary hover:underline">
+            {t("inventory.showAll")}
+          </Link>
+        </div>
+      )}
+
+      {displayedStores.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <StoreIcon className="h-12 w-12 text-muted-foreground/40 mb-4" />
@@ -560,7 +551,7 @@ export default function AdminStores() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stores?.map((store) => (
+          {displayedStores.map((store) => (
             <Card
               key={store.id}
               className="hover-elevate"

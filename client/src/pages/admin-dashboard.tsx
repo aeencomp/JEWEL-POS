@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/30",
       testId: "stat-total-stores",
+      href: "/restaurants",
     },
     {
       title: t("admin.activeStores"),
@@ -58,6 +60,7 @@ export default function AdminDashboard() {
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
       testId: "stat-active-stores",
+      href: "/restaurants?status=active",
     },
     {
       title: t("admin.revenue"),
@@ -66,6 +69,7 @@ export default function AdminDashboard() {
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/30",
       testId: "stat-revenue",
+      href: "/subscriptions",
     },
     {
       title: t("admin.expiringSoon"),
@@ -74,6 +78,7 @@ export default function AdminDashboard() {
       color: "text-red-600 dark:text-red-400",
       bg: "bg-red-50 dark:bg-red-950/30",
       testId: "stat-expiring-soon",
+      href: "/subscriptions?filter=expiring",
     },
   ];
 
@@ -85,23 +90,25 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <Card key={stat.testId}>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <p className="text-sm text-muted-foreground font-medium">
-                  {stat.title}
-                </p>
-                <div
-                  className={`w-8 h-8 rounded-md ${stat.bg} flex items-center justify-center flex-shrink-0`}
-                >
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+          <Link key={stat.testId} href={stat.href} data-testid={`link-${stat.testId}`}>
+            <Card className="h-full cursor-pointer transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {stat.title}
+                  </p>
+                  <div
+                    className={`w-8 h-8 rounded-md ${stat.bg} flex items-center justify-center flex-shrink-0`}
+                  >
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  </div>
                 </div>
-              </div>
-              <p className="text-2xl font-bold" data-testid={`text-${stat.testId}`}>
-                {stat.value}
-              </p>
-            </CardContent>
-          </Card>
+                <p className="text-2xl font-bold" data-testid={`text-${stat.testId}`}>
+                  {stat.value}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 

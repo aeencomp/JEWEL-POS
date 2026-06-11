@@ -1,16 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
 import { CreditCard, RefreshCcw, Loader2, Check, Pencil, Bell } from "lucide-react";
 import type { Store, Subscription } from "@shared/schema";
+import { useQueryParam } from "@/hooks/use-query-param";
 
 export default function AdminSubscriptions() {
   const { toast } = useToast();
@@ -35,6 +30,8 @@ export default function AdminSubscriptions() {
     queryKey: ["/api/stores"],
   });
 
+  const filter = useQueryParam("filter");
+
   const { data: subscriptions, isLoading: loadingSubs } = useQuery<Subscription[]>({
     queryKey: ["/api/subscriptions"],
     staleTime: 0,
@@ -42,26 +39,17 @@ export default function AdminSubscriptions() {
     refetchInterval: 60000,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, plan }: { id: number; plan: string }) => {
-      const res = await apiRequest("PATCH", `/api/subscriptions/${id}`, { plan });
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      toast({ title: language === "ar" ? "تم تحديث الخطة بنجاح" : "Plan updated successfully" });
-    },
-    onError: (error: Error) => {
-      const is403 = error.message.startsWith("403");
-      toast({
-        title: language === "ar" ? "فشل التحديث" : "Update failed",
-        description: is403
-          ? (language === "ar" ? "انتهت الجلسة. يرجى تسجيل الخروج وإعادة الدخول." : "Session expired. Please log out and log in again.")
-          : error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const displayedSubscriptions = useMemo(() => {
+    if (!subscriptions) return [];
+    if (filter !== "expiring") return subscriptions;
+    return subscriptions.filter((s) => {
+      if (!s.endDate || s.status !== "active") return false;
+      const daysLeft = Math.ceil(
+        (new Date(s.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      );
+      return daysLeft <= 7 && daysLeft > 0;
+    });
+  }, [subscriptions, filter]);
 
   const priceMutation = useMutation({
     mutationFn: async ({ id, pricePerMonth }: { id: number; pricePerMonth: string }) => {
@@ -124,13 +112,6 @@ export default function AdminSubscriptions() {
     return days > 0 ? days : 0;
   };
 
-  const planLabels: Record<string, string> = {
-    basic: t("common.basic"),
-    standard: t("common.standard"),
-    premium: t("common.premium"),
-    custom: language === "ar" ? "مخصص" : "Custom",
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -145,13 +126,22 @@ export default function AdminSubscriptions() {
         {t("admin.subscriptions")}
       </h1>
 
+      {filter === "expiring" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="destructive">{t("admin.expiringSoon")}</Badge>
+          <Link href="/subscriptions" className="text-sm text-primary hover:underline">
+            {t("inventory.showAll")}
+          </Link>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
           <CardTitle className="text-base">{t("admin.subscriptions")}</CardTitle>
-          <Badge variant="secondary">{subscriptions?.length || 0}</Badge>
+          <Badge variant="secondary">{displayedSubscriptions.length}</Badge>
         </CardHeader>
         <CardContent>
-          {subscriptions?.length === 0 ? (
+          {displayedSubscriptions.length === 0 ? (
             <div className="text-center py-12">
               <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
               <p className="text-lg font-medium text-muted-foreground">
@@ -180,7 +170,7 @@ export default function AdminSubscriptions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {subscriptions?.map((sub) => {
+                  {displayedSubscriptions.map((sub) => {
                     const daysLeft = getDaysRemaining(sub.endDate);
                     return (
                       <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
@@ -192,7 +182,7 @@ export default function AdminSubscriptions() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" data-testid={`badge-plan-${sub.id}`}>
-                            {planLabels[sub.plan] || sub.plan}
+                            {t("common.standard")}
                           </Badge>
                         </TableCell>
                         <TableCell data-testid={`text-sub-price-${sub.id}`}>
@@ -283,52 +273,23 @@ export default function AdminSubscriptions() {
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
-                            <Select
-                              value={sub.plan}
-                              onValueChange={(plan) =>
-                                updateMutation.mutate({ id: sub.id, plan })
-                              }
-                            >
-                              <SelectTrigger
-                                className="w-28"
-                                data-testid={`select-plan-${sub.id}`}
-                              >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="basic">
-                                  {t("common.basic")}
-                                </SelectItem>
-                                <SelectItem value="standard">
-                                  {t("common.standard")}
-                                </SelectItem>
-                                <SelectItem value="premium">
-                                  {t("common.premium")}
-                                </SelectItem>
-                                <SelectItem value="custom">
-                                  {language === "ar" ? "مخصص" : "Custom"}
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => renewMutation.mutate(sub.id)}
-                              disabled={renewMutation.isPending}
-                              data-testid={`button-renew-${sub.id}`}
-                            >
-                              {renewMutation.isPending ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <>
-                                  <RefreshCcw className="h-3 w-3 me-1" />
-                                  {t("admin.renew")}
-                                </>
-                              )}
-                            </Button>
-                          </div>
+                        <TableCell className="text-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => renewMutation.mutate(sub.id)}
+                            disabled={renewMutation.isPending}
+                            data-testid={`button-renew-${sub.id}`}
+                          >
+                            {renewMutation.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <>
+                                <RefreshCcw className="h-3 w-3 me-1" />
+                                {t("admin.renew")}
+                              </>
+                            )}
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

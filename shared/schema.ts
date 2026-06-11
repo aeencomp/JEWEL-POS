@@ -59,7 +59,7 @@ export const storesRelations = relations(stores, ({ many, one }) => ({
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   storeId: integer("store_id").notNull().references(() => stores.id),
-  plan: text("plan", { enum: ["basic", "standard", "premium", "custom"] }).notNull().default("basic"),
+  plan: text("plan", { enum: ["basic", "standard", "premium", "custom"] }).notNull().default("standard"),
   pricePerMonth: decimal("price_per_month", { precision: 10, scale: 2 }).notNull(),
   status: text("status", { enum: ["active", "expired", "cancelled", "trial"] }).notNull().default("trial"),
   startDate: timestamp("start_date").notNull().defaultNow(),
