@@ -176,18 +176,76 @@ export function registerPharmacyRoutes(app: Express, helpers: AuthHelpers) {
 
     if (!existing) return res.status(404).json({ message: "Prescription not found" });
 
-    const { status, notes } = req.body;
-    const updates: Partial<typeof existing> = {};
-    if (status === "pending" || status === "dispensed" || status === "cancelled") updates.status = status;
-    if (notes !== undefined) updates.notes = notes || null;
+    try {
+      const {
+        patientName,
+        patientPhone,
+        doctorName,
+        doctorLicense,
+        notes,
+        status,
+        items,
+      } = req.body;
 
-    const [updated] = await db
-      .update(pharmacyPrescriptions)
-      .set(updates)
-      .where(eq(pharmacyPrescriptions.id, id))
-      .returning();
+      const updates: Partial<typeof existing> = {};
+      if (patientName !== undefined) updates.patientName = String(patientName);
+      if (patientPhone !== undefined) updates.patientPhone = patientPhone || null;
+      if (doctorName !== undefined) updates.doctorName = doctorName || null;
+      if (doctorLicense !== undefined) updates.doctorLicense = doctorLicense || null;
+      if (notes !== undefined) updates.notes = notes || null;
+      if (status === "pending" || status === "dispensed" || status === "cancelled") updates.status = status;
 
-    res.json(updated);
+      if (Array.isArray(items) && items.length > 0) {
+        let totalAmount = 0;
+        for (const item of items) {
+          totalAmount += parseFloat(String(item.unitPrice ?? 0)) * (parseInt(String(item.quantity ?? 1), 10) || 1);
+        }
+        updates.totalAmount = String(totalAmount);
+
+        await db.delete(pharmacyPrescriptionItems).where(eq(pharmacyPrescriptionItems.prescriptionId, id));
+
+        const itemRows: InsertPharmacyPrescriptionItem[] = items.map((item: Record<string, unknown>) => ({
+          prescriptionId: id,
+          inventoryItemId: item.inventoryItemId ? Number(item.inventoryItemId) : null,
+          drugName: String(item.drugName || item.name || "Drug"),
+          quantity: Math.max(1, parseInt(String(item.quantity ?? 1), 10) || 1),
+          dosageInstructions: item.dosageInstructions ? String(item.dosageInstructions) : null,
+          unitPrice: String(item.unitPrice ?? 0),
+        }));
+        await db.insert(pharmacyPrescriptionItems).values(itemRows);
+      }
+
+      const [updated] = await db
+        .update(pharmacyPrescriptions)
+        .set(updates)
+        .where(eq(pharmacyPrescriptions.id, id))
+        .returning();
+
+      const updatedItems = await db
+        .select()
+        .from(pharmacyPrescriptionItems)
+        .where(eq(pharmacyPrescriptionItems.prescriptionId, id));
+
+      res.json({ ...updated, items: updatedItems });
+    } catch (error) {
+      sendValidationError(res, error);
+    }
+  });
+
+  app.delete("/api/pharmacy/prescriptions/:id", requireAuth, withPharmacy, async (req, res) => {
+    const storeId = getEffectiveStoreId(req)!;
+    const id = parseInt(req.params.id);
+    const [existing] = await db
+      .select()
+      .from(pharmacyPrescriptions)
+      .where(and(eq(pharmacyPrescriptions.id, id), eq(pharmacyPrescriptions.storeId, storeId)))
+      .limit(1);
+
+    if (!existing) return res.status(404).json({ message: "Prescription not found" });
+
+    await db.delete(pharmacyPrescriptionItems).where(eq(pharmacyPrescriptionItems.prescriptionId, id));
+    await db.delete(pharmacyPrescriptions).where(eq(pharmacyPrescriptions.id, id));
+    res.sendStatus(204);
   });
 
   app.get("/api/pharmacy/reports", requireAuth, withPharmacy, async (req, res) => {
