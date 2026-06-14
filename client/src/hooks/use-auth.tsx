@@ -40,7 +40,7 @@ type AuthContextType = {
 
 type LoginData = Pick<InsertUser, "username" | "password"> & {
   portal?: string;
-  posSystem?: "jewel" | "oil" | "fashion" | "restaurant";
+  posSystem?: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);

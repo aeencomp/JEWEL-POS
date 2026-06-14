@@ -40,7 +40,7 @@ export const stores = pgTable("stores", {
   logoUrl: text("logo_url"),
   receiptHeader: text("receipt_header"),
   receiptFooter: text("receipt_footer"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy"] }).notNull().default("jewel"),
   features: text("features"),
 });
 
@@ -128,6 +128,13 @@ export const inventoryItems = pgTable("inventory_items", {
   color: text("color"),
   brand: text("brand"),
   styleCode: text("style_code"),
+  genericName: text("generic_name"),
+  activeIngredient: text("active_ingredient"),
+  dosageForm: text("dosage_form"),
+  strength: text("strength"),
+  expiryDate: timestamp("expiry_date"),
+  batchNumber: text("batch_number"),
+  requiresPrescription: boolean("requires_prescription").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -366,7 +373,7 @@ export const signupRequests = pgTable("signup_requests", {
   businessName: text("business_name").notNull(),
   phone: text("phone").notNull(),
   email: text("email"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy"] }).notNull().default("jewel"),
   notes: text("notes"),
   status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -849,6 +856,61 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
 });
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+
+// ── Pharmacy ──────────────────────────────────────────────────
+export const pharmacyPrescriptions = pgTable("pharmacy_prescriptions", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  prescriptionNumber: text("prescription_number").notNull(),
+  patientName: text("patient_name").notNull(),
+  patientPhone: text("patient_phone"),
+  doctorName: text("doctor_name"),
+  doctorLicense: text("doctor_license"),
+  status: text("status", { enum: ["pending", "dispensed", "cancelled"] }).notNull().default("pending"),
+  notes: text("notes"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const pharmacyPrescriptionItems = pgTable("pharmacy_prescription_items", {
+  id: serial("id").primaryKey(),
+  prescriptionId: integer("prescription_id").notNull().references(() => pharmacyPrescriptions.id),
+  inventoryItemId: integer("inventory_item_id").references(() => inventoryItems.id),
+  drugName: text("drug_name").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  dosageInstructions: text("dosage_instructions"),
+  unitPrice: decimal("unit_price", { precision: 12, scale: 2 }).notNull().default("0"),
+});
+
+export const pharmacyPrescriptionsRelations = relations(pharmacyPrescriptions, ({ one, many }) => ({
+  store: one(stores, { fields: [pharmacyPrescriptions.storeId], references: [stores.id] }),
+  items: many(pharmacyPrescriptionItems),
+}));
+
+export const pharmacyPrescriptionItemsRelations = relations(pharmacyPrescriptionItems, ({ one }) => ({
+  prescription: one(pharmacyPrescriptions, {
+    fields: [pharmacyPrescriptionItems.prescriptionId],
+    references: [pharmacyPrescriptions.id],
+  }),
+  inventoryItem: one(inventoryItems, {
+    fields: [pharmacyPrescriptionItems.inventoryItemId],
+    references: [inventoryItems.id],
+  }),
+}));
+
+export const insertPharmacyPrescriptionSchema = createInsertSchema(pharmacyPrescriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPharmacyPrescriptionItemSchema = createInsertSchema(pharmacyPrescriptionItems).omit({
+  id: true,
+});
+
+export type PharmacyPrescription = typeof pharmacyPrescriptions.$inferSelect;
+export type PharmacyPrescriptionItem = typeof pharmacyPrescriptionItems.$inferSelect;
+export type InsertPharmacyPrescription = z.infer<typeof insertPharmacyPrescriptionSchema>;
+export type InsertPharmacyPrescriptionItem = z.infer<typeof insertPharmacyPrescriptionItemSchema>;
 
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),

@@ -155,7 +155,8 @@ const products: Product[] = [
     descriptionAr: "إدارة الصيدليات مع الوصفات وصلاحية الدواء والتأمين وتنبيهات المخزون.",
     icon: Pill,
     gradient: "from-teal-500 to-cyan-500",
-    available: false,
+    available: true,
+    href: "/pharmacy-login",
     tags: ["Pharmacy", "Prescriptions", "Stock"],
     tagsAr: ["صيدلية", "وصفات", "مخزون"],
   },
@@ -173,7 +174,7 @@ type SignupForm = {
   businessName: string;
   phone: string;
   email: string;
-  posSystem: "jewel" | "oil" | "fashion" | "restaurant";
+  posSystem: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
   notes: string;
 };
 
@@ -182,7 +183,7 @@ type Pricing = { monthly: number };
 const DEFAULT_PRICING: Pricing = { monthly: 45000 };
 
 type PosPricingPlan = {
-  id: "jewel" | "fashion" | "oil" | "restaurant";
+  id: "jewel" | "fashion" | "oil" | "restaurant" | "pharmacy";
   name: string;
   nameAr: string;
   subtitle: string;
@@ -353,6 +354,46 @@ const POS_PRICING_PLANS: PosPricingPlan[] = [
       "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
     ],
   },
+  {
+    id: "pharmacy",
+    name: "PharmaPOS",
+    nameAr: "نقطة بيع الصيدلية",
+    subtitle: "Pharmacies & Drug Stores",
+    subtitleAr: "الصيدليات ومحلات الأدوية",
+    icon: Pill,
+    gradient: "from-teal-500 to-cyan-500",
+    accent: "text-teal-500",
+    features: [
+      "Pharmacy POS with barcode scanning",
+      "Drug inventory with batch & expiry tracking",
+      "Prescription registration & dispensing",
+      "Expiry alerts (expired & expiring soon)",
+      "Rx-only drug flagging",
+      "Customer management",
+      "Sales history & order tracking",
+      "Stock audit & inventory counts",
+      "Pharmacy reports & top sellers",
+      "Custom store branding (logo & colors)",
+      "Cloud backup & data export",
+      "Receipt printing (thermal + A4)",
+      "Bilingual interface (English / Arabic + RTL)",
+    ],
+    featuresAr: [
+      "نقطة بيع صيدلية مع مسح الباركود",
+      "مخزون أدوية مع تتبع الدفعات والصلاحية",
+      "تسجيل وصرف الوصفات الطبية",
+      "تنبيهات الصلاحية (منتهية وقريبة الانتهاء)",
+      "تمييز الأدوية التي تتطلب وصفة",
+      "إدارة العملاء",
+      "سجل المبيعات ومتابعة الطلبات",
+      "جرد المخزون والعد الدوري",
+      "تقارير الصيدلية وأكثر الأدوية مبيعاً",
+      "علامة تجارية مخصصة (شعار وألوان)",
+      "نسخ احتياطي سحابي وتصدير البيانات",
+      "طباعة الفواتير (حرارية + A4)",
+      "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
+    ],
+  },
 ];
 
 const PLATFORM_INCLUDES = {
@@ -421,6 +462,17 @@ const SIGNUP_POS_OPTIONS = [
     activeBg: "bg-orange-50 dark:bg-orange-950/30",
     hoverBorder: "hover:border-orange-300",
   },
+  {
+    id: "pharmacy" as const,
+    label: "PharmaPOS",
+    subEn: "Pharmacy",
+    subAr: "صيدلية",
+    icon: Pill,
+    gradient: "from-teal-500 to-cyan-500",
+    activeBorder: "border-teal-500",
+    activeBg: "bg-teal-50 dark:bg-teal-950/30",
+    hoverBorder: "hover:border-teal-300",
+  },
 ];
 
 export default function LandingPage() {
@@ -436,7 +488,7 @@ export default function LandingPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant">("jewel");
+  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant" | "pharmacy">("jewel");
   const [form, setForm] = useState<SignupForm>({
     name: "",
     businessName: "",

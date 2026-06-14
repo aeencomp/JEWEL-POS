@@ -202,6 +202,7 @@ export function setupAuth(app: Express) {
               fashion: "FashionPOS",
               oil: "FactoryPOS",
               restaurant: "RestoPOS",
+              pharmacy: "PharmaPOS",
             };
             return res.status(403).json({
               message: `This account is for ${portalNames[actualPos as DemoPosSystem] ?? actualPos}, not ${portalNames[requestedPos]}. Use the correct login page or set store type in admin.`,

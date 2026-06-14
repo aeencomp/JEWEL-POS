@@ -71,6 +71,14 @@ import IqOrderStore from "@/pages/iq-order/iq-order-store";
 import IqOrderTrack from "@/pages/iq-order/iq-order-track";
 import DriverLogin from "@/pages/driver/driver-login";
 import DriverApp from "@/pages/driver/driver-app";
+import PharmacyLogin from "@/pages/pharmacy/pharmacy-login";
+import PharmacyLayout from "@/pages/pharmacy/pharmacy-layout";
+import PharmacyDashboard from "@/pages/pharmacy/pharmacy-dashboard";
+import PharmacyPos from "@/pages/pharmacy/pharmacy-pos";
+import PharmacyInventory from "@/pages/pharmacy/pharmacy-inventory";
+import PharmacyPrescriptions from "@/pages/pharmacy/pharmacy-prescriptions";
+import PharmacyExpiry from "@/pages/pharmacy/pharmacy-expiry";
+import PharmacyReports from "@/pages/pharmacy/pharmacy-reports";
 import PrivacyPage from "@/pages/privacy";
 import { Loader2 } from "lucide-react";
 import { resolveUserPosSystem } from "@/lib/pos-system";
@@ -123,6 +131,25 @@ function FashionRouter() {
       <Route path="/fashion/debts" component={DebtsPage} />
       <Route path="/fashion/branding" component={StoreBranding} />
       <Route path="/fashion/backup" component={StoreBackup} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function PharmacyRouter() {
+  return (
+    <Switch>
+      <Route path="/pharmacy" component={PharmacyDashboard} />
+      <Route path="/pharmacy/pos" component={PharmacyPos} />
+      <Route path="/pharmacy/inventory" component={PharmacyInventory} />
+      <Route path="/pharmacy/prescriptions" component={PharmacyPrescriptions} />
+      <Route path="/pharmacy/expiry" component={PharmacyExpiry} />
+      <Route path="/pharmacy/customers" component={CustomersPage} />
+      <Route path="/pharmacy/orders" component={OrdersHistory} />
+      <Route path="/pharmacy/reports" component={PharmacyReports} />
+      <Route path="/pharmacy/stock-audit" component={StockAudit} />
+      <Route path="/pharmacy/branding" component={StoreBranding} />
+      <Route path="/pharmacy/backup" component={StoreBackup} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -247,10 +274,24 @@ function RestaurantStoreLayout() {
   );
 }
 
+function PharmacyStoreLayout() {
+  const { isImpersonating, impersonatingStoreName, stopImpersonateMutation } = useAuth();
+  return (
+    <PharmacyLayout
+      isImpersonating={isImpersonating}
+      impersonatingStoreName={impersonatingStoreName}
+      onStopImpersonate={() => stopImpersonateMutation.mutate()}
+    >
+      <PharmacyRouter />
+    </PharmacyLayout>
+  );
+}
+
 function storeHomePath(posSystem?: string): string {
   if (posSystem === "oil") return "/oil";
   if (posSystem === "fashion") return "/fashion";
   if (posSystem === "restaurant") return "/restaurant";
+  if (posSystem === "pharmacy") return "/pharmacy";
   return "/";
 }
 
@@ -293,6 +334,9 @@ function AppContent() {
     if (location === "/restaurant-login") {
       return <RestaurantLogin />;
     }
+    if (location === "/pharmacy-login") {
+      return <PharmacyLogin />;
+    }
     if (location === "/oil" || location.startsWith("/oil/")) {
       return <Redirect to="/oil-login" />;
     }
@@ -301,6 +345,9 @@ function AppContent() {
     }
     if (location === "/restaurant" || location.startsWith("/restaurant/")) {
       return <Redirect to="/restaurant-login" />;
+    }
+    if (location === "/pharmacy" || location.startsWith("/pharmacy/")) {
+      return <Redirect to="/pharmacy-login" />;
     }
     return <LandingPage />;
   }
@@ -316,6 +363,9 @@ function AppContent() {
   }
   if (location === "/restaurant-login") {
     return <Redirect to={posSystem === "restaurant" ? "/restaurant" : home} />;
+  }
+  if (location === "/pharmacy-login") {
+    return <Redirect to={posSystem === "pharmacy" ? "/pharmacy" : home} />;
   }
   if (location === "/driver-login") return <DriverLogin />;
   if (location === "/driver" || location.startsWith("/driver/")) return <DriverApp />;
@@ -353,7 +403,13 @@ function AppContent() {
       }
       return <RestaurantStoreLayout />;
     }
-    if (location.startsWith("/fashion") || location.startsWith("/oil") || location.startsWith("/restaurant")) {
+    if (posSystem === "pharmacy") {
+      if (!location.startsWith("/pharmacy")) {
+        return <Redirect to="/pharmacy" />;
+      }
+      return <PharmacyStoreLayout />;
+    }
+    if (location.startsWith("/fashion") || location.startsWith("/oil") || location.startsWith("/restaurant") || location.startsWith("/pharmacy")) {
       return <Redirect to="/" />;
     }
   }

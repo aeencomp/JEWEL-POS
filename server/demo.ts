@@ -7,13 +7,14 @@ import { eq } from "drizzle-orm";
 export const DEMO_USERNAME = "demo";
 export const DEMO_PASSWORD = "demo123";
 
-export type DemoPosSystem = "jewel" | "oil" | "fashion" | "restaurant";
+export type DemoPosSystem = "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
 
 const DEMO_STORE_NAMES: Record<DemoPosSystem, string> = {
   jewel: "IQ-POS Demo — Jewel",
   fashion: "IQ-POS Demo — Fashion",
   oil: "IQ-POS Demo — Factory",
   restaurant: "IQ-POS Demo — Restaurant",
+  pharmacy: "IQ-POS Demo — Pharmacy",
 };
 
 const DEMO_BRAND_COLORS: Record<DemoPosSystem, string> = {
@@ -21,6 +22,7 @@ const DEMO_BRAND_COLORS: Record<DemoPosSystem, string> = {
   fashion: "#db2777",
   oil: "#2563eb",
   restaurant: "#ea580c",
+  pharmacy: "#0d9488",
 };
 
 export function isDemoUser(user: { username?: string } | null | undefined): boolean {
@@ -28,7 +30,7 @@ export function isDemoUser(user: { username?: string } | null | undefined): bool
 }
 
 export function normalizeDemoPosSystem(value: unknown): DemoPosSystem {
-  if (value === "oil" || value === "fashion" || value === "restaurant") return value;
+  if (value === "oil" || value === "fashion" || value === "restaurant" || value === "pharmacy") return value;
   return "jewel";
 }
 
@@ -43,7 +45,7 @@ export async function resolveDemoStoreId(posSystem: DemoPosSystem): Promise<numb
 }
 
 export async function refreshDemoStoreIdCache() {
-  for (const ps of ["jewel", "fashion", "oil", "restaurant"] as DemoPosSystem[]) {
+  for (const ps of ["jewel", "fashion", "oil", "restaurant", "pharmacy"] as DemoPosSystem[]) {
     const id = await resolveDemoStoreId(ps);
     if (id) demoStoreIdBySystem[ps] = id;
   }
@@ -165,6 +167,103 @@ async function seedRestaurantDemo(storeId: number) {
   }
 }
 
+async function seedPharmacyDemo(storeId: number) {
+  const cats = await storage.getCategories(storeId);
+  if (cats.length > 0) return;
+
+  const categoryNames = ["Tablets", "Syrups", "Injections", "OTC", "Vitamins"];
+  const catIds: number[] = [];
+  for (let i = 0; i < categoryNames.length; i++) {
+    const cat = await storage.createCategory({ storeId, name: categoryNames[i], sortOrder: i });
+    catIds.push(cat.id);
+  }
+
+  const samples = [
+    {
+      sku: "PHM-PAR500",
+      name: "Paracetamol 500mg",
+      genericName: "Paracetamol",
+      activeIngredient: "Paracetamol",
+      dosageForm: "Tablet",
+      strength: "500mg",
+      batchNumber: "B2026-001",
+      categoryId: catIds[0],
+      costPrice: "500",
+      sellingPrice: "1000",
+      quantity: 200,
+      requiresPrescription: false,
+    },
+    {
+      sku: "PHM-AMOX500",
+      name: "Amoxicillin 500mg",
+      genericName: "Amoxicillin",
+      activeIngredient: "Amoxicillin",
+      dosageForm: "Capsule",
+      strength: "500mg",
+      batchNumber: "B2026-002",
+      categoryId: catIds[0],
+      costPrice: "3000",
+      sellingPrice: "5000",
+      quantity: 80,
+      requiresPrescription: true,
+    },
+    {
+      sku: "PHM-COUGH",
+      name: "Cough Syrup 120ml",
+      genericName: "Dextromethorphan",
+      activeIngredient: "Dextromethorphan",
+      dosageForm: "Syrup",
+      strength: "120ml",
+      batchNumber: "B2026-003",
+      categoryId: catIds[1],
+      costPrice: "4000",
+      sellingPrice: "7000",
+      quantity: 45,
+      requiresPrescription: false,
+    },
+    {
+      sku: "PHM-VITC",
+      name: "Vitamin C 1000mg",
+      genericName: "Ascorbic Acid",
+      activeIngredient: "Vitamin C",
+      dosageForm: "Tablet",
+      strength: "1000mg",
+      batchNumber: "B2026-004",
+      categoryId: catIds[4],
+      costPrice: "2000",
+      sellingPrice: "3500",
+      quantity: 120,
+      requiresPrescription: false,
+    },
+  ];
+
+  const expiry = new Date();
+  expiry.setMonth(expiry.getMonth() + 8);
+
+  for (const sample of samples) {
+    const barcode = `${storeId}${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    await storage.createInventoryItem({
+      storeId,
+      categoryId: sample.categoryId,
+      sku: sample.sku,
+      barcode,
+      name: sample.name,
+      genericName: sample.genericName,
+      activeIngredient: sample.activeIngredient,
+      dosageForm: sample.dosageForm,
+      strength: sample.strength,
+      batchNumber: sample.batchNumber,
+      expiryDate: expiry,
+      requiresPrescription: sample.requiresPrescription,
+      metalType: "other",
+      costPrice: sample.costPrice,
+      sellingPrice: sample.sellingPrice,
+      quantity: sample.quantity,
+      isAvailable: true,
+    });
+  }
+}
+
 async function ensureDemoStore(posSystem: DemoPosSystem) {
   const stores = await storage.getStores();
   let store = stores.find((s) => s.name === DEMO_STORE_NAMES[posSystem] && s.posSystem === posSystem);
@@ -185,12 +284,13 @@ async function ensureDemoStore(posSystem: DemoPosSystem) {
   if (posSystem === "jewel") await seedJewelDemo(store.id);
   if (posSystem === "fashion") await seedFashionDemo(store.id);
   if (posSystem === "restaurant") await seedRestaurantDemo(store.id);
+  if (posSystem === "pharmacy") await seedPharmacyDemo(store.id);
   return store;
 }
 
 /** Idempotent — safe on every server start and production deploy. */
 export async function seedDemoEnvironment() {
-  const systems: DemoPosSystem[] = ["jewel", "fashion", "oil", "restaurant"];
+  const systems: DemoPosSystem[] = ["jewel", "fashion", "oil", "restaurant", "pharmacy"];
   for (const ps of systems) {
     await ensureDemoStore(ps);
   }

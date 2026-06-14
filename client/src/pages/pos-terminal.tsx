@@ -4,7 +4,7 @@ import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { isFashionStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
+import { isFashionStore, isPharmacyStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
 import { normalizeBarcodeForScan, scanCodeVariants } from "@/lib/barcode";
 import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -51,6 +51,7 @@ import {
   ArrowLeft,
   Gem,
   Shirt,
+  Pill,
   Tag,
   Box,
   Star,
@@ -97,14 +98,16 @@ function TerminalIcon({ iconName, size = 20 }: { iconName: string; size?: number
   return <Icon style={{ width: size, height: size }} />;
 }
 
-export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" | "fashion" }) {
+export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" | "fashion" | "pharmacy" }) {
   const { t } = useLanguage();
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { toast } = useToast();
   const { user } = useAuth();
   const isFashion = variant === "fashion" || isFashionStore((user as { posSystem?: string })?.posSystem);
-  const ItemIcon = isFashion ? Shirt : Gem;
+  const isPharmacy = variant === "pharmacy" || isPharmacyStore((user as { posSystem?: string })?.posSystem);
+  const isRetailScan = isFashion || isPharmacy;
+  const ItemIcon = isPharmacy ? Pill : isFashion ? Shirt : Gem;
   useLocation();
   const [match, params] = useRoute("/pos/:id");
   const terminalId = match && params?.id ? parseInt(params.id) : null;
@@ -295,7 +298,7 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
     toast({ title: isAr ? "تمت الإضافة" : "Added to cart", description: item.name });
   }
 
-  const scannerCaptureActive = isFashion && !orderDialog && !newCustomerDialog;
+  const scannerCaptureActive = isRetailScan && !orderDialog && !newCustomerDialog;
 
   useEffect(() => {
     if (!scannerCaptureActive) return;

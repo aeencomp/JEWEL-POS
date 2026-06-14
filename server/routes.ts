@@ -9,6 +9,7 @@ import { categories, customers, inventoryItems, orders, orderItems, repairOrders
 import { eq, desc } from "drizzle-orm";
 import { calcLoyaltyEarned } from "@shared/loyalty";
 import { registerRestaurantRoutes } from "./restaurant-routes";
+import { registerPharmacyRoutes } from "./pharmacy-routes";
 import { registerIqOrderRoutes } from "./iq-order-routes";
 import { registerDriverRoutes, ensureDemoDriver } from "./driver-routes";
 import { registerPushRoutes } from "./push-routes";
@@ -76,7 +77,7 @@ function generateInventoryBarcode(
   _suffix = "",
   inventory: { barcode?: string | null }[] = [],
 ): string {
-  if (posSystem === "fashion") return nextFashionBarcode(storeId, inventory);
+  if (posSystem === "fashion" || posSystem === "pharmacy") return nextFashionBarcode(storeId, inventory);
   const prefix = posSystem === "oil" ? "OIL" : "JWL";
   const tail = _suffix.replace(/[^A-Z0-9]/gi, "").substring(0, 8).toUpperCase();
   return `${prefix}${storeId}${Date.now().toString(36).toUpperCase()}${tail}`;
@@ -594,7 +595,9 @@ export async function registerRoutes(
               ? "fashion"
               : storeData.posSystem === "restaurant"
                 ? "restaurant"
-                : "jewel",
+                : storeData.posSystem === "pharmacy"
+                  ? "pharmacy"
+                  : "jewel",
         brandColor:
           storeData.posSystem === "fashion"
             ? "#db2777"
@@ -602,7 +605,9 @@ export async function registerRoutes(
               ? "#2563eb"
               : storeData.posSystem === "restaurant"
                 ? "#ea580c"
-                : "#d4a574",
+                : storeData.posSystem === "pharmacy"
+                  ? "#0d9488"
+                  : "#d4a574",
       });
 
       const standardPrice = String(await getStandardMonthlyPrice());
@@ -632,6 +637,13 @@ export async function registerRoutes(
         const fashionCategories = ["Men", "Women", "Kids", "Accessories"];
         for (let i = 0; i < fashionCategories.length; i++) {
           await storage.createCategory({ storeId: store.id, name: fashionCategories[i], sortOrder: i });
+        }
+      }
+
+      if (store.posSystem === "pharmacy") {
+        const pharmacyCategories = ["Tablets", "Syrups", "Injections", "OTC", "Vitamins", "Cosmetics"];
+        for (let i = 0; i < pharmacyCategories.length; i++) {
+          await storage.createCategory({ storeId: store.id, name: pharmacyCategories[i], sortOrder: i });
         }
       }
 
@@ -1486,6 +1498,12 @@ export async function registerRoutes(
     if (body.color === "") body.color = null;
     if (body.brand === "") body.brand = null;
     if (body.styleCode === "") body.styleCode = null;
+    if (body.genericName === "") body.genericName = null;
+    if (body.activeIngredient === "") body.activeIngredient = null;
+    if (body.dosageForm === "") body.dosageForm = null;
+    if (body.strength === "") body.strength = null;
+    if (body.batchNumber === "") body.batchNumber = null;
+    if (body.expiryDate === "") body.expiryDate = null;
     if (body.quantity !== undefined) {
       const qty = Number(body.quantity);
       if (!Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {
@@ -2894,6 +2912,7 @@ export async function registerRoutes(
   });
 
   registerRestaurantRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
+  registerPharmacyRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
   registerIqOrderRoutes(app, { sendValidationError });
   registerDriverRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
   registerPushRoutes(app, { sendValidationError });

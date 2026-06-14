@@ -1,4 +1,4 @@
-export type PosSystem = "jewel" | "oil" | "fashion" | "restaurant";
+export type PosSystem = "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
 
 export const DEMO_USERNAME = "demo";
 
@@ -8,18 +8,19 @@ export function resolveUserPosSystem(
   pathname: string,
 ): PosSystem | undefined {
   const ps = user?.posSystem;
-  if (ps === "oil" || ps === "fashion" || ps === "restaurant" || ps === "jewel") return ps;
+  if (ps === "oil" || ps === "fashion" || ps === "restaurant" || ps === "pharmacy" || ps === "jewel") return ps;
   if (user?.username !== DEMO_USERNAME) return undefined;
   if (pathname.startsWith("/restaurant")) return "restaurant";
+  if (pathname.startsWith("/pharmacy")) return "pharmacy";
   if (pathname.startsWith("/fashion")) return "fashion";
   if (pathname.startsWith("/oil")) return "oil";
   return "jewel";
 }
 
-export const POS_SYSTEMS: PosSystem[] = ["jewel", "oil", "fashion", "restaurant"];
+export const POS_SYSTEMS: PosSystem[] = ["jewel", "oil", "fashion", "restaurant", "pharmacy"];
 
 export function normalizePosSystem(value: unknown): PosSystem {
-  if (value === "oil" || value === "fashion" || value === "restaurant") return value;
+  if (value === "oil" || value === "fashion" || value === "restaurant" || value === "pharmacy") return value;
   return "jewel";
 }
 
@@ -27,6 +28,7 @@ export function posSystemLabel(system: PosSystem, isAr: boolean): string {
   if (system === "oil") return isAr ? "FactoryPOS" : "FactoryPOS";
   if (system === "fashion") return isAr ? "FashionPOS" : "FashionPOS";
   if (system === "restaurant") return isAr ? "RestoPOS" : "RestoPOS";
+  if (system === "pharmacy") return isAr ? "PharmaPOS" : "PharmaPOS";
   return isAr ? "JewelPOS" : "JewelPOS";
 }
 
@@ -34,6 +36,7 @@ export function posSystemSubtitle(system: PosSystem, isAr: boolean): string {
   if (system === "oil") return isAr ? "نظام إدارة المصنع" : "Factory Management";
   if (system === "fashion") return isAr ? "نظام إدارة الملابس" : "Fashion & Apparel";
   if (system === "restaurant") return isAr ? "نظام المطاعم والمقاهي" : "Restaurant & Café";
+  if (system === "pharmacy") return isAr ? "نظام إدارة الصيدلية" : "Pharmacy Management";
   return isAr ? "نظام إدارة المجوهرات" : "Jewelry Management";
 }
 
@@ -41,6 +44,7 @@ export function defaultBrandColor(system: PosSystem): string {
   if (system === "oil") return "#2563eb";
   if (system === "fashion") return "#db2777";
   if (system === "restaurant") return "#ea580c";
+  if (system === "pharmacy") return "#0d9488";
   return "#d4a574";
 }
 
@@ -60,6 +64,10 @@ export function isFashionStore(posSystem: unknown): boolean {
   return posSystem === "fashion";
 }
 
+export function isPharmacyStore(posSystem: unknown): boolean {
+  return posSystem === "pharmacy";
+}
+
 /** storeId for real users; demoStoreId / impersonation for demo & admin. */
 export function getEffectiveStoreId(
   user: {
@@ -74,5 +82,5 @@ export function getEffectiveStoreId(
 }
 
 export function isJewelStore(posSystem: unknown): boolean {
-  return posSystem !== "oil" && posSystem !== "fashion" && posSystem !== "restaurant";
+  return posSystem !== "oil" && posSystem !== "fashion" && posSystem !== "restaurant" && posSystem !== "pharmacy";
 }
