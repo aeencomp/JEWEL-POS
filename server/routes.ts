@@ -1409,16 +1409,27 @@ export async function registerRoutes(
     if (body.color === "") body.color = null;
     if (body.brand === "") body.brand = null;
     if (body.styleCode === "") body.styleCode = null;
+    if (body.genericName === "") body.genericName = null;
+    if (body.activeIngredient === "") body.activeIngredient = null;
+    if (body.dosageForm === "") body.dosageForm = null;
+    if (body.strength === "") body.strength = null;
+    if (body.batchNumber === "") body.batchNumber = null;
+    if (body.expiryDate === "") body.expiryDate = null;
     const store = await storage.getStore(storeId);
     const existingItems = await storage.getInventoryItems(storeId);
     if (!body.barcode || String(body.barcode).trim() === "") {
       body.barcode = generateInventoryBarcode(storeId, store?.posSystem, body.sku || "", existingItems);
     }
-    const item = await storage.createInventoryItem({
-      ...body,
-      storeId,
-    });
-    res.status(201).json(item);
+    try {
+      const item = await storage.createInventoryItem({
+        ...body,
+        storeId,
+      });
+      res.status(201).json(item);
+    } catch (err) {
+      console.error("POST /api/inventory failed:", err);
+      res.status(500).json({ message: "Failed to create item" });
+    }
   });
 
   app.post("/api/inventory/variants", requireAuth, async (req, res) => {
@@ -1504,6 +1515,15 @@ export async function registerRoutes(
     if (body.strength === "") body.strength = null;
     if (body.batchNumber === "") body.batchNumber = null;
     if (body.expiryDate === "") body.expiryDate = null;
+    if (body.costPrice === "") body.costPrice = "0";
+    if (body.sellingPrice === "") body.sellingPrice = "0";
+    if (body.categoryId !== undefined) {
+      const categoryId = Number(body.categoryId);
+      if (!Number.isFinite(categoryId) || categoryId <= 0) {
+        return res.status(400).json({ message: "Invalid category" });
+      }
+      body.categoryId = categoryId;
+    }
     if (body.quantity !== undefined) {
       const qty = Number(body.quantity);
       if (!Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {
@@ -1511,8 +1531,14 @@ export async function registerRoutes(
       }
       body.quantity = qty;
     }
-    const updated = await storage.updateInventoryItem(id, body);
-    res.json(updated);
+    try {
+      const updated = await storage.updateInventoryItem(id, body);
+      if (!updated) return res.status(404).json({ message: "Item not found" });
+      res.json(updated);
+    } catch (err) {
+      console.error("PATCH /api/inventory/:id failed:", err);
+      res.status(500).json({ message: "Failed to update item" });
+    }
   });
 
   app.delete("/api/inventory/:id", requireAuth, async (req, res) => {

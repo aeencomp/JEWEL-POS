@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import type { InventoryItem, Category } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, parseApiErrorMessage } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { generateInventoryBarcode } from "@/lib/barcode";
 import { buildPharmacyLabelPrintHtml } from "@/lib/linear-barcode";
 import { FashionLabelPreview } from "@/components/fashion-label-preview";
@@ -40,9 +41,33 @@ const emptyForm: DrugForm = {
   costPrice: "", sellingPrice: "", quantity: "0", requiresPrescription: false,
 };
 
+function toDateInputValue(value: Date | string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+function toIsoExpiry(value: string): string | null {
+  if (!value.trim()) return null;
+  const d = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+function normalizePrice(value: string): string {
+  const cleaned = value.replace(/,/g, "").trim();
+  const n = parseFloat(cleaned);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error("invalid price");
+  }
+  return n.toFixed(2);
+}
+
 export default function PharmacyInventory() {
   const { language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isAr = language === "ar";
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
@@ -55,34 +80,69 @@ export default function PharmacyInventory() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const categoryId = parseInt(form.categoryId, 10);
+      if (!Number.isFinite(categoryId) || categoryId <= 0) {
+        throw new Error(isAr ? "اختر فئة صحيحة" : "Select a valid category");
+      }
+      const qty = parseInt(form.quantity, 10);
+      if (!Number.isFinite(qty) || qty < 0) {
+        throw new Error(isAr ? "الكمية يجب أن تكون رقمًا صحيحًا" : "Quantity must be a whole number");
+      }
+      let costPrice: string;
+      let sellingPrice: string;
+      try {
+        costPrice = normalizePrice(form.costPrice);
+        sellingPrice = normalizePrice(form.sellingPrice);
+      } catch {
+        throw new Error(isAr ? "أدخل أسعارًا صحيحة" : "Enter valid prices");
+      }
+      const expiryDate = toIsoExpiry(form.expiryDate);
+      if (form.expiryDate.trim() && !expiryDate) {
+        throw new Error(isAr ? "تاريخ الصلاحية غير صالح" : "Invalid expiry date");
+      }
       const body = {
-        name: form.name,
-        sku: form.sku,
-        barcode: form.barcode || undefined,
-        categoryId: Number(form.categoryId),
-        genericName: form.genericName || null,
-        activeIngredient: form.activeIngredient || null,
-        dosageForm: form.dosageForm || null,
-        strength: form.strength || null,
-        batchNumber: form.batchNumber || null,
-        expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
-        costPrice: form.costPrice,
-        sellingPrice: form.sellingPrice,
-        quantity: parseInt(form.quantity, 10) || 0,
+        name: form.name.trim(),
+        sku: form.sku.trim(),
+        barcode: form.barcode.trim() || undefined,
+        categoryId,
+        genericName: form.genericName.trim() || null,
+        activeIngredient: form.activeIngredient.trim() || null,
+        dosageForm: form.dosageForm.trim() || null,
+        strength: form.strength.trim() || null,
+        batchNumber: form.batchNumber.trim() || null,
+        expiryDate,
+        costPrice,
+        sellingPrice,
+        quantity: qty,
         requiresPrescription: form.requiresPrescription,
-        metalType: "other",
+        metalType: "other" as const,
         isAvailable: true,
       };
       if (editing) {
-        return apiRequest("PATCH", `/api/inventory/${editing.id}`, body);
+        await apiRequest("PATCH", `/api/inventory/${editing.id}`, body);
+      } else {
+        await apiRequest("POST", "/api/inventory", body);
       }
-      return apiRequest("POST", "/api/inventory", body);
     },
     onSuccess: () => {
+      const wasEdit = !!editing;
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       setOpen(false);
       setEditing(null);
       setForm(emptyForm);
+      toast({
+        title: isAr ? "تم الحفظ" : "Saved",
+        description: wasEdit
+          ? (isAr ? "تم تحديث الدواء بنجاح" : "Drug updated successfully")
+          : (isAr ? "تمت إضافة الدواء بنجاح" : "Drug added successfully"),
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: isAr ? "فشل الحفظ" : "Save failed",
+        description: parseApiErrorMessage(err),
+        variant: "destructive",
+      });
     },
   });
 
@@ -146,7 +206,7 @@ export default function PharmacyInventory() {
       dosageForm: item.dosageForm || "",
       strength: item.strength || "",
       batchNumber: item.batchNumber || "",
-      expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().slice(0, 10) : "",
+      expiryDate: toDateInputValue(item.expiryDate),
       costPrice: item.costPrice,
       sellingPrice: item.sellingPrice,
       quantity: String(item.quantity),
@@ -239,10 +299,25 @@ export default function PharmacyInventory() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) {
+            setEditing(null);
+            setForm(emptyForm);
+          }
+        }}
+      >
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? (isAr ? "تعديل دواء" : "Edit Drug") : (isAr ? "دواء جديد" : "New Drug")}</DialogTitle></DialogHeader>
-          <div className="grid gap-3 py-2">
+          <form
+            className="grid gap-3 py-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveMutation.mutate();
+            }}
+          >
             <Input placeholder={isAr ? "اسم الدواء" : "Drug name"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <Input
@@ -277,7 +352,7 @@ export default function PharmacyInventory() {
                 }));
               }}
             />
-            <Select value={form.categoryId} onValueChange={(v) => setForm({ ...form, categoryId: v })}>
+            <Select value={form.categoryId || undefined} onValueChange={(v) => setForm({ ...form, categoryId: v })}>
               <SelectTrigger><SelectValue placeholder={isAr ? "الفئة" : "Category"} /></SelectTrigger>
               <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
@@ -300,13 +375,17 @@ export default function PharmacyInventory() {
               <Checkbox checked={form.requiresPrescription} onCheckedChange={(v) => setForm({ ...form, requiresPrescription: !!v })} />
               {isAr ? "يتطلب وصفة طبية" : "Requires prescription (Rx)"}
             </label>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>{isAr ? "إلغاء" : "Cancel"}</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.sku || !form.categoryId} className="bg-teal-600">
-              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (isAr ? "حفظ" : "Save")}
-            </Button>
-          </DialogFooter>
+            <DialogFooter className="px-0 pb-0 pt-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+              <Button
+                type="submit"
+                disabled={saveMutation.isPending || !form.name.trim() || !form.sku.trim() || !form.categoryId || !form.costPrice.trim() || !form.sellingPrice.trim()}
+                className="bg-teal-600"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (isAr ? "حفظ" : "Save")}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
