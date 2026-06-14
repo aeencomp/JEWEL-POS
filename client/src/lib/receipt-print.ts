@@ -35,6 +35,11 @@ export type ReceiptLabels = {
   weight: string;
   gemstone: string;
   caratWeight: string;
+  genericName?: string;
+  strength?: string;
+  dosageForm?: string;
+  batchNumber?: string;
+  expiryDate?: string;
 };
 
 export type ReceiptPrintInput = {
@@ -45,6 +50,7 @@ export type ReceiptPrintInput = {
   labels: ReceiptLabels;
   isAr: boolean;
   isFashion: boolean;
+  isPharmacy?: boolean;
   format?: ReceiptFormat;
   storeName: string;
   storeAddress?: string;
@@ -63,6 +69,12 @@ type InvExtra = InventoryItem & {
   brand?: string;
   barcode?: string;
   styleCode?: string;
+  genericName?: string | null;
+  activeIngredient?: string | null;
+  dosageForm?: string | null;
+  strength?: string | null;
+  batchNumber?: string | null;
+  expiryDate?: Date | string | null;
 };
 
 function esc(s: string) {
@@ -78,6 +90,7 @@ function itemDetailLines(
   inv: InvExtra | undefined,
   labels: ReceiptLabels,
   isFashion: boolean,
+  isPharmacy: boolean,
   categoryName?: string,
 ): string {
   const lines: string[] = [];
@@ -85,7 +98,17 @@ function itemDetailLines(
   if (sku) lines.push(detailLine(labels.sku, sku));
   if (categoryName) lines.push(detailLine(labels.category, categoryName));
 
-  if (isFashion) {
+  if (isPharmacy) {
+    if (inv?.genericName) lines.push(detailLine(labels.genericName || "Generic", inv.genericName));
+    if (inv?.dosageForm) lines.push(detailLine(labels.dosageForm || "Form", inv.dosageForm));
+    if (inv?.strength) lines.push(detailLine(labels.strength || "Strength", inv.strength));
+    if (inv?.barcode) lines.push(detailLine(labels.barcode, inv.barcode));
+    if (inv?.batchNumber) lines.push(detailLine(labels.batchNumber || "Batch", inv.batchNumber));
+    if (inv?.expiryDate) {
+      const exp = new Date(inv.expiryDate).toLocaleDateString();
+      lines.push(detailLine(labels.expiryDate || "Expiry", exp));
+    }
+  } else if (isFashion) {
     if (inv?.styleCode) lines.push(detailLine(labels.styleCode, inv.styleCode));
     if (inv?.size) lines.push(detailLine(labels.size, inv.size));
     if (inv?.color) lines.push(detailLine(labels.color, inv.color));
@@ -274,7 +297,7 @@ function buildThermalBody(ctx: ReturnType<typeof buildContext>, qrHtml: string) 
   const rows = items.map((item) => {
     const inv = inventory.find((i) => i.id === item.inventoryItemId) as InvExtra | undefined;
     const cat = inv ? categories?.find((c) => c.id === inv.categoryId) : undefined;
-    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, cat?.name);
+    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, !!input.isPharmacy, cat?.name);
     const lineTotal = Number(item.price) * item.quantity;
     return `<tr>
       <td><span class="item-name">${esc(item.name)}</span>${detailsHtml}</td>
@@ -328,7 +351,7 @@ function buildA4Body(ctx: ReturnType<typeof buildContext>) {
   const rows = items.map((item) => {
     const inv = inventory.find((i) => i.id === item.inventoryItemId) as InvExtra | undefined;
     const cat = inv ? categories?.find((c) => c.id === inv.categoryId) : undefined;
-    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, cat?.name);
+    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, !!input.isPharmacy, cat?.name);
     const lineTotal = Number(item.price) * item.quantity;
     return `<tr>
       <td><div class="item-name">${esc(item.name)}</div>${detailsHtml}</td>

@@ -104,12 +104,29 @@ export function linearBarcodeToDataUrl(value: string, options: LinearBarcodeOpti
   return canvas.toDataURL("image/png");
 }
 
+export function buildPharmacyLabelPrintHtml(opts: {
+  name: string;
+  price: string;
+  barcodeValue: string;
+  strength?: string | null;
+  dosageForm?: string | null;
+}): string {
+  const subtitle = [opts.dosageForm, opts.strength].filter(Boolean).join(" · ");
+  return buildFashionLabelPrintHtml({
+    name: opts.name,
+    price: opts.price,
+    barcodeValue: opts.barcodeValue,
+    subtitle: subtitle || undefined,
+  });
+}
+
 export function buildFashionLabelPrintHtml(opts: {
   name: string;
   price: string;
   barcodeValue: string;
+  subtitle?: string;
 }): string {
-  const { name, price, barcodeValue } = opts;
+  const { name, price, barcodeValue, subtitle } = opts;
   const { width, height } = FASHION_LABEL_MM;
   const bcSvg = linearBarcodeToPrintSvg(barcodeValue, getFashionLabelBarcodeOptions(barcodeValue));
   const bcNum = esc(barcodePayload(barcodeValue));
@@ -129,6 +146,7 @@ ${FASHION_LABEL_CSS}
 </style></head><body>
 <div class="label">
 <div class="name">${esc(name)}</div>
+${subtitle ? `<div class="sub" style="font-size:7pt;text-align:center;opacity:0.85;margin-bottom:0.3mm">${esc(subtitle)}</div>` : ""}
 <div class="mid">
 <div class="bc-wrap">${bcSvg}</div>
 <div class="bc-num">${bcNum}</div>

@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/use-auth";
 import type { InventoryItem, Category } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { generateInventoryBarcode } from "@/lib/barcode";
+import { buildPharmacyLabelPrintHtml } from "@/lib/linear-barcode";
+import { FashionLabelPreview } from "@/components/fashion-label-preview";
 import { getEffectiveStoreId } from "@/lib/pos-system";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Pill, Loader2, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Pill, Loader2, RefreshCw, Barcode, Printer } from "lucide-react";
 
 type DrugForm = {
   name: string;
@@ -46,6 +48,7 @@ export default function PharmacyInventory() {
   const [editing, setEditing] = useState<InventoryItem | null>(null);
   const [form, setForm] = useState<DrugForm>(emptyForm);
   const [search, setSearch] = useState("");
+  const [barcodeItem, setBarcodeItem] = useState<InventoryItem | null>(null);
 
   const { data: items = [], isLoading } = useQuery<InventoryItem[]>({ queryKey: ["/api/inventory"] });
   const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/categories"] });
@@ -115,6 +118,22 @@ export default function PharmacyInventory() {
     setOpen(true);
   }
 
+  function printBarcodeLabel(item: InventoryItem) {
+    const code = item.barcode || item.sku;
+    if (!code) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const labelHtml = buildPharmacyLabelPrintHtml({
+      name: item.name,
+      price: parseFloat(item.sellingPrice).toLocaleString(),
+      barcodeValue: code,
+      strength: item.strength,
+      dosageForm: item.dosageForm,
+    });
+    printWindow.document.write(labelHtml);
+    printWindow.document.close();
+  }
+
   function openEdit(item: InventoryItem) {
     setEditing(item);
     setForm({
@@ -179,7 +198,16 @@ export default function PharmacyInventory() {
                   <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell>{parseFloat(item.sellingPrice).toLocaleString()}</TableCell>
-                  <TableCell><Button size="sm" variant="ghost" onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></Button></TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      {item.barcode && (
+                        <Button size="sm" variant="ghost" title={isAr ? "طباعة باركود" : "Print barcode"} onClick={() => setBarcodeItem(item)}>
+                          <Barcode className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -255,6 +283,36 @@ export default function PharmacyInventory() {
               {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (isAr ? "حفظ" : "Save")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!barcodeItem} onOpenChange={(open) => !open && setBarcodeItem(null)}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{isAr ? "طباعة باركود الدواء" : "Drug Barcode Label"}</DialogTitle>
+          </DialogHeader>
+          {barcodeItem && (
+            <div className="flex flex-col items-center gap-4">
+              <FashionLabelPreview
+                className="mx-auto rounded-lg border border-dashed border-teal-300/50 shadow-sm"
+                name={barcodeItem.name}
+                price={parseFloat(barcodeItem.sellingPrice).toLocaleString()}
+                barcodeValue={barcodeItem.barcode || barcodeItem.sku}
+              />
+              {(barcodeItem.dosageForm || barcodeItem.strength) && (
+                <p className="text-xs text-muted-foreground text-center">
+                  {[barcodeItem.dosageForm, barcodeItem.strength].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              <p className="text-[10px] text-center text-muted-foreground">
+                {isAr ? "ملصق حراري 50×25 مم" : "Thermal label 50×25 mm"}
+              </p>
+              <Button variant="outline" onClick={() => printBarcodeLabel(barcodeItem)} className="gap-2">
+                <Printer className="h-4 w-4" />
+                {isAr ? "طباعة الملصق" : "Print Label"}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

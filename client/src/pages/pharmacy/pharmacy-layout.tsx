@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { posSystemLabel, posSystemSubtitle } from "@/lib/pos-system";
+import { PharmacyThemePicker } from "@/components/pharmacy-theme-picker";
 import {
   LayoutDashboard, ShoppingCart, Package, Users, ClipboardList, FileText,
   AlertTriangle, ClipboardCheck, Palette, HardDrive, LogOut, Menu, X,
@@ -66,6 +67,13 @@ export default function PharmacyLayout({
   const brandColor = branding?.brandColor || "#0d9488";
   const brandStyle = { "--pharmacy-brand": brandColor } as React.CSSProperties;
 
+  const saveColorMutation = useMutation({
+    mutationFn: (brandColor: string) => apiRequest("PATCH", "/api/store/branding", { brandColor }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/store/branding"] });
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/logout"),
     onSuccess: () => {
@@ -79,8 +87,8 @@ export default function PharmacyLayout({
   const currentPage = navItems.find((i) => isActive(i));
 
   const sidebarBg = isDark
-    ? "linear-gradient(180deg, #042f2e 0%, #0a0f0f 100%)"
-    : "linear-gradient(160deg, #0f766e 0%, #14b8a6 60%, #0f766e 100%)";
+    ? `linear-gradient(180deg, color-mix(in srgb, ${brandColor} 25%, #042f2e) 0%, #0a0f0f 100%)`
+    : `linear-gradient(160deg, color-mix(in srgb, ${brandColor} 85%, #000) 0%, ${brandColor} 60%, color-mix(in srgb, ${brandColor} 85%, #000) 100%)`;
 
   const Sidebar = () => (
     <div
@@ -108,7 +116,7 @@ export default function PharmacyLayout({
         </div>
       </div>
 
-      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto pharmacy-scroll pharmacy-scroll-dark">
         <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-3 text-teal-200/40">
           {isAr ? "القائمة" : "Menu"}
         </p>
@@ -177,7 +185,7 @@ export default function PharmacyLayout({
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
+      className="flex h-screen overflow-hidden pharmacy-scroll"
       style={{ ...brandStyle, background: isDark ? "#0a0f0f" : "#f0fdfa" }}
       dir={isAr ? "rtl" : "ltr"}
     >
@@ -207,8 +215,19 @@ export default function PharmacyLayout({
               {currentPage ? (isAr ? currentPage.labelAr : currentPage.label) : "PharmaPOS"}
             </h2>
           </div>
+          <PharmacyThemePicker
+            color={brandColor}
+            onChange={(c) => {
+              queryClient.setQueryData(["/api/store/branding"], (old: BrandingData | undefined) =>
+                old ? { ...old, brandColor: c } : old,
+              );
+            }}
+            onSave={(c) => saveColorMutation.mutate(c)}
+            saving={saveColorMutation.isPending}
+            variant="light"
+          />
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto pharmacy-scroll pharmacy-scroll-light">{children}</main>
       </div>
     </div>
   );

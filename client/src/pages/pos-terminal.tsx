@@ -394,6 +394,11 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       weight: t("inventory.weight"),
       gemstone: t("inventory.gemstone"),
       caratWeight: t("inventory.caratWeight"),
+      genericName: isAr ? "الاسم العلمي" : "Generic",
+      strength: isAr ? "التركيز" : "Strength",
+      dosageForm: isAr ? "الشكل الدوائي" : "Form",
+      batchNumber: isAr ? "رقم الدفعة" : "Batch",
+      expiryDate: isAr ? "الصلاحية" : "Expiry",
     };
   }
 
@@ -413,7 +418,8 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       categories,
       labels: receiptLabels(),
       isAr,
-      isFashion,
+      isFashion: isFashion && !isPharmacy,
+      isPharmacy,
       storeName: branding?.name || "Store",
       storeAddress: branding?.address || "",
       brandColor: branding?.brandColor || "#333",
@@ -908,6 +914,33 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
                 {t("pos.payByDebit")}
               </button>
             </div>
+
+            {completedOrder && (
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 text-xs"
+                  onClick={() => handlePrintReceipt("thermal")}
+                  data-testid="button-cart-print-thermal"
+                >
+                  <Printer className="h-3.5 w-3.5 me-1.5" />
+                  {t("receipt.printThermal")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 text-xs"
+                  onClick={() => handlePrintReceipt("a4")}
+                  data-testid="button-cart-print-a4"
+                >
+                  <Printer className="h-3.5 w-3.5 me-1.5" />
+                  {t("receipt.printA4")}
+                </Button>
+              </div>
+            )}
 
             {orderMutation.isPending && (
               <div className="flex items-center justify-center gap-2 text-sm text-slate-400 py-1">
