@@ -3,6 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import type { InventoryItem, PharmacyPrescription, PharmacyPrescriptionItem } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { printHtmlDocument } from "@/lib/print-window";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +41,7 @@ function fmt(n: string | number) {
 
 export default function PharmacyPrescriptions() {
   const { language } = useLanguage();
+  const { toast } = useToast();
   const isAr = language === "ar";
   const [open, setOpen] = useState(false);
   const [editingRx, setEditingRx] = useState<RxWithItems | null>(null);
@@ -148,8 +151,6 @@ export default function PharmacyPrescriptions() {
   }
 
   function printPrescription(rx: RxWithItems) {
-    const w = window.open("", "_blank");
-    if (!w) return;
     const storeName = branding?.name || "PharmaPOS";
     const dateStr = new Date(rx.createdAt).toLocaleString(isAr ? "ar-IQ" : "en-GB");
     const align = isAr ? "right" : "left";
@@ -160,7 +161,7 @@ export default function PharmacyPrescriptions() {
       )
       .join("");
 
-    w.document.write(`<!DOCTYPE html><html dir="${isAr ? "rtl" : "ltr"}"><head><title>${rx.prescriptionNumber}</title>
+    const html = `<!DOCTYPE html><html dir="${isAr ? "rtl" : "ltr"}"><head><title>${rx.prescriptionNumber}</title>
       <style>
         body{font-family:Arial,sans-serif;padding:24px;max-width:720px;margin:0 auto;color:#111}
         h1{font-size:20px;margin:0 0 4px;color:#0d9488}h2{font-size:13px;color:#666;font-weight:normal;margin:0 0 20px}
@@ -188,8 +189,16 @@ export default function PharmacyPrescriptions() {
       <div class="total">${isAr ? "الإجمالي" : "Total"}: ${fmt(rx.totalAmount)} IQD</div>
       ${rx.notes ? `<div class="notes"><strong>${isAr ? "ملاحظات" : "Notes"}:</strong> ${rx.notes}</div>` : ""}
       <script>window.onload=function(){setTimeout(function(){window.print();window.close();},300);}</script>
-      </body></html>`);
-    w.document.close();
+      </body></html>`;
+
+    const ok = printHtmlDocument(html, "width=820,height=900");
+    if (!ok) {
+      toast({
+        title: isAr ? "فشلت الطباعة" : "Print failed",
+        description: isAr ? "اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى." : "Allow pop-ups for this site, then try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -227,7 +236,7 @@ export default function PharmacyPrescriptions() {
                   <TableCell>{new Date(rx.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1 flex-wrap">
-                      <Button size="sm" variant="ghost" title={isAr ? "طباعة" : "Print"} onClick={() => printPrescription(rx)}>
+                      <Button type="button" size="sm" variant="ghost" title={isAr ? "طباعة" : "Print"} onClick={() => printPrescription(rx)}>
                         <Printer className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="ghost" title={isAr ? "تعديل" : "Edit"} onClick={() => openEdit(rx)}>

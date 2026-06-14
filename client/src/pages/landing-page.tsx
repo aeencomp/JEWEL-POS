@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
@@ -498,6 +498,11 @@ export default function LandingPage() {
     notes: "",
   });
   const [errors, setErrors] = useState<Partial<SignupForm>>({});
+
+  useEffect(() => {
+    document.documentElement.classList.add("landing-scroll");
+    return () => document.documentElement.classList.remove("landing-scroll");
+  }, []);
 
   const mutation = useMutation({
     mutationFn: (data: SignupForm) =>
@@ -1064,7 +1069,7 @@ export default function LandingPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 bg-card overflow-hidden">
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3.5">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3.5 landing-scroll">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}

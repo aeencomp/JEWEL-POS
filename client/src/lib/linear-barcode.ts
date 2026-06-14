@@ -82,15 +82,26 @@ export function linearBarcodeToPrintSvg(value: string, options: LinearBarcodeOpt
   const payload = barcodePayload(value);
   const base = options.width != null ? options : { ...getPrintBarcodeOptions(value), ...options };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  JsBarcode(svg, payload, {
-    format,
-    width: base.width ?? 2.2,
-    height: base.height ?? 70,
-    displayValue: false,
-    margin: base.margin ?? 16,
-    xmlDocument: document,
-    ...(format === "CODE39" ? { mod43: false } : {}),
-  });
+  try {
+    JsBarcode(svg, payload, {
+      format,
+      width: base.width ?? 2.2,
+      height: base.height ?? 70,
+      displayValue: false,
+      margin: base.margin ?? 16,
+      xmlDocument: document,
+      ...(format === "CODE39" ? { mod43: false } : {}),
+    });
+  } catch {
+    JsBarcode(svg, payload, {
+      format: "CODE128",
+      width: base.width ?? 2.2,
+      height: base.height ?? 70,
+      displayValue: false,
+      margin: base.margin ?? 16,
+      xmlDocument: document,
+    });
+  }
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
   svg.style.width = "100%";
   svg.style.height = "auto";

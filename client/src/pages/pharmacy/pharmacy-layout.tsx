@@ -85,6 +85,7 @@ export default function PharmacyLayout({
   const isActive = (item: (typeof navItems)[0]) =>
     item.exact ? location === item.path : location.startsWith(item.path);
   const currentPage = navItems.find((i) => isActive(i));
+  const isPosPage = location.startsWith("/pharmacy/pos");
 
   const sidebarBg = isDark
     ? `linear-gradient(180deg, color-mix(in srgb, ${brandColor} 25%, #042f2e) 0%, #0a0f0f 100%)`
@@ -227,7 +228,7 @@ export default function PharmacyLayout({
             variant="light"
           />
         </header>
-        <main className="flex-1 overflow-auto pharmacy-scroll pharmacy-scroll-light">{children}</main>
+        <main className={`flex-1 min-h-0 flex flex-col pharmacy-scroll pharmacy-scroll-light ${isPosPage ? "overflow-hidden" : "overflow-y-auto"}`}>{children}</main>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { apiRequest, queryClient, parseApiErrorMessage } from "@/lib/queryClient
 import { useToast } from "@/hooks/use-toast";
 import { generateInventoryBarcode } from "@/lib/barcode";
 import { buildPharmacyLabelPrintHtml } from "@/lib/linear-barcode";
+import { printHtmlDocument } from "@/lib/print-window";
 import { FashionLabelPreview } from "@/components/fashion-label-preview";
 import { getEffectiveStoreId } from "@/lib/pos-system";
 import { Button } from "@/components/ui/button";
@@ -178,20 +179,43 @@ export default function PharmacyInventory() {
     setOpen(true);
   }
 
-  function printBarcodeLabel(item: InventoryItem) {
+  function printBarcodeLabel(item: InventoryItem): boolean {
     const code = item.barcode || item.sku;
-    if (!code) return;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    const labelHtml = buildPharmacyLabelPrintHtml({
-      name: item.name,
-      price: parseFloat(item.sellingPrice).toLocaleString(),
-      barcodeValue: code,
-      strength: item.strength,
-      dosageForm: item.dosageForm,
-    });
-    printWindow.document.write(labelHtml);
-    printWindow.document.close();
+    if (!code) {
+      toast({
+        title: isAr ? "لا يوجد باركود" : "No barcode",
+        description: isAr ? "هذا الدواء لا يملك باركود أو SKU." : "This drug has no barcode or SKU.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    try {
+      const labelHtml = buildPharmacyLabelPrintHtml({
+        name: item.name,
+        price: parseFloat(item.sellingPrice).toLocaleString(),
+        barcodeValue: code,
+        strength: item.strength,
+        dosageForm: item.dosageForm,
+      });
+      const ok = printHtmlDocument(labelHtml, "width=320,height=480");
+      if (!ok) {
+        toast({
+          title: isAr ? "فشلت الطباعة" : "Print failed",
+          description: isAr ? "اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى." : "Allow pop-ups for this site, then try again.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      toast({ title: isAr ? "جاري الطباعة…" : "Printing…" });
+      return true;
+    } catch (err) {
+      toast({
+        title: isAr ? "فشلت الطباعة" : "Print failed",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+      return false;
+    }
   }
 
   function openEdit(item: InventoryItem) {
@@ -230,7 +254,7 @@ export default function PharmacyInventory() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="border rounded-xl overflow-hidden">
+        <div className="border rounded-xl">
           <Table>
             <TableHeader>
               <TableRow>
@@ -256,9 +280,12 @@ export default function PharmacyInventory() {
                     {(item.barcode || item.sku) ? (
                       <button
                         type="button"
-                        className="font-mono text-xs flex items-center gap-1.5 text-teal-400 hover:text-teal-300 hover:underline transition-colors"
-                        title={isAr ? "طباعة باركود" : "Print barcode label"}
-                        onClick={() => setBarcodeItem(item)}
+                        className="font-mono text-xs flex items-center gap-1.5 text-teal-500 hover:text-teal-400 hover:underline transition-colors cursor-pointer relative z-10"
+                        title={isAr ? "معاينة الباركود" : "Preview barcode label"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBarcodeItem(item);
+                        }}
                       >
                         <Barcode className="h-3.5 w-3.5 shrink-0" />
                         {item.barcode || item.sku}
@@ -272,22 +299,26 @@ export default function PharmacyInventory() {
                   <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell>{parseFloat(item.sellingPrice).toLocaleString()}</TableCell>
-                  <TableCell>
+                  <TableCell className="sticky end-0 z-10 bg-background/95 backdrop-blur-sm shadow-[-6px_0_10px_-8px_rgba(0,0,0,0.35)]">
                     <div className="flex items-center justify-end gap-1.5">
                       {(item.barcode || item.sku) && (
                         <Button
+                          type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8 gap-1.5 text-xs border-teal-500/30 text-teal-400 hover:bg-teal-500/10 hover:text-teal-300"
+                          className="h-8 gap-1.5 text-xs border-teal-500/40 text-teal-500 hover:bg-teal-500/15 hover:text-teal-400 cursor-pointer"
                           title={isAr ? "طباعة باركود" : "Print barcode"}
-                          onClick={() => setBarcodeItem(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            printBarcodeLabel(item);
+                          }}
                           data-testid={`button-print-barcode-${item.id}`}
                         >
-                          <Printer className="h-3.5 w-3.5" />
+                          <Printer className="h-3.5 w-3.5 pointer-events-none" />
                           {isAr ? "طباعة" : "Print"}
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(item)} title={isAr ? "تعديل" : "Edit"}>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => openEdit(item)} title={isAr ? "تعديل" : "Edit"}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </div>
@@ -410,11 +441,12 @@ export default function PharmacyInventory() {
               <p className="text-[10px] text-center text-muted-foreground">
                 {isAr ? "ملصق حراري 50×25 مم" : "Thermal label 50×25 mm"}
               </p>
-              <Button variant="outline" onClick={() => printBarcodeLabel(barcodeItem)} className="gap-2">
+              <Button type="button" variant="outline" onClick={() => printBarcodeLabel(barcodeItem)} className="gap-2">
                 <Printer className="h-4 w-4" />
                 {isAr ? "طباعة الملصق" : "Print Label"}
               </Button>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground"

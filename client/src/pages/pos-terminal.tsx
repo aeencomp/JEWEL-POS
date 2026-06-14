@@ -441,8 +441,30 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
 
   async function handlePrintReceipt(format: ReceiptFormat) {
     const input = receiptPrintInput();
-    if (!input) return;
-    await printReceipt(input, format);
+    if (!input) {
+      toast({
+        title: isAr ? "لا يوجد إيصال" : "No receipt",
+        description: isAr ? "أكمل عملية البيع أولاً." : "Complete a sale first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const ok = await printReceipt(input, format);
+      if (!ok) {
+        toast({
+          title: isAr ? "فشلت الطباعة" : "Print failed",
+          description: isAr ? "اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى." : "Allow pop-ups for this site, then try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: isAr ? "فشلت الطباعة" : "Print failed",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
   }
 
   const terminalCatLocked = effectiveTerminalConfig?.categoryId != null;
@@ -656,10 +678,10 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
         </main>
 
         {/* ── Cart Panel ─────────────────────────────────────────── */}
-        <aside className="w-80 xl:w-96 flex flex-col bg-white dark:bg-slate-900 border-s border-slate-200 dark:border-slate-800 flex-shrink-0">
+        <aside className="w-72 xl:w-80 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900 border-s border-slate-200 dark:border-slate-800 flex-shrink-0">
 
           {/* Cart Header */}
-          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4 text-slate-400" />
               <span className="font-bold text-sm">{t("pos.cart")}</span>
@@ -688,8 +710,8 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
           </div>
 
           {/* Customer selector */}
-          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
+          <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div className="flex items-center gap-1.5">
               <Select
                 value={selectedCustomerId}
                 onValueChange={(v) => {
@@ -706,7 +728,7 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
                   }
                 }}
               >
-                <SelectTrigger className="flex-1 h-9 text-sm" data-testid="select-customer">
+                <SelectTrigger className="flex-1 h-8 text-xs" data-testid="select-customer">
                   <SelectValue placeholder={t("pos.selectCustomer")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -723,46 +745,48 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
               </Select>
               <button
                 onClick={() => setNewCustomerDialog(true)}
-                className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-foreground hover:border-slate-300 transition-colors flex-shrink-0"
+                className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-foreground hover:border-slate-300 transition-colors flex-shrink-0"
                 data-testid="button-new-customer-pos"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
             {isFashion && selectedCustomer && (
-              <p className="text-xs text-slate-500 mt-2" data-testid="text-loyalty-balance">
+              <p className="text-[11px] text-slate-500 mt-1.5" data-testid="text-loyalty-balance">
                 {t("loyalty.available")}: <span className="font-semibold text-foreground">{selectedCustomer.loyaltyPoints || 0}</span> {t("loyalty.points")}
               </p>
             )}
-            <div className="mt-3 space-y-2">
-              <Input
-                value={cartCustomerName}
-                onChange={(e) => setCartCustomerName(e.target.value)}
-                placeholder={t("customers.name")}
-                className="h-9 text-sm"
-                data-testid="input-cart-customer-name"
-              />
-              <Input
-                value={cartCustomerPhone}
-                onChange={(e) => setCartCustomerPhone(e.target.value)}
-                placeholder={t("customers.phone")}
-                className="h-9 text-sm"
-                dir="ltr"
-                data-testid="input-cart-customer-phone"
-              />
+            <div className="mt-1.5 space-y-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
+                <Input
+                  value={cartCustomerName}
+                  onChange={(e) => setCartCustomerName(e.target.value)}
+                  placeholder={t("customers.name")}
+                  className="h-8 text-xs"
+                  data-testid="input-cart-customer-name"
+                />
+                <Input
+                  value={cartCustomerPhone}
+                  onChange={(e) => setCartCustomerPhone(e.target.value)}
+                  placeholder={t("customers.phone")}
+                  className="h-8 text-xs"
+                  dir="ltr"
+                  data-testid="input-cart-customer-phone"
+                />
+              </div>
               <Textarea
                 value={cartNotes}
                 onChange={(e) => setCartNotes(e.target.value)}
                 placeholder={t("pos.notes")}
-                rows={2}
-                className="text-sm resize-none min-h-[60px]"
+                rows={1}
+                className="text-xs resize-none min-h-8 py-1.5"
                 data-testid="input-cart-notes"
               />
             </div>
           </div>
 
           {/* Cart items */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
@@ -773,49 +797,49 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {cart.map((item) => (
-                  <div key={item.inventoryItemId} className="px-4 py-3" data-testid={`cart-item-${item.inventoryItemId}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: brandColor + "15" }}>
-                        <ItemIcon className="h-4 w-4" style={{ color: brandColor }} />
+                  <div key={item.inventoryItemId} className="px-3 py-2" data-testid={`cart-item-${item.inventoryItemId}`}>
+                    <div className="flex items-start gap-2">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: brandColor + "15" }}>
+                        <ItemIcon className="h-3.5 w-3.5" style={{ color: brandColor }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-foreground leading-tight truncate">{item.name}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="font-medium text-xs text-foreground leading-tight truncate">{item.name}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
                           {item.price.toLocaleString()} {t("common.currency")}
                         </p>
                       </div>
                       <button
                         onClick={() => removeFromCart(item.inventoryItemId)}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors flex-shrink-0 mt-0.5"
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors flex-shrink-0"
                         data-testid={`button-remove-${item.inventoryItemId}`}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2 ps-12">
-                      <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-between mt-1.5 ps-10">
+                      <div className="flex items-center gap-0.5">
                         <button
                           onClick={() => updateQty(item.inventoryItemId, -1)}
-                          className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          className="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           data-testid={`button-qty-minus-${item.inventoryItemId}`}
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-2.5 w-2.5" />
                         </button>
-                        <span className="w-8 text-center text-sm font-bold text-foreground" data-testid={`text-cart-qty-${item.inventoryItemId}`}>
+                        <span className="w-7 text-center text-xs font-bold text-foreground" data-testid={`text-cart-qty-${item.inventoryItemId}`}>
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQty(item.inventoryItemId, 1)}
-                          className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          className="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           data-testid={`button-qty-plus-${item.inventoryItemId}`}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-2.5 w-2.5" />
                         </button>
                       </div>
-                      <span className="text-sm font-bold text-foreground" data-testid={`text-line-total-${item.inventoryItemId}`}>
+                      <span className="text-xs font-bold text-foreground" data-testid={`text-line-total-${item.inventoryItemId}`}>
                         {(item.price * item.quantity).toLocaleString()}
-                        <span className="text-xs font-normal text-slate-400 ms-1">{t("common.currency")}</span>
+                        <span className="text-[10px] font-normal text-slate-400 ms-0.5">{t("common.currency")}</span>
                       </span>
                     </div>
                   </div>
@@ -825,23 +849,23 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
           </div>
 
           {/* Totals + Payment */}
-          <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
+          <div className="border-t border-slate-200 dark:border-slate-800 p-2.5 space-y-2 shrink-0 bg-white dark:bg-slate-900">
             {/* Subtotal + Discount */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">{t("pos.total")}</span>
                 <span className="font-medium" data-testid="text-subtotal">
                   {subtotal.toLocaleString()} {t("common.currency")}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500 shrink-0">{t("pos.discount")}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500 shrink-0">{t("pos.discount")}</span>
                 <input
                   type="number"
                   min={0}
                   value={manualDiscount || ""}
                   onChange={(e) => applyManualDiscount(Number(e.target.value) || 0)}
-                  className="flex-1 h-8 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm text-foreground focus:outline-none focus:ring-1 transition-all"
+                  className="flex-1 h-7 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 text-xs text-foreground focus:outline-none focus:ring-1 transition-all"
                   data-testid="input-discount"
                 />
               </div>
@@ -868,82 +892,82 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
                 </p>
               )}
               <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
-                <span className="font-bold text-base">{t("pos.grandTotal")}</span>
-                <span className="font-bold text-lg" style={{ color: brandColor }} data-testid="text-grand-total">
+                <span className="font-bold text-sm">{t("pos.grandTotal")}</span>
+                <span className="font-bold text-base" style={{ color: brandColor }} data-testid="text-grand-total">
                   {grandTotal.toLocaleString()} {t("common.currency")}
                 </span>
               </div>
             </div>
 
             {/* Payment buttons 2×2 grid */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 disabled={cart.length === 0 || orderMutation.isPending}
                 onClick={() => handlePayment("cash")}
-                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl font-semibold text-white text-xs transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-500 hover:bg-emerald-600 shadow-sm"
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg font-semibold text-white text-[10px] leading-tight transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-500 hover:bg-emerald-600 shadow-sm"
                 data-testid="button-pay-cash"
               >
-                <Banknote className="h-5 w-5" />
+                <Banknote className="h-4 w-4" />
                 {t("pos.payByCash")}
               </button>
               <button
                 disabled={cart.length === 0 || orderMutation.isPending}
                 onClick={() => handlePayment("card")}
-                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl font-semibold text-white text-xs transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 shadow-sm"
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg font-semibold text-white text-[10px] leading-tight transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 shadow-sm"
                 data-testid="button-pay-card"
               >
-                <CreditCard className="h-5 w-5" />
+                <CreditCard className="h-4 w-4" />
                 {t("pos.payByCard")}
               </button>
               <button
                 disabled={cart.length === 0 || orderMutation.isPending}
                 onClick={() => handlePayment("transfer")}
-                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl font-semibold text-white text-xs transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-violet-500 hover:bg-violet-600 shadow-sm"
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg font-semibold text-white text-[10px] leading-tight transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-violet-500 hover:bg-violet-600 shadow-sm"
                 data-testid="button-pay-transfer"
               >
-                <ArrowRightLeft className="h-5 w-5" />
+                <ArrowRightLeft className="h-4 w-4" />
                 {t("pos.payByTransfer")}
               </button>
               <button
                 disabled={cart.length === 0 || orderMutation.isPending}
                 onClick={() => handlePayment("debit")}
-                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl font-semibold text-white text-xs transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-orange-500 hover:bg-orange-600 shadow-sm"
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg font-semibold text-white text-[10px] leading-tight transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed bg-orange-500 hover:bg-orange-600 shadow-sm"
                 data-testid="button-pay-debit"
               >
-                <Clock className="h-5 w-5" />
+                <Clock className="h-4 w-4" />
                 {t("pos.payByDebit")}
               </button>
             </div>
 
             {completedOrder && (
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-10 text-xs"
+                  className="h-8 text-[10px] px-2"
                   onClick={() => handlePrintReceipt("thermal")}
                   data-testid="button-cart-print-thermal"
                 >
-                  <Printer className="h-3.5 w-3.5 me-1.5" />
-                  {t("receipt.printThermal")}
+                  <Printer className="h-3 w-3 me-1 shrink-0" />
+                  <span className="truncate">{t("receipt.printThermal")}</span>
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-10 text-xs"
+                  className="h-8 text-[10px] px-2"
                   onClick={() => handlePrintReceipt("a4")}
                   data-testid="button-cart-print-a4"
                 >
-                  <Printer className="h-3.5 w-3.5 me-1.5" />
-                  {t("receipt.printA4")}
+                  <Printer className="h-3 w-3 me-1 shrink-0" />
+                  <span className="truncate">{t("receipt.printA4")}</span>
                 </Button>
               </div>
             )}
 
             {orderMutation.isPending && (
-              <div className="flex items-center justify-center gap-2 text-sm text-slate-400 py-1">
+              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 py-0.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {isAr ? "جارٍ المعالجة..." : "Processing..."}
               </div>
@@ -1027,11 +1051,11 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
             </div>
           )}
           <DialogFooter className="gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => handlePrintReceipt("thermal")} data-testid="button-print-receipt-thermal">
+            <Button type="button" variant="outline" onClick={() => handlePrintReceipt("thermal")} data-testid="button-print-receipt-thermal">
               <Printer className="w-4 h-4 me-2" />
               {t("receipt.printThermal")}
             </Button>
-            <Button variant="outline" onClick={() => handlePrintReceipt("a4")} data-testid="button-print-receipt-a4">
+            <Button type="button" variant="outline" onClick={() => handlePrintReceipt("a4")} data-testid="button-print-receipt-a4">
               <Printer className="w-4 h-4 me-2" />
               {t("receipt.printA4")}
             </Button>

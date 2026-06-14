@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import type { Category, InventoryItem, Order, OrderItem } from "@shared/schema";
+import { printHtmlDocument } from "@/lib/print-window";
 
 export type ReceiptFormat = "thermal" | "a4";
 
@@ -431,15 +432,10 @@ ${body}
 
 export function openReceiptPrint(html: string, format: ReceiptFormat = "thermal") {
   const size = format === "a4" ? "width=900,height=1100" : "width=320,height=720";
-  const w = window.open("", "_blank", size);
-  if (!w) return;
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-  w.focus();
+  return printHtmlDocument(html, size);
 }
 
 export async function printReceipt(input: ReceiptPrintInput, format: ReceiptFormat = "thermal") {
   const html = await buildReceiptHtml({ ...input, format });
-  openReceiptPrint(html, format);
+  return openReceiptPrint(html, format);
 }
