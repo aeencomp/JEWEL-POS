@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import type { InventoryItem, Category } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { generateInventoryBarcode } from "@/lib/barcode";
+import { getEffectiveStoreId } from "@/lib/pos-system";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Pill, Loader2 } from "lucide-react";
+import { Plus, Pencil, Pill, Loader2, RefreshCw } from "lucide-react";
 
 type DrugForm = {
   name: string;
   sku: string;
+  barcode: string;
   categoryId: string;
   genericName: string;
   activeIngredient: string;
@@ -29,13 +33,14 @@ type DrugForm = {
 };
 
 const emptyForm: DrugForm = {
-  name: "", sku: "", categoryId: "", genericName: "", activeIngredient: "",
+  name: "", sku: "", barcode: "", categoryId: "", genericName: "", activeIngredient: "",
   dosageForm: "", strength: "", batchNumber: "", expiryDate: "",
   costPrice: "", sellingPrice: "", quantity: "0", requiresPrescription: false,
 };
 
 export default function PharmacyInventory() {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const isAr = language === "ar";
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
@@ -50,6 +55,7 @@ export default function PharmacyInventory() {
       const body = {
         name: form.name,
         sku: form.sku,
+        barcode: form.barcode || undefined,
         categoryId: Number(form.categoryId),
         genericName: form.genericName || null,
         activeIngredient: form.activeIngredient || null,
@@ -81,9 +87,31 @@ export default function PharmacyInventory() {
     !search || i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.toLowerCase().includes(search.toLowerCase()),
   );
 
+  function nextPharmacySku(list: InventoryItem[]) {
+    const nums = list
+      .map((i) => i.sku.match(/^PHM-(\d+)$/i)?.[1])
+      .filter(Boolean)
+      .map((n) => parseInt(n!, 10));
+    const next = (nums.length ? Math.max(...nums) : 0) + 1;
+    return `PHM-${String(next).padStart(4, "0")}`;
+  }
+
+  function generateBarcode(sku: string, list: InventoryItem[] = items) {
+    const storeId = getEffectiveStoreId(user);
+    if (!storeId) return "";
+    return generateInventoryBarcode(storeId, "pharmacy", sku, list);
+  }
+
   function openNew() {
     setEditing(null);
-    setForm({ ...emptyForm, categoryId: categories[0] ? String(categories[0].id) : "" });
+    const sku = nextPharmacySku(items);
+    const barcode = generateBarcode(sku);
+    setForm({
+      ...emptyForm,
+      categoryId: categories[0] ? String(categories[0].id) : "",
+      sku,
+      barcode,
+    });
     setOpen(true);
   }
 
@@ -92,6 +120,7 @@ export default function PharmacyInventory() {
     setForm({
       name: item.name,
       sku: item.sku,
+      barcode: item.barcode || "",
       categoryId: String(item.categoryId),
       genericName: item.genericName || "",
       activeIngredient: item.activeIngredient || "",
@@ -127,6 +156,7 @@ export default function PharmacyInventory() {
             <TableHeader>
               <TableRow>
                 <TableHead>{isAr ? "الدواء" : "Drug"}</TableHead>
+                <TableHead>{isAr ? "الباركود" : "Barcode"}</TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead>{isAr ? "الشكل" : "Form"}</TableHead>
                 <TableHead>{isAr ? "الصلاحية" : "Expiry"}</TableHead>
@@ -143,6 +173,7 @@ export default function PharmacyInventory() {
                     {item.genericName && <div className="text-xs text-muted-foreground">{item.genericName}</div>}
                     {item.requiresPrescription && <Badge variant="outline" className="mt-1 text-xs">Rx</Badge>}
                   </TableCell>
+                  <TableCell className="font-mono text-xs">{item.barcode || "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{item.sku}</TableCell>
                   <TableCell>{item.dosageForm || "—"} {item.strength && `/ ${item.strength}`}</TableCell>
                   <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
@@ -161,7 +192,39 @@ export default function PharmacyInventory() {
           <DialogHeader><DialogTitle>{editing ? (isAr ? "تعديل دواء" : "Edit Drug") : (isAr ? "دواء جديد" : "New Drug")}</DialogTitle></DialogHeader>
           <div className="grid gap-3 py-2">
             <Input placeholder={isAr ? "اسم الدواء" : "Drug name"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Input placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Input
+                readOnly
+                placeholder={isAr ? "الباركود" : "Barcode"}
+                value={form.barcode}
+                className="font-mono bg-muted/50"
+              />
+              {!editing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title={isAr ? "توليد باركود جديد" : "Regenerate barcode"}
+                  onClick={() => setForm((f) => ({ ...f, barcode: generateBarcode(f.sku) }))}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <Input
+              placeholder="SKU"
+              value={form.sku}
+              readOnly={!editing}
+              className={!editing ? "font-mono bg-muted/50" : "font-mono"}
+              onChange={(e) => {
+                const sku = e.target.value;
+                setForm((f) => ({
+                  ...f,
+                  sku,
+                  barcode: editing ? f.barcode : generateBarcode(sku),
+                }));
+              }}
+            />
             <Select value={form.categoryId} onValueChange={(v) => setForm({ ...form, categoryId: v })}>
               <SelectTrigger><SelectValue placeholder={isAr ? "الفئة" : "Category"} /></SelectTrigger>
               <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
