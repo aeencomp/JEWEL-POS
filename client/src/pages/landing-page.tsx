@@ -562,7 +562,7 @@ export default function LandingPage() {
 
               <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
                 {isAr
-                  ? "أنظمة نقاط بيع متخصصة لمحلات المجوهرات والملابس والمصانع — مصممة للسوق العراقي، ثنائية اللغة، وجاهزة للعمل."
+                  ? "أنظمة نقاط بيع متخصصة لمحلات المجوهرات والملابس والمصانع — مصممة للسوق العراقي والعالمي ، ثنائية اللغة، وجاهزة للعمل."
                   : "Specialized POS systems for jewelry, fashion, and factories — built for the Iraqi market, bilingual, and ready to run."}
               </p>
 
