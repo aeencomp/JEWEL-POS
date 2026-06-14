@@ -181,7 +181,7 @@ export default function PharmacyInventory() {
                 <TableHead>{isAr ? "الصلاحية" : "Expiry"}</TableHead>
                 <TableHead>{isAr ? "الكمية" : "Qty"}</TableHead>
                 <TableHead>{isAr ? "السعر" : "Price"}</TableHead>
-                <TableHead></TableHead>
+                <TableHead className="w-[140px] text-end">{isAr ? "إجراءات" : "Actions"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -192,20 +192,44 @@ export default function PharmacyInventory() {
                     {item.genericName && <div className="text-xs text-muted-foreground">{item.genericName}</div>}
                     {item.requiresPrescription && <Badge variant="outline" className="mt-1 text-xs">Rx</Badge>}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{item.barcode || "—"}</TableCell>
+                  <TableCell>
+                    {(item.barcode || item.sku) ? (
+                      <button
+                        type="button"
+                        className="font-mono text-xs flex items-center gap-1.5 text-teal-400 hover:text-teal-300 hover:underline transition-colors"
+                        title={isAr ? "طباعة باركود" : "Print barcode label"}
+                        onClick={() => setBarcodeItem(item)}
+                      >
+                        <Barcode className="h-3.5 w-3.5 shrink-0" />
+                        {item.barcode || item.sku}
+                      </button>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{item.sku}</TableCell>
                   <TableCell>{item.dosageForm || "—"} {item.strength && `/ ${item.strength}`}</TableCell>
                   <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell>{parseFloat(item.sellingPrice).toLocaleString()}</TableCell>
                   <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      {item.barcode && (
-                        <Button size="sm" variant="ghost" title={isAr ? "طباعة باركود" : "Print barcode"} onClick={() => setBarcodeItem(item)}>
-                          <Barcode className="h-4 w-4" />
+                    <div className="flex items-center justify-end gap-1.5">
+                      {(item.barcode || item.sku) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1.5 text-xs border-teal-500/30 text-teal-400 hover:bg-teal-500/10 hover:text-teal-300"
+                          title={isAr ? "طباعة باركود" : "Print barcode"}
+                          onClick={() => setBarcodeItem(item)}
+                          data-testid={`button-print-barcode-${item.id}`}
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                          {isAr ? "طباعة" : "Print"}
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(item)} title={isAr ? "تعديل" : "Edit"}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -310,6 +334,17 @@ export default function PharmacyInventory() {
               <Button variant="outline" onClick={() => printBarcodeLabel(barcodeItem)} className="gap-2">
                 <Printer className="h-4 w-4" />
                 {isAr ? "طباعة الملصق" : "Print Label"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => {
+                  printBarcodeLabel(barcodeItem);
+                  setBarcodeItem(null);
+                }}
+              >
+                {isAr ? "طباعة وإغلاق" : "Print & close"}
               </Button>
             </div>
           )}
