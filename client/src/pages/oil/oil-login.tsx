@@ -7,7 +7,6 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
-import { DemoLoginHint } from "@/components/demo-login-hint";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -209,7 +208,6 @@ export default function OilLogin() {
                   </>
                 )}
               </button>
-              <DemoLoginHint />
 
               {/* Back to landing */}
               <div className="text-center pt-2">
@@ -222,19 +220,6 @@ export default function OilLogin() {
                 </button>
               </div>
             </form>
-
-            {/* Credentials hint for demo */}
-            <div className="border border-slate-800 rounded-xl p-4 space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{isAr ? "حساب تجريبي" : "Demo Account"}</p>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>{isAr ? "اسم المستخدم:" : "Username:"}</span>
-                <span className="font-mono text-slate-300">oiluser</span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>{isAr ? "كلمة المرور:" : "Password:"}</span>
-                <span className="font-mono text-slate-300">oil123</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
