@@ -256,7 +256,7 @@ html, body {
 
 function buildContext(input: ReceiptPrintInput) {
   const {
-    order, items, inventory, categories, labels, isAr, isFashion,
+    order, items, inventory, categories, labels, isAr, isFashion, isPharmacy,
     storeName, storeAddress, receiptHeader, receiptFooter,
     customerName, customerPhone, paymentLabel, logoUrl,
   } = input;
@@ -281,7 +281,7 @@ function buildContext(input: ReceiptPrintInput) {
       : "";
 
   return {
-    order, items, inventory, categories, labels, isAr, isFashion,
+    order, items, inventory, categories, labels, isAr, isFashion, isPharmacy: !!isPharmacy,
     storeName, storeAddress, receiptHeader, receiptFooter,
     customerName, customerPhone, paymentLabel, dateStr,
     customerBlock, notesBlock, discountRow, logoUrl,
@@ -290,7 +290,7 @@ function buildContext(input: ReceiptPrintInput) {
 
 function buildThermalBody(ctx: ReturnType<typeof buildContext>, qrHtml: string) {
   const {
-    order, items, inventory, categories, labels, isFashion,
+    order, items, inventory, categories, labels, isFashion, isPharmacy,
     storeName, storeAddress, receiptHeader, receiptFooter,
     paymentLabel, dateStr, customerBlock, notesBlock, discountRow,
   } = ctx;
@@ -298,7 +298,7 @@ function buildThermalBody(ctx: ReturnType<typeof buildContext>, qrHtml: string) 
   const rows = items.map((item) => {
     const inv = inventory.find((i) => i.id === item.inventoryItemId) as InvExtra | undefined;
     const cat = inv ? categories?.find((c) => c.id === inv.categoryId) : undefined;
-    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, !!input.isPharmacy, cat?.name);
+    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, isPharmacy, cat?.name);
     const lineTotal = Number(item.price) * item.quantity;
     return `<tr>
       <td><span class="item-name">${esc(item.name)}</span>${detailsHtml}</td>
@@ -344,7 +344,7 @@ ${qrHtml}
 
 function buildA4Body(ctx: ReturnType<typeof buildContext>) {
   const {
-    order, items, inventory, categories, labels, isFashion,
+    order, items, inventory, categories, labels, isFashion, isPharmacy,
     storeName, storeAddress, receiptHeader, receiptFooter,
     customerName, customerPhone, paymentLabel, dateStr, discountRow, logoUrl,
   } = ctx;
@@ -352,7 +352,7 @@ function buildA4Body(ctx: ReturnType<typeof buildContext>) {
   const rows = items.map((item) => {
     const inv = inventory.find((i) => i.id === item.inventoryItemId) as InvExtra | undefined;
     const cat = inv ? categories?.find((c) => c.id === inv.categoryId) : undefined;
-    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, !!input.isPharmacy, cat?.name);
+    const detailsHtml = itemDetailLines(item, inv, labels, isFashion, isPharmacy, cat?.name);
     const lineTotal = Number(item.price) * item.quantity;
     return `<tr>
       <td><div class="item-name">${esc(item.name)}</div>${detailsHtml}</td>
