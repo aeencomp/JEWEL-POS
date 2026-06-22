@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, parseApiErrorMessage, queryClient } from "../lib/queryClient";
+import { storeHomePath } from "@/lib/pos-system";
 import { useToast } from "@/hooks/use-toast";
 
 type UserWithImpersonation = SelectUser & {
@@ -13,6 +14,7 @@ type UserWithImpersonation = SelectUser & {
   impersonatingStoreName?: string;
   demoStoreId?: number;
   demoStoreName?: string;
+  posSystem?: string;
 };
 
 type TwoFAResponse = {
@@ -40,7 +42,7 @@ type AuthContextType = {
 
 type LoginData = Pick<InsertUser, "username" | "password"> & {
   portal?: string;
-  posSystem?: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
+  posSystem?: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy" | "grocery";
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -170,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/layaways"] });
-      window.location.href = "/";
+      window.location.href = storeHomePath(data.posSystem);
     },
     onError: (error: Error) => {
       toast({

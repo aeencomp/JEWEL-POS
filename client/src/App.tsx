@@ -79,9 +79,18 @@ import PharmacyInventory from "@/pages/pharmacy/pharmacy-inventory";
 import PharmacyPrescriptions from "@/pages/pharmacy/pharmacy-prescriptions";
 import PharmacyExpiry from "@/pages/pharmacy/pharmacy-expiry";
 import PharmacyReports from "@/pages/pharmacy/pharmacy-reports";
+import GroceryLogin from "@/pages/grocery/grocery-login";
+import GroceryLayout from "@/pages/grocery/grocery-layout";
+import GroceryDashboard from "@/pages/grocery/grocery-dashboard";
+import GroceryPos from "@/pages/grocery/grocery-pos";
+import GroceryInventory from "@/pages/grocery/grocery-inventory";
+import GroceryExpiry from "@/pages/grocery/grocery-expiry";
+import GroceryReports from "@/pages/grocery/grocery-reports";
+import GrocerySuppliers from "@/pages/grocery/grocery-suppliers";
+import GroceryPurchases from "@/pages/grocery/grocery-purchases";
 import PrivacyPage from "@/pages/privacy";
 import { Loader2 } from "lucide-react";
-import { resolveUserPosSystem } from "@/lib/pos-system";
+import { resolveUserPosSystem, storeHomePath } from "@/lib/pos-system";
 
 function AdminRouter() {
   return (
@@ -150,6 +159,28 @@ function PharmacyRouter() {
       <Route path="/pharmacy/stock-audit" component={StockAudit} />
       <Route path="/pharmacy/branding" component={StoreBranding} />
       <Route path="/pharmacy/backup" component={StoreBackup} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function GroceryRouter() {
+  return (
+    <Switch>
+      <Route path="/grocery" component={GroceryDashboard} />
+      <Route path="/grocery/pos" component={GroceryPos} />
+      <Route path="/grocery/inventory" component={GroceryInventory} />
+      <Route path="/grocery/expiry" component={GroceryExpiry} />
+      <Route path="/grocery/suppliers" component={GrocerySuppliers} />
+      <Route path="/grocery/purchases" component={GroceryPurchases} />
+      <Route path="/grocery/returns" component={FashionReturns} />
+      <Route path="/grocery/debts" component={DebtsPage} />
+      <Route path="/grocery/customers" component={CustomersPage} />
+      <Route path="/grocery/orders" component={OrdersHistory} />
+      <Route path="/grocery/reports" component={GroceryReports} />
+      <Route path="/grocery/stock-audit" component={StockAudit} />
+      <Route path="/grocery/branding" component={StoreBranding} />
+      <Route path="/grocery/backup" component={StoreBackup} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -287,12 +318,21 @@ function PharmacyStoreLayout() {
   );
 }
 
-function storeHomePath(posSystem?: string): string {
-  if (posSystem === "oil") return "/oil";
-  if (posSystem === "fashion") return "/fashion";
-  if (posSystem === "restaurant") return "/restaurant";
-  if (posSystem === "pharmacy") return "/pharmacy";
-  return "/";
+function GroceryStoreLayout() {
+  const { isImpersonating, impersonatingStoreName, stopImpersonateMutation } = useAuth();
+  return (
+    <GroceryLayout
+      isImpersonating={isImpersonating}
+      impersonatingStoreName={impersonatingStoreName}
+      onStopImpersonate={() => stopImpersonateMutation.mutate()}
+    >
+      <GroceryRouter />
+    </GroceryLayout>
+  );
+}
+
+function storeHomePathFromUser(posSystem?: string): string {
+  return storeHomePath(posSystem);
 }
 
 function AppContent() {
@@ -337,6 +377,9 @@ function AppContent() {
     if (location === "/pharmacy-login") {
       return <PharmacyLogin />;
     }
+    if (location === "/grocery-login") {
+      return <GroceryLogin />;
+    }
     if (location === "/oil" || location.startsWith("/oil/")) {
       return <Redirect to="/oil-login" />;
     }
@@ -349,11 +392,14 @@ function AppContent() {
     if (location === "/pharmacy" || location.startsWith("/pharmacy/")) {
       return <Redirect to="/pharmacy-login" />;
     }
+    if (location === "/grocery" || location.startsWith("/grocery/")) {
+      return <Redirect to="/grocery-login" />;
+    }
     return <LandingPage />;
   }
 
   const posSystem = resolveUserPosSystem(user as { username?: string; posSystem?: string }, location);
-  const home = storeHomePath(posSystem);
+  const home = storeHomePathFromUser(posSystem);
 
   if (location === "/oil-login") {
     return <Redirect to={posSystem === "oil" ? "/oil" : home} />;
@@ -366,6 +412,9 @@ function AppContent() {
   }
   if (location === "/pharmacy-login") {
     return <Redirect to={posSystem === "pharmacy" ? "/pharmacy" : home} />;
+  }
+  if (location === "/grocery-login") {
+    return <Redirect to={posSystem === "grocery" ? "/grocery" : home} />;
   }
   if (location === "/driver-login") return <DriverLogin />;
   if (location === "/driver" || location.startsWith("/driver/")) return <DriverApp />;
@@ -409,7 +458,13 @@ function AppContent() {
       }
       return <PharmacyStoreLayout />;
     }
-    if (location.startsWith("/fashion") || location.startsWith("/oil") || location.startsWith("/restaurant") || location.startsWith("/pharmacy")) {
+    if (posSystem === "grocery") {
+      if (!location.startsWith("/grocery")) {
+        return <Redirect to="/grocery" />;
+      }
+      return <GroceryStoreLayout />;
+    }
+    if (location.startsWith("/fashion") || location.startsWith("/oil") || location.startsWith("/restaurant") || location.startsWith("/pharmacy") || location.startsWith("/grocery")) {
       return <Redirect to="/" />;
     }
   }

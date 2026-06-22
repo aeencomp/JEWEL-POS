@@ -1,13 +1,14 @@
 import { db } from "./db";
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
-import { menuCategories, menuItems, restaurantTables, users } from "@shared/schema";
+import { menuCategories, menuItems, restaurantTables, users, grocerySuppliers } from "@shared/schema";
+import { GROCERY_DEFAULT_CATEGORIES } from "@shared/grocery-defaults";
 import { eq } from "drizzle-orm";
 
 export const DEMO_USERNAME = "demo";
 export const DEMO_PASSWORD = "demo123";
 
-export type DemoPosSystem = "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
+export type DemoPosSystem = "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy" | "grocery";
 
 const DEMO_STORE_NAMES: Record<DemoPosSystem, string> = {
   jewel: "IQ-POS Demo — Jewel",
@@ -15,6 +16,7 @@ const DEMO_STORE_NAMES: Record<DemoPosSystem, string> = {
   oil: "IQ-POS Demo — Factory",
   restaurant: "IQ-POS Demo — Restaurant",
   pharmacy: "IQ-POS Demo — Pharmacy",
+  grocery: "IQ-POS Demo — Grocery",
 };
 
 const DEMO_BRAND_COLORS: Record<DemoPosSystem, string> = {
@@ -23,6 +25,7 @@ const DEMO_BRAND_COLORS: Record<DemoPosSystem, string> = {
   oil: "#2563eb",
   restaurant: "#ea580c",
   pharmacy: "#0d9488",
+  grocery: "#16a34a",
 };
 
 export function isDemoUser(user: { username?: string } | null | undefined): boolean {
@@ -30,7 +33,7 @@ export function isDemoUser(user: { username?: string } | null | undefined): bool
 }
 
 export function normalizeDemoPosSystem(value: unknown): DemoPosSystem {
-  if (value === "oil" || value === "fashion" || value === "restaurant" || value === "pharmacy") return value;
+  if (value === "oil" || value === "fashion" || value === "restaurant" || value === "pharmacy" || value === "grocery") return value;
   return "jewel";
 }
 
@@ -45,7 +48,7 @@ export async function resolveDemoStoreId(posSystem: DemoPosSystem): Promise<numb
 }
 
 export async function refreshDemoStoreIdCache() {
-  for (const ps of ["jewel", "fashion", "oil", "restaurant", "pharmacy"] as DemoPosSystem[]) {
+  for (const ps of ["jewel", "fashion", "oil", "restaurant", "pharmacy", "grocery"] as DemoPosSystem[]) {
     const id = await resolveDemoStoreId(ps);
     if (id) demoStoreIdBySystem[ps] = id;
   }
@@ -264,6 +267,55 @@ async function seedPharmacyDemo(storeId: number) {
   }
 }
 
+async function seedGroceryDemo(storeId: number) {
+  const cats = await storage.getCategories(storeId);
+  if (cats.length > 0) return;
+
+  const categoryNames = GROCERY_DEFAULT_CATEGORIES.slice(0, 6);
+  const catIds: number[] = [];
+  for (let i = 0; i < categoryNames.length; i++) {
+    const cat = await storage.createCategory({ storeId, name: categoryNames[i], sortOrder: i });
+    catIds.push(cat.id);
+  }
+
+  const samples = [
+    { sku: "GRC-MILK1L", name: "حليب طازج 1 لتر", brand: "المراعي", categoryId: catIds[0], costPrice: "1500", sellingPrice: "2000", quantity: 48, batchNumber: "L2026-01" },
+    { sku: "GRC-COLA", name: "كولا 330 مل", brand: "بيبسي", categoryId: catIds[1], costPrice: "500", sellingPrice: "750", quantity: 120, batchNumber: "B2026-02" },
+    { sku: "GRC-CHIPS", name: "شيبس بطاطا 50 غ", brand: "لايز", categoryId: catIds[2], costPrice: "800", sellingPrice: "1250", quantity: 80, batchNumber: "S2026-03" },
+    { sku: "GRC-DETERG", name: "مسحوق غسيل 1 كغ", brand: "تايد", categoryId: catIds[3], costPrice: "4000", sellingPrice: "5500", quantity: 30, batchNumber: "C2026-04" },
+  ];
+
+  const expiry = new Date();
+  expiry.setMonth(expiry.getMonth() + 6);
+
+  for (const sample of samples) {
+    const barcode = `${storeId}${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    await storage.createInventoryItem({
+      storeId,
+      categoryId: sample.categoryId,
+      sku: sample.sku,
+      barcode,
+      name: sample.name,
+      brand: sample.brand,
+      batchNumber: sample.batchNumber,
+      expiryDate: expiry,
+      metalType: "other",
+      costPrice: sample.costPrice,
+      sellingPrice: sample.sellingPrice,
+      quantity: sample.quantity,
+      isAvailable: true,
+    });
+  }
+
+  const existingSuppliers = await db.select().from(grocerySuppliers).where(eq(grocerySuppliers.storeId, storeId)).limit(1);
+  if (existingSuppliers.length === 0) {
+    await db.insert(grocerySuppliers).values([
+      { storeId, name: "شركة الوطنية للتجارة", phone: "+964 770 111 2222", address: "بغداد" },
+      { storeId, name: "شركة الأغذية الطازجة", phone: "+964 770 333 4444", address: "أربيل" },
+    ]);
+  }
+}
+
 async function ensureDemoStore(posSystem: DemoPosSystem) {
   const stores = await storage.getStores();
   let store = stores.find((s) => s.name === DEMO_STORE_NAMES[posSystem] && s.posSystem === posSystem);
@@ -285,12 +337,13 @@ async function ensureDemoStore(posSystem: DemoPosSystem) {
   if (posSystem === "fashion") await seedFashionDemo(store.id);
   if (posSystem === "restaurant") await seedRestaurantDemo(store.id);
   if (posSystem === "pharmacy") await seedPharmacyDemo(store.id);
+  if (posSystem === "grocery") await seedGroceryDemo(store.id);
   return store;
 }
 
 /** Idempotent — safe on every server start and production deploy. */
 export async function seedDemoEnvironment() {
-  const systems: DemoPosSystem[] = ["jewel", "fashion", "oil", "restaurant", "pharmacy"];
+  const systems: DemoPosSystem[] = ["jewel", "fashion", "oil", "restaurant", "pharmacy", "grocery"];
   for (const ps of systems) {
     await ensureDemoStore(ps);
   }

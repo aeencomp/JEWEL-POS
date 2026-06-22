@@ -40,7 +40,7 @@ export const stores = pgTable("stores", {
   logoUrl: text("logo_url"),
   receiptHeader: text("receipt_header"),
   receiptFooter: text("receipt_footer"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy", "grocery"] }).notNull().default("jewel"),
   features: text("features"),
 });
 
@@ -373,7 +373,7 @@ export const signupRequests = pgTable("signup_requests", {
   businessName: text("business_name").notNull(),
   phone: text("phone").notNull(),
   email: text("email"),
-  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy"] }).notNull().default("jewel"),
+  posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy", "grocery"] }).notNull().default("jewel"),
   notes: text("notes"),
   status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -911,6 +911,53 @@ export type PharmacyPrescription = typeof pharmacyPrescriptions.$inferSelect;
 export type PharmacyPrescriptionItem = typeof pharmacyPrescriptionItems.$inferSelect;
 export type InsertPharmacyPrescription = z.infer<typeof insertPharmacyPrescriptionSchema>;
 export type InsertPharmacyPrescriptionItem = z.infer<typeof insertPharmacyPrescriptionItemSchema>;
+
+// ── Grocery ───────────────────────────────────────────────────
+export const grocerySuppliers = pgTable("grocery_suppliers", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertGrocerySupplierSchema = createInsertSchema(grocerySuppliers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type GrocerySupplier = typeof grocerySuppliers.$inferSelect;
+export type InsertGrocerySupplier = z.infer<typeof insertGrocerySupplierSchema>;
+
+export const groceryPurchases = pgTable("grocery_purchases", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").notNull().references(() => stores.id),
+  supplierId: integer("supplier_id").references(() => grocerySuppliers.id),
+  supplierName: text("supplier_name"),
+  invoiceNumber: text("invoice_number").notNull(),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
+  paymentStatus: text("payment_status", { enum: ["unpaid", "partial", "paid"] }).notNull().default("unpaid"),
+  paymentMethod: text("payment_method", { enum: ["cash", "card", "transfer"] }).notNull().default("cash"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const groceryPurchaseItems = pgTable("grocery_purchase_items", {
+  id: serial("id").primaryKey(),
+  purchaseId: integer("purchase_id").notNull().references(() => groceryPurchases.id),
+  inventoryItemId: integer("inventory_item_id").notNull().references(() => inventoryItems.id),
+  productName: text("product_name").notNull(),
+  sku: text("sku"),
+  quantity: integer("quantity").notNull(),
+  unitCost: decimal("unit_cost", { precision: 12, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+});
+
+export type GroceryPurchase = typeof groceryPurchases.$inferSelect;
+export type GroceryPurchaseItem = typeof groceryPurchaseItems.$inferSelect;
 
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),

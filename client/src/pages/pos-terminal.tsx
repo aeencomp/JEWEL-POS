@@ -4,7 +4,7 @@ import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { isFashionStore, isPharmacyStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
+import { isFashionStore, isPharmacyStore, isGroceryStore, calcLoyaltyDiscount, LOYALTY_EARN_PER_IQD, LOYALTY_REDEEM_IQD } from "@/lib/pos-system";
 import { normalizeBarcodeForScan, scanCodeVariants } from "@/lib/barcode";
 import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -52,6 +52,7 @@ import {
   Gem,
   Shirt,
   Pill,
+  ShoppingBasket,
   Tag,
   Box,
   Star,
@@ -98,7 +99,7 @@ function TerminalIcon({ iconName, size = 20 }: { iconName: string; size?: number
   return <Icon style={{ width: size, height: size }} />;
 }
 
-export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" | "fashion" | "pharmacy" }) {
+export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" | "fashion" | "pharmacy" | "grocery" }) {
   const { t } = useLanguage();
   const { language } = useLanguage();
   const isAr = language === "ar";
@@ -106,8 +107,9 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
   const { user } = useAuth();
   const isFashion = variant === "fashion" || isFashionStore((user as { posSystem?: string })?.posSystem);
   const isPharmacy = variant === "pharmacy" || isPharmacyStore((user as { posSystem?: string })?.posSystem);
-  const isRetailScan = isFashion || isPharmacy;
-  const ItemIcon = isPharmacy ? Pill : isFashion ? Shirt : Gem;
+  const isGrocery = variant === "grocery" || isGroceryStore((user as { posSystem?: string })?.posSystem);
+  const isRetailScan = isFashion || isPharmacy || isGrocery;
+  const ItemIcon = isPharmacy ? Pill : isGrocery ? ShoppingBasket : isFashion ? Shirt : Gem;
   useLocation();
   const [match, params] = useRoute("/pos/:id");
   const terminalId = match && params?.id ? parseInt(params.id) : null;
@@ -418,8 +420,9 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
       categories,
       labels: receiptLabels(),
       isAr,
-      isFashion: isFashion && !isPharmacy,
+      isFashion: isFashion && !isPharmacy && !isGrocery,
       isPharmacy,
+      isGrocery: isGrocery && !isPharmacy,
       storeName: branding?.name || "Store",
       storeAddress: branding?.address || "",
       brandColor: branding?.brandColor || "#333",
@@ -538,7 +541,7 @@ export default function PosTerminal({ variant = "jewel" }: { variant?: "jewel" |
 
         {/* Product Grid */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-100 dark:bg-slate-950">
-          {isFashion && (
+          {isRetailScan && (
             <input
               ref={scannerInputRef}
               type="text"

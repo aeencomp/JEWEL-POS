@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { isFashionStore } from "@/lib/pos-system";
+import { isFashionStore, isPharmacyStore, isGroceryStore } from "@/lib/pos-system";
 import { printReceipt, type ReceiptFormat, type ReceiptLabels } from "@/lib/receipt-print";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, OrderItem, InventoryItem, Category } from "@shared/schema";
@@ -67,6 +67,8 @@ export default function OrdersHistory() {
   const isAr = language === "ar";
   const { user } = useAuth();
   const isFashion = isFashionStore((user as { posSystem?: string })?.posSystem);
+  const isPharmacy = isPharmacyStore((user as { posSystem?: string })?.posSystem);
+  const isGrocery = isGroceryStore((user as { posSystem?: string })?.posSystem);
   const { toast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -125,6 +127,8 @@ export default function OrdersHistory() {
       weight: t("inventory.weight"),
       gemstone: t("inventory.gemstone"),
       caratWeight: t("inventory.caratWeight"),
+      batchNumber: isAr ? "رقم الدفعة" : "Batch",
+      expiryDate: isAr ? "الصلاحية" : "Expiry",
     };
   }
 
@@ -151,7 +155,9 @@ export default function OrdersHistory() {
       categories,
       labels: receiptLabels(),
       isAr,
-      isFashion,
+      isFashion: isFashion && !isPharmacy && !isGrocery,
+      isPharmacy,
+      isGrocery: isGrocery && !isPharmacy,
       storeName: branding?.name || "Store",
       storeAddress: branding?.address || "",
       brandColor: branding?.brandColor || "#333",

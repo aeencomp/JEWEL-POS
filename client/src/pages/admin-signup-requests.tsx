@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Gem, Droplets, Shirt, CheckCircle, XCircle, Clock, Trash2, Search, UserCheck } from "lucide-react";
+import { posSystemLabel } from "@/lib/pos-system";
 import type { SignupRequest } from "@shared/schema";
 
 const statusColors: Record<string, string> = {
@@ -170,28 +171,7 @@ export default function AdminSignupRequests() {
                     <TableCell>{req.businessName}</TableCell>
                     <TableCell dir="ltr" className="font-mono text-sm">{req.phone}</TableCell>
                     <TableCell>
-                      {req.posSystem === "oil" ? (
-                        <span className="flex items-center gap-1.5 text-sm">
-                          <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-                            <Droplets className="h-3 w-3 text-white" />
-                          </div>
-                          FactoryPOS
-                        </span>
-                      ) : req.posSystem === "fashion" ? (
-                        <span className="flex items-center gap-1.5 text-sm">
-                          <div className="w-5 h-5 rounded bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                            <Shirt className="h-3 w-3 text-white" />
-                          </div>
-                          FashionPOS
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-sm">
-                          <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
-                            <Gem className="h-3 w-3 text-white" />
-                          </div>
-                          JewelPOS
-                        </span>
-                      )}
+                      <span className="text-sm">{posSystemLabel(req.posSystem as any, isAr)}</span>
                     </TableCell>
                     <TableCell>
                       <Badge className={`text-[11px] px-2 py-0.5 flex items-center gap-1 w-fit ${statusColors[req.status]}`}>

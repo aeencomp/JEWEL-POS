@@ -117,7 +117,8 @@ const products: Product[] = [
     descriptionAr: "نقطة بيع سريعة للبقالة والسوبرماركت مع قراءة الباركود وتتبع الصلاحية والموردين.",
     icon: ShoppingBasket,
     gradient: "from-green-500 to-emerald-600",
-    available: false,
+    available: true,
+    href: "/grocery-login",
     tags: ["Grocery", "Barcode", "Expiry"],
     tagsAr: ["بقالة", "باركود", "صلاحية"],
   },
@@ -174,7 +175,7 @@ type SignupForm = {
   businessName: string;
   phone: string;
   email: string;
-  posSystem: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy";
+  posSystem: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy" | "grocery";
   notes: string;
 };
 
@@ -183,7 +184,7 @@ type Pricing = { monthly: number };
 const DEFAULT_PRICING: Pricing = { monthly: 45000 };
 
 type PosPricingPlan = {
-  id: "jewel" | "fashion" | "oil" | "restaurant" | "pharmacy";
+  id: "jewel" | "fashion" | "oil" | "restaurant" | "pharmacy" | "grocery";
   name: string;
   nameAr: string;
   subtitle: string;
@@ -394,6 +395,46 @@ const POS_PRICING_PLANS: PosPricingPlan[] = [
       "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
     ],
   },
+  {
+    id: "grocery",
+    name: "GroceryPOS",
+    nameAr: "نقطة بيع البقالة",
+    subtitle: "Grocery & Supermarkets",
+    subtitleAr: "البقالة والسوبرماركت",
+    icon: ShoppingBasket,
+    gradient: "from-green-500 to-emerald-600",
+    accent: "text-green-500",
+    features: [
+      "Fast POS with barcode scanning",
+      "Product inventory with batch & expiry",
+      "Expiry alerts (expired & expiring soon)",
+      "Supplier management & stock receiving",
+      "Customer management",
+      "Sales history & returns",
+      "Stock audit & inventory counts",
+      "Grocery reports & top sellers",
+      "Supplier debts tracking",
+      "Custom store branding (logo & colors)",
+      "Cloud backup & data export",
+      "Receipt printing (thermal + A4)",
+      "Bilingual interface (English / Arabic + RTL)",
+    ],
+    featuresAr: [
+      "نقطة بيع سريعة مع مسح الباركود",
+      "مخزون منتجات مع الدفعات والصلاحية",
+      "تنبيهات الصلاحية (منتهية وقريبة)",
+      "إدارة الموردين واستلام المخزون",
+      "إدارة العملاء",
+      "سجل المبيعات والمرتجعات",
+      "جرد المخزون والعد الدوري",
+      "تقارير البقالة وأكثر المنتجات مبيعاً",
+      "متابعة ديون الموردين",
+      "علامة تجارية مخصصة (شعار وألوان)",
+      "نسخ احتياطي سحابي وتصدير البيانات",
+      "طباعة الفواتير (حرارية + A4)",
+      "واجهة ثنائية اللغة (عربي / إنجليزي + RTL)",
+    ],
+  },
 ];
 
 const PLATFORM_INCLUDES = {
@@ -473,6 +514,17 @@ const SIGNUP_POS_OPTIONS = [
     activeBg: "bg-teal-50 dark:bg-teal-950/30",
     hoverBorder: "hover:border-teal-300",
   },
+  {
+    id: "grocery" as const,
+    label: "GroceryPOS",
+    subEn: "Grocery",
+    subAr: "بقالة",
+    icon: ShoppingBasket,
+    gradient: "from-green-500 to-emerald-600",
+    activeBorder: "border-green-500",
+    activeBg: "bg-green-50 dark:bg-green-950/30",
+    hoverBorder: "hover:border-green-300",
+  },
 ];
 
 export default function LandingPage() {
@@ -488,7 +540,7 @@ export default function LandingPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant" | "pharmacy">("jewel");
+  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant" | "pharmacy" | "grocery">("jewel");
   const [form, setForm] = useState<SignupForm>({
     name: "",
     businessName: "",
@@ -540,9 +592,10 @@ export default function LandingPage() {
     mutation.mutate(form);
   }
 
-  function handleOpen(preselect?: "jewel" | "oil" | "fashion" | "restaurant") {
+  function handleOpen(preselect?: SignupForm["posSystem"]) {
     setSubmitted(false);
     setErrors({});
+    if (preselect) setActivePlan(preselect);
     setForm({ name: "", businessName: "", phone: "", email: "", posSystem: preselect ?? "jewel", notes: "" });
     setDialogOpen(true);
   }

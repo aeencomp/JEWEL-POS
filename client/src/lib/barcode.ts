@@ -60,7 +60,7 @@ export function generateInventoryBarcode(
   _suffix = "",
   inventory: { barcode?: string | null }[] = [],
 ): string {
-  if (posSystem === "fashion" || posSystem === "pharmacy") {
+  if (posSystem === "fashion" || posSystem === "pharmacy" || posSystem === "grocery") {
     return nextFashionBarcode(storeId, inventory);
   }
   const prefix = posSystem === "oil" ? "OIL" : "JWL";
