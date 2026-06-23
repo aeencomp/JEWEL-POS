@@ -53,6 +53,31 @@ export async function getStripePriceId(): Promise<string> {
   return priceId;
 }
 
+export async function getPublicStripePrice(): Promise<{
+  amount: number;
+  currency: string;
+  interval: string;
+  enabled: true;
+} | null> {
+  if (!(await isStripeConfigured())) return null;
+  try {
+    const price = await getStripe().prices.retrieve(await getStripePriceId());
+    if (price.unit_amount == null || !price.currency) return null;
+    const zeroDecimal = new Set([
+      "bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf",
+    ]);
+    const amount = zeroDecimal.has(price.currency) ? price.unit_amount : price.unit_amount / 100;
+    return {
+      amount,
+      currency: price.currency,
+      interval: price.recurring?.interval ?? "month",
+      enabled: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function appBaseUrl(req?: { protocol?: string; get?: (name: string) => string | undefined }): string {
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
   if (req?.get?.("host")) {

@@ -13,7 +13,7 @@ import { registerPharmacyRoutes } from "./pharmacy-routes";
 import { GROCERY_DEFAULT_CATEGORIES } from "@shared/grocery-defaults";
 import { registerGroceryRoutes } from "./grocery-routes";
 import { registerStripeRoutes } from "./stripe-routes";
-import { subscriptionPayload } from "./stripe-service";
+import { subscriptionPayload, getPublicStripePrice } from "./stripe-service";
 import { registerIqOrderRoutes } from "./iq-order-routes";
 import { registerDriverRoutes, ensureDemoDriver } from "./driver-routes";
 import { registerPushRoutes } from "./push-routes";
@@ -780,19 +780,11 @@ export async function registerRoutes(
 
   app.get("/api/pricing", async (_req, res) => {
     try {
-      const raw = await storage.getSetting("pricing");
-      if (!raw) return res.json(DEFAULT_PRICING);
-      const parsed = JSON.parse(raw);
-      if (typeof parsed.monthly === "number") return res.json(parsed);
-      // Legacy tiered pricing — use standard plan or fall back to 45,000 IQD
-      const legacy =
-        parsed.jewel?.standard ??
-        parsed.fashion?.standard ??
-        parsed.oil?.standard ??
-        DEFAULT_PRICING.monthly;
-      res.json({ monthly: legacy });
+      const monthly = await getStandardMonthlyPrice();
+      const stripe = await getPublicStripePrice();
+      res.json({ monthly, stripe });
     } catch {
-      res.json(DEFAULT_PRICING);
+      res.json({ ...DEFAULT_PRICING, stripe: null });
     }
   });
 

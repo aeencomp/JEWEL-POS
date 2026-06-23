@@ -48,6 +48,13 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DualPriceDisplay,
+  PoweredByStripe,
+  type LandingPricing,
+  fmtIqd,
+  fmtStripeMoney,
+} from "@/components/landing-stripe-pricing";
 
 function IqPosLogo({ size = 32 }: { size?: number }) {
   return (
@@ -180,9 +187,9 @@ type SignupForm = {
   notes: string;
 };
 
-type Pricing = { monthly: number };
+type Pricing = LandingPricing;
 
-const DEFAULT_PRICING: Pricing = { monthly: 45000 };
+const DEFAULT_PRICING: Pricing = { monthly: 45000, stripe: null };
 
 type PosPricingPlan = {
   id: "jewel" | "fashion" | "oil" | "restaurant" | "pharmacy" | "grocery";
@@ -456,7 +463,7 @@ const PLATFORM_INCLUDES = {
 };
 
 function fmtPrice(n: number) {
-  return n.toLocaleString("en-US");
+  return fmtIqd(n);
 }
 
 const SIGNUP_POS_OPTIONS = [
@@ -539,9 +546,7 @@ export default function LandingPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: stripeConfig } = useQuery<{ enabled: boolean }>({
-    queryKey: ["/api/stripe/config"],
-  });
+  const stripeEnabled = !!pricing.stripe?.enabled;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -951,33 +956,37 @@ export default function LandingPage() {
                   <Star className="h-3 w-3" />
                   {isAr ? "الخطة القياسية" : "Standard Plan"}
                 </div>
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <span
-                    className="text-5xl sm:text-6xl font-extrabold text-white tracking-tight leading-none"
-                    data-testid="price-monthly"
-                  >
-                    {fmtPrice(pricing.monthly)}
-                  </span>
-                  <span className="text-lg text-amber-100/80 font-medium">
-                    {isAr ? "د.ع / شهر" : "IQD / mo"}
-                  </span>
-                </div>
+                <DualPriceDisplay pricing={pricing} isAr={isAr} variant="hero" />
                 <p className="text-amber-100/70 text-sm mt-4 leading-relaxed">
                   {isAr
                     ? "ينطبق على JewelPOS و FashionPOS و FactoryPOS وجميع الأنظمة القادمة"
                     : "Applies to JewelPOS, FashionPOS, FactoryPOS, and all upcoming systems"}
                 </p>
               </div>
-              <Button
-                size="lg"
-                className="w-full bg-white text-amber-700 hover:bg-amber-50 font-semibold shadow-lg shadow-black/10 border-0"
-                onClick={() => handleOpen()}
-                data-testid="button-pricing-hero"
-              >
-                <UserPlus className="h-4 w-4 me-2" />
-                {isAr ? "اطلب الاشتراك الآن" : "Request Subscription"}
-                <ArrowRight className="h-4 w-4 ms-2" />
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  size="lg"
+                  className="w-full bg-white text-amber-700 hover:bg-amber-50 font-semibold shadow-lg shadow-black/10 border-0"
+                  onClick={() => handleOpen()}
+                  data-testid="button-pricing-hero"
+                >
+                  <UserPlus className="h-4 w-4 me-2" />
+                  {isAr ? "اطلب الاشتراك الآن" : "Request Subscription"}
+                  <ArrowRight className="h-4 w-4 ms-2" />
+                </Button>
+                {stripeEnabled && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+                    onClick={() => handleOpen()}
+                    data-testid="button-pricing-hero-stripe"
+                  >
+                    <CreditCard className="h-4 w-4 me-2" />
+                    {isAr ? "ادفع بالبطاقة الآن" : "Pay by Card Now"}
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="lg:col-span-3 bg-card dark:bg-slate-900/90 p-8 sm:p-10">
@@ -1060,12 +1069,7 @@ export default function LandingPage() {
                           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">
                             {isAr ? "الاشتراك الشهري" : "Monthly"}
                           </p>
-                          <p className="text-2xl font-extrabold text-foreground" data-testid={`price-${plan.id}`}>
-                            {fmtPrice(pricing.monthly)}{" "}
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {isAr ? "د.ع" : "IQD"}
-                            </span>
-                          </p>
+                          <DualPriceDisplay pricing={pricing} isAr={isAr} variant="compact" />
                         </div>
                         <Button
                           className={`bg-gradient-to-r ${plan.gradient} text-white border-0 shrink-0`}
@@ -1096,6 +1100,17 @@ export default function LandingPage() {
               );
             })}
           </div>
+
+          {stripeEnabled && (
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <PoweredByStripe isAr={isAr} variant="muted" />
+              <p className="text-xs text-muted-foreground text-center max-w-md">
+                {isAr
+                  ? "الأسعار بالدينار للعرض المحلي · الدفع بالبطاقة يتم بالدولار عبر Stripe بشكل آمن"
+                  : "IQD shown for local reference · Card payments are processed securely in USD via Stripe"}
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1123,14 +1138,17 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground">
+          <div className="mt-8 pt-6 border-t border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-muted-foreground">
             <p>
               {isAr ? "© 2026 IQ-POS. جميع الحقوق محفوظة." : "© 2026 IQ-POS Platform. All rights reserved."}
             </p>
-            <p className="flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 opacity-60" />
-              {isAr ? "آمن · سحابي · ثنائي اللغة" : "Secure · Cloud · Bilingual"}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {stripeEnabled && <PoweredByStripe isAr={isAr} variant="muted" />}
+              <p className="flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 opacity-60" />
+                {isAr ? "آمن · سحابي · ثنائي اللغة" : "Secure · Cloud · Bilingual"}
+              </p>
+            </div>
           </div>
         </div>
       </footer>
@@ -1295,26 +1313,43 @@ export default function LandingPage() {
                 </div>
 
                 <div className="shrink-0 border-t border-border bg-card p-3 pt-2 space-y-2">
-                  {stripeConfig?.enabled && (
-                    <Button
-                      type="button"
-                      className="w-full h-10 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-sm"
-                      disabled={stripeCheckoutMutation.isPending}
-                      onClick={handleStripeCheckout}
-                      data-testid="button-stripe-signup"
-                    >
-                      {stripeCheckoutMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                          {isAr ? "جاري التحويل..." : "Redirecting..."}
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="h-4 w-4 me-2" />
-                          {isAr ? "اشترك وادفع بالبطاقة" : "Subscribe & Pay with Card"}
-                        </>
-                      )}
-                    </Button>
+                  {stripeEnabled && pricing.stripe && (
+                    <>
+                      <div className="rounded-lg bg-violet-500/5 border border-violet-500/15 px-3 py-2 text-xs text-muted-foreground">
+                        <p className="font-medium text-foreground mb-1">
+                          {isAr ? "الأسعار" : "Pricing"}
+                        </p>
+                        <p>
+                          {fmtIqd(pricing.monthly)} {isAr ? "د.ع / شهر (عرض)" : "IQD / mo (display)"}
+                          {" · "}
+                          <span className="text-[#635BFF] font-semibold">
+                            {fmtStripeMoney(pricing.stripe.amount, pricing.stripe.currency)} {isAr ? "بالبطاقة" : "by card"}
+                          </span>
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        className="w-full h-10 rounded-lg bg-gradient-to-r from-[#635BFF] to-indigo-600 hover:from-[#5851ea] hover:to-indigo-700 text-white font-semibold text-sm shadow-sm"
+                        disabled={stripeCheckoutMutation.isPending}
+                        onClick={handleStripeCheckout}
+                        data-testid="button-stripe-signup"
+                      >
+                        {stripeCheckoutMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                            {isAr ? "جاري التحويل..." : "Redirecting..."}
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4 me-2" />
+                            {isAr ? "اشترك وادفع بالبطاقة" : "Subscribe & Pay with Card"}
+                          </>
+                        )}
+                      </Button>
+                      <div className="flex justify-center pb-1">
+                        <PoweredByStripe isAr={isAr} variant="muted" />
+                      </div>
+                    </>
                   )}
                   <Button
                     type="submit"
