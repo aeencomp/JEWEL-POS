@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import {
   activateSubscriptionFromStripe,
   appBaseUrl,
+  CHECKOUT_SESSION_DEFAULTS,
   extendSubscriptionOneMonth,
   getStripe,
   getStripePriceId,
@@ -14,6 +15,22 @@ import {
   isStripeConfigured,
   saveStripeSettings,
 } from "./stripe-service";
+
+async function markSignupPaidFromSession(session: Stripe.Checkout.Session): Promise<boolean> {
+  if (session.metadata?.type !== "signup_subscription" || !session.metadata.signupRequestId) {
+    return false;
+  }
+  const paid =
+    session.payment_status === "paid" ||
+    session.status === "complete";
+  if (!paid) return false;
+
+  await db
+    .update(signupRequests)
+    .set({ paidAt: new Date(), stripeCheckoutSessionId: session.id })
+    .where(eq(signupRequests.id, parseInt(session.metadata.signupRequestId, 10)));
+  return true;
+}
 
 type StripeHelpers = {
   requireAuth: (req: Request, res: Response, next: () => void) => void;
@@ -37,7 +54,11 @@ async function createCheckoutSession(opts: {
   }
 
   const base = appBaseUrl(opts.req);
+  if (process.env.NODE_ENV === "production" && !process.env.APP_URL?.trim()) {
+    console.warn("[stripe] APP_URL is not set — checkout redirect URLs may be wrong. Set APP_URL=https://iq-pos.com in .env");
+  }
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    ...CHECKOUT_SESSION_DEFAULTS,
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${base}${opts.successPath}?session_id={CHECKOUT_SESSION_ID}&checkout=success`,
@@ -168,7 +189,11 @@ export function registerStripeRoutes(app: Express, helpers: StripeHelpers) {
 
       const stripe = getStripe();
       const base = appBaseUrl(req);
+      if (process.env.NODE_ENV === "production" && !process.env.APP_URL?.trim()) {
+        console.warn("[stripe] APP_URL is not set — signup checkout redirect URLs may be wrong. Set APP_URL=https://iq-pos.com in .env");
+      }
       const session = await stripe.checkout.sessions.create({
+        ...CHECKOUT_SESSION_DEFAULTS,
         mode: "subscription",
         customer_email: parsed.email,
         line_items: [{ price: priceId, quantity: 1 }],
@@ -199,6 +224,36 @@ export function registerStripeRoutes(app: Express, helpers: StripeHelpers) {
         return res.status(400).json({ message: "Invalid signup data" });
       }
       const message = err instanceof Error ? err.message : "Failed to create checkout session";
+      res.status(500).json({ message });
+    }
+  });
+
+  app.get("/api/stripe/signup-session/:sessionId", async (req, res) => {
+    if (!(await isStripeConfigured())) {
+      return res.status(503).json({ message: "Stripe is not configured" });
+    }
+
+    const sessionId = String(req.params.sessionId ?? "").trim();
+    if (!sessionId.startsWith("cs_")) {
+      return res.status(400).json({ message: "Invalid session ID" });
+    }
+
+    try {
+      const stripe = getStripe();
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.metadata?.type !== "signup_subscription") {
+        return res.status(403).json({ message: "Not a signup checkout session" });
+      }
+
+      const paid = await markSignupPaidFromSession(session);
+      res.json({
+        status: session.status,
+        paymentStatus: session.payment_status,
+        paid: paid || session.payment_status === "paid" || session.status === "complete",
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to verify session";
+      console.error("[stripe signup session]", err);
       res.status(500).json({ message });
     }
   });
@@ -262,11 +317,8 @@ export function registerStripeRoutes(app: Express, helpers: StripeHelpers) {
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
-          if (session.metadata?.type === "signup_subscription" && session.metadata.signupRequestId) {
-            await db
-              .update(signupRequests)
-              .set({ paidAt: new Date(), stripeCheckoutSessionId: session.id })
-              .where(eq(signupRequests.id, parseInt(session.metadata.signupRequestId, 10)));
+          if (session.metadata?.type === "signup_subscription") {
+            await markSignupPaidFromSession(session);
           } else if (session.metadata?.type === "store_subscription" && session.metadata.storeId) {
             const storeId = parseInt(session.metadata.storeId, 10);
             const stripeSubId = session.subscription;

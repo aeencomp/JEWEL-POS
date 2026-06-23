@@ -53,6 +53,15 @@ export async function getStripePriceId(): Promise<string> {
   return priceId;
 }
 
+/** Card-only checkout — avoids Cash App / bank methods that often hang for Iraq-region customers. */
+export const CHECKOUT_SESSION_DEFAULTS: Pick<
+  Stripe.Checkout.SessionCreateParams,
+  "payment_method_types" | "billing_address_collection"
+> = {
+  payment_method_types: ["card"],
+  billing_address_collection: "auto",
+};
+
 export async function getPublicStripePrice(): Promise<{
   amount: number;
   currency: string;

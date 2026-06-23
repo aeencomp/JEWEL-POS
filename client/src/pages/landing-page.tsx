@@ -568,18 +568,70 @@ export default function LandingPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("signup") === "success") {
-      toast({
-        title: isAr ? "تم الدفع بنجاح" : "Payment successful",
-        description: isAr
-          ? "شكراً! سنراجع طلبك ونفعّل حسابك قريباً."
-          : "Thank you! We will review your request and activate your account soon.",
-      });
+    const signup = params.get("signup");
+    const sessionId = params.get("session_id");
+
+    function cleanSignupParams() {
       params.delete("signup");
       params.delete("session_id");
       const clean = params.toString();
       window.history.replaceState({}, "", clean ? `/?${clean}` : "/");
     }
+
+    if (signup === "cancelled") {
+      toast({
+        title: isAr ? "تم إلغاء الدفع" : "Payment cancelled",
+        description: isAr ? "يمكنك المحاولة مرة أخرى في أي وقت." : "You can try again anytime.",
+      });
+      cleanSignupParams();
+      return;
+    }
+
+    if (signup !== "success" || !sessionId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/stripe/signup-session/${encodeURIComponent(sessionId)}`);
+        const data = (await res.json()) as { paid?: boolean; message?: string };
+        if (cancelled) return;
+
+        if (data.paid) {
+          setSubmitted(true);
+          setDialogOpen(true);
+          toast({
+            title: isAr ? "تم الدفع بنجاح" : "Payment successful",
+            description: isAr
+              ? "شكراً! سنراجع طلبك ونفعّل حسابك قريباً."
+              : "Thank you! We will review your request and activate your account soon.",
+          });
+        } else {
+          toast({
+            title: isAr ? "الدفع قيد المعالجة" : "Payment pending",
+            description: isAr
+              ? "إذا تم خصم المبلغ، سنتواصل معك قريباً. وإلا حاول مرة أخرى ببطاقة فيزا أو ماستركارد دولية."
+              : "If you were charged, we will contact you soon. Otherwise retry with an international Visa or Mastercard.",
+            variant: "destructive",
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          toast({
+            title: isAr ? "تعذّر التحقق من الدفع" : "Could not verify payment",
+            description: isAr
+              ? "إذا تم الدفع، تواصل معنا — وإلا حاول مرة أخرى."
+              : "If payment went through, contact us — otherwise please try again.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (!cancelled) cleanSignupParams();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isAr, toast]);
 
   const mutation = useMutation({
