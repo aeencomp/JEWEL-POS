@@ -6,16 +6,6 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   Gem,
   Droplets,
@@ -24,7 +14,6 @@ import {
   Shirt,
   Pill,
   ArrowRight,
-  CheckCircle,
   Check,
   Globe,
   Zap,
@@ -32,28 +21,18 @@ import {
   BarChart3,
   Star,
   UserPlus,
-  Send,
   LogIn,
   Cloud,
   Headphones,
   RefreshCw,
   BadgeCheck,
-  User,
-  Building2,
-  Phone,
-  Mail,
-  Loader2,
   CreditCard,
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import {
   DualPriceDisplay,
   PoweredByStripe,
   type LandingPricing,
   fmtIqd,
-  fmtStripeMoney,
 } from "@/components/landing-stripe-pricing";
 
 function IqPosLogo({ size = 32 }: { size?: number }) {
@@ -177,15 +156,6 @@ const features = [
   { icon: Shield, label: "Secure & Cloud-backed", labelAr: "آمن ومدعوم بالسحابة" },
   { icon: BarChart3, label: "Built-in Analytics", labelAr: "تحليلات مدمجة" },
 ];
-
-type SignupForm = {
-  name: string;
-  businessName: string;
-  phone: string;
-  email: string;
-  posSystem: "jewel" | "oil" | "fashion" | "restaurant" | "pharmacy" | "grocery";
-  notes: string;
-};
 
 type Pricing = LandingPricing;
 
@@ -462,84 +432,16 @@ const PLATFORM_INCLUDES = {
   ],
 };
 
+type PosSystemId = PosPricingPlan["id"];
+
 function fmtPrice(n: number) {
   return fmtIqd(n);
 }
-
-const SIGNUP_POS_OPTIONS = [
-  {
-    id: "jewel" as const,
-    label: "JewelPOS",
-    subEn: "Jewelry",
-    subAr: "مجوهرات",
-    icon: Gem,
-    gradient: "from-amber-500 to-yellow-600",
-    activeBorder: "border-amber-500",
-    activeBg: "bg-amber-50 dark:bg-amber-950/30",
-    hoverBorder: "hover:border-amber-300",
-  },
-  {
-    id: "fashion" as const,
-    label: "FashionPOS",
-    subEn: "Clothing",
-    subAr: "ملابس",
-    icon: Shirt,
-    gradient: "from-pink-500 to-purple-600",
-    activeBorder: "border-pink-500",
-    activeBg: "bg-pink-50 dark:bg-pink-950/30",
-    hoverBorder: "hover:border-pink-300",
-  },
-  {
-    id: "oil" as const,
-    label: "FactoryPOS",
-    subEn: "Factory",
-    subAr: "زيوت",
-    icon: Droplets,
-    gradient: "from-blue-600 to-cyan-600",
-    activeBorder: "border-blue-500",
-    activeBg: "bg-blue-50 dark:bg-blue-950/30",
-    hoverBorder: "hover:border-blue-300",
-  },
-  {
-    id: "restaurant" as const,
-    label: "RestoPOS",
-    subEn: "Restaurant",
-    subAr: "مطعم",
-    icon: Utensils,
-    gradient: "from-orange-500 to-red-500",
-    activeBorder: "border-orange-500",
-    activeBg: "bg-orange-50 dark:bg-orange-950/30",
-    hoverBorder: "hover:border-orange-300",
-  },
-  {
-    id: "pharmacy" as const,
-    label: "PharmaPOS",
-    subEn: "Pharmacy",
-    subAr: "صيدلية",
-    icon: Pill,
-    gradient: "from-teal-500 to-cyan-500",
-    activeBorder: "border-teal-500",
-    activeBg: "bg-teal-50 dark:bg-teal-950/30",
-    hoverBorder: "hover:border-teal-300",
-  },
-  {
-    id: "grocery" as const,
-    label: "GroceryPOS",
-    subEn: "Grocery",
-    subAr: "بقالة",
-    icon: ShoppingBasket,
-    gradient: "from-green-500 to-emerald-600",
-    activeBorder: "border-green-500",
-    activeBg: "bg-green-50 dark:bg-green-950/30",
-    hoverBorder: "hover:border-green-300",
-  },
-];
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const { language } = useLanguage();
   const isAr = language === "ar";
-  const { toast } = useToast();
 
   const { data: pricing = DEFAULT_PRICING } = useQuery<Pricing>({
     queryKey: ["/api/pricing"],
@@ -548,18 +450,7 @@ export default function LandingPage() {
 
   const stripeEnabled = !!pricing.stripe?.enabled;
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant" | "pharmacy" | "grocery">("jewel");
-  const [form, setForm] = useState<SignupForm>({
-    name: "",
-    businessName: "",
-    phone: "",
-    email: "",
-    posSystem: "jewel",
-    notes: "",
-  });
-  const [errors, setErrors] = useState<Partial<SignupForm>>({});
+  const [activePlan, setActivePlan] = useState<PosSystemId>("jewel");
 
   useEffect(() => {
     document.documentElement.classList.add("landing-scroll");
@@ -568,135 +459,14 @@ export default function LandingPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const signup = params.get("signup");
-    const sessionId = params.get("session_id");
-
-    function cleanSignupParams() {
-      params.delete("signup");
-      params.delete("session_id");
-      const clean = params.toString();
-      window.history.replaceState({}, "", clean ? `/?${clean}` : "/");
+    if (params.get("signup")) {
+      navigate(`/signup?${params.toString()}`);
     }
+  }, [navigate]);
 
-    if (signup === "cancelled") {
-      toast({
-        title: isAr ? "تم إلغاء الدفع" : "Payment cancelled",
-        description: isAr ? "يمكنك المحاولة مرة أخرى في أي وقت." : "You can try again anytime.",
-      });
-      cleanSignupParams();
-      return;
-    }
-
-    if (signup !== "success" || !sessionId) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/stripe/signup-session/${encodeURIComponent(sessionId)}`);
-        const data = (await res.json()) as { paid?: boolean; message?: string };
-        if (cancelled) return;
-
-        if (data.paid) {
-          setSubmitted(true);
-          setDialogOpen(true);
-          toast({
-            title: isAr ? "تم الدفع بنجاح" : "Payment successful",
-            description: isAr
-              ? "شكراً! سنراجع طلبك ونفعّل حسابك قريباً."
-              : "Thank you! We will review your request and activate your account soon.",
-          });
-        } else {
-          toast({
-            title: isAr ? "الدفع قيد المعالجة" : "Payment pending",
-            description: isAr
-              ? "إذا تم خصم المبلغ، سنتواصل معك قريباً. وإلا حاول مرة أخرى ببطاقة فيزا أو ماستركارد دولية."
-              : "If you were charged, we will contact you soon. Otherwise retry with an international Visa or Mastercard.",
-            variant: "destructive",
-          });
-        }
-      } catch {
-        if (!cancelled) {
-          toast({
-            title: isAr ? "تعذّر التحقق من الدفع" : "Could not verify payment",
-            description: isAr
-              ? "إذا تم الدفع، تواصل معنا — وإلا حاول مرة أخرى."
-              : "If payment went through, contact us — otherwise please try again.",
-            variant: "destructive",
-          });
-        }
-      } finally {
-        if (!cancelled) cleanSignupParams();
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isAr, toast]);
-
-  const mutation = useMutation({
-    mutationFn: (data: SignupForm) =>
-      apiRequest("POST", "/api/signup-requests", data),
-    onSuccess: () => {
-      setSubmitted(true);
-    },
-    onError: () => {
-      toast({
-        title: isAr ? "حدث خطأ" : "Something went wrong",
-        description: isAr ? "يرجى المحاولة مرة أخرى" : "Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const stripeCheckoutMutation = useMutation({
-    mutationFn: async (data: SignupForm) => {
-      const res = await apiRequest("POST", "/api/stripe/signup-checkout", data);
-      const json = await res.json();
-      if (!json.url) throw new Error("No checkout URL");
-      window.location.href = json.url;
-    },
-    onError: () => {
-      toast({
-        title: isAr ? "فشل الدفع" : "Checkout failed",
-        description: isAr ? "يرجى المحاولة مرة أخرى" : "Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  function validate(): boolean {
-    const e: Partial<SignupForm> = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!form.name.trim()) e.name = isAr ? "الاسم مطلوب" : "Name is required";
-    if (!form.businessName.trim()) e.businessName = isAr ? "اسم العمل مطلوب" : "Business name is required";
-    if (!form.phone.trim()) e.phone = isAr ? "رقم الهاتف مطلوب" : "Phone is required";
-    if (!form.email.trim()) {
-      e.email = isAr ? "البريد الإلكتروني مطلوب" : "Email is required";
-    } else if (!emailRegex.test(form.email.trim())) {
-      e.email = isAr ? "بريد إلكتروني غير صالح" : "Invalid email address";
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  function handleStripeCheckout() {
-    if (!validate()) return;
-    stripeCheckoutMutation.mutate(form);
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
-    mutation.mutate(form);
-  }
-
-  function handleOpen(preselect?: SignupForm["posSystem"]) {
-    setSubmitted(false);
-    setErrors({});
+  function goToSignup(preselect?: PosSystemId) {
     if (preselect) setActivePlan(preselect);
-    setForm({ name: "", businessName: "", phone: "", email: "", posSystem: preselect ?? "jewel", notes: "" });
-    setDialogOpen(true);
+    navigate(preselect ? `/signup?pos=${preselect}` : "/signup");
   }
 
   return (
@@ -719,7 +489,7 @@ export default function LandingPage() {
             <Button
               size="sm"
               className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 hidden sm:inline-flex"
-              onClick={() => handleOpen()}
+              onClick={() => goToSignup()}
             >
               {isAr ? "اطلب الاشتراك" : "Get Started"}
             </Button>
@@ -779,7 +549,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   className="w-full sm:w-auto h-12 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg shadow-amber-500/20 border-0"
-                  onClick={() => handleOpen()}
+                  onClick={() => goToSignup()}
                 >
                   <UserPlus className="h-4 w-4 me-2" />
                   {isAr ? "اطلب الاشتراك" : "Request Access"}
@@ -952,7 +722,7 @@ export default function LandingPage() {
                       <Button
                         variant="outline"
                         className="w-full text-sm"
-                        onClick={() => handleOpen(product.id as "jewel" | "oil" | "fashion" | "restaurant")}
+                        onClick={() => goToSignup(product.id as "jewel" | "oil" | "fashion" | "restaurant")}
                         data-testid={`button-request-${product.id}`}
                       >
                         <UserPlus className="h-4 w-4 me-2" />
@@ -1019,7 +789,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   className="w-full bg-white text-amber-700 hover:bg-amber-50 font-semibold shadow-lg shadow-black/10 border-0"
-                  onClick={() => handleOpen()}
+                  onClick={() => goToSignup()}
                   data-testid="button-pricing-hero"
                 >
                   <UserPlus className="h-4 w-4 me-2" />
@@ -1031,7 +801,7 @@ export default function LandingPage() {
                     size="lg"
                     variant="outline"
                     className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
-                    onClick={() => handleOpen()}
+                    onClick={() => goToSignup()}
                     data-testid="button-pricing-hero-stripe"
                   >
                     <CreditCard className="h-4 w-4 me-2" />
@@ -1125,7 +895,7 @@ export default function LandingPage() {
                         </div>
                         <Button
                           className={`bg-gradient-to-r ${plan.gradient} text-white border-0 shrink-0`}
-                          onClick={() => handleOpen(plan.id)}
+                          onClick={() => goToSignup(plan.id)}
                           data-testid={`button-pricing-${plan.id}`}
                         >
                           {isAr ? "اطلب الآن" : "Get Started"}
@@ -1204,251 +974,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-
-      {/* Sign-up Request Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent
-          className="max-w-md w-[calc(100%-1.5rem)] p-0 gap-0 overflow-hidden border shadow-2xl max-h-[min(90dvh,640px)] !flex flex-col"
-          dir={isAr ? "rtl" : "ltr"}
-        >
-          {!submitted ? (
-            <>
-              <div className="shrink-0 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 px-4 py-3">
-                <DialogHeader className="space-y-0.5 text-start">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
-                      <UserPlus className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <DialogTitle className="text-white text-base font-bold leading-tight">
-                        {isAr ? "طلب الاشتراك في IQ-POS" : "Request Access to IQ-POS"}
-                      </DialogTitle>
-                      <DialogDescription className="text-amber-100/85 text-xs mt-0.5 line-clamp-2">
-                        {isAr
-                          ? "أرسل طلبك وسيتواصل معك فريقنا في أقرب وقت."
-                          : "Submit your request and our team will get back to you shortly."}
-                      </DialogDescription>
-                    </div>
-                  </div>
-                </DialogHeader>
-              </div>
-
-              <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 bg-card overflow-hidden">
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3.5 landing-scroll">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {isAr ? "اختر نظام نقطة البيع" : "Choose POS System"}
-                    </Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {SIGNUP_POS_OPTIONS.map((opt) => {
-                        const Icon = opt.icon;
-                        const isSelected = form.posSystem === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => setForm((f) => ({ ...f, posSystem: opt.id }))}
-                            data-testid={`pos-select-${opt.id}`}
-                            className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all duration-200 ${
-                              isSelected
-                                ? `${opt.activeBorder} ${opt.activeBg} shadow-sm ring-1 ring-offset-1 ring-offset-background ${
-                                    opt.id === "jewel" ? "ring-amber-500/40" : opt.id === "fashion" ? "ring-pink-500/40" : opt.id === "restaurant" ? "ring-orange-500/40" : "ring-blue-500/40"
-                                  }`
-                                : `border-border bg-background ${opt.hoverBorder} hover:shadow-sm`
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${opt.gradient} flex items-center justify-center shadow-sm`}>
-                              <Icon className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="text-[10px] font-bold leading-tight text-center">{opt.label}</span>
-                            <span className="text-[9px] text-muted-foreground">{isAr ? opt.subAr : opt.subEn}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="h-px bg-border" />
-
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="req-name" className="text-xs font-medium">
-                        {isAr ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <User className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        <Input
-                          id="req-name"
-                          data-testid="input-signup-name"
-                          value={form.name}
-                          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                          placeholder={isAr ? "محمد علي" : "John Smith"}
-                          className={`h-9 ps-9 text-sm rounded-lg ${errors.name ? "border-destructive" : ""}`}
-                        />
-                      </div>
-                      {errors.name && <p className="text-[11px] text-destructive">{errors.name}</p>}
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="req-business" className="text-xs font-medium">
-                        {isAr ? "اسم المحل / الشركة" : "Business Name"} <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Building2 className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        <Input
-                          id="req-business"
-                          data-testid="input-signup-business"
-                          value={form.businessName}
-                          onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
-                          placeholder={isAr ? "مجوهرات النور" : "Golden Jewelers"}
-                          className={`h-9 ps-9 text-sm rounded-lg ${errors.businessName ? "border-destructive" : ""}`}
-                        />
-                      </div>
-                      {errors.businessName && <p className="text-[11px] text-destructive">{errors.businessName}</p>}
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="req-phone" className="text-xs font-medium">
-                        {isAr ? "رقم الهاتف" : "Phone Number"} <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Phone className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        <Input
-                          id="req-phone"
-                          data-testid="input-signup-phone"
-                          value={form.phone}
-                          onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                          placeholder="+964 7xx xxx xxxx"
-                          dir="ltr"
-                          className={`h-9 ps-9 text-sm rounded-lg ${errors.phone ? "border-destructive" : ""}`}
-                        />
-                      </div>
-                      {errors.phone && <p className="text-[11px] text-destructive">{errors.phone}</p>}
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="req-email" className="text-xs font-medium">
-                        {isAr ? "البريد الإلكتروني" : "Email Address"} <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Mail className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        <Input
-                          id="req-email"
-                          data-testid="input-signup-email"
-                          type="email"
-                          value={form.email}
-                          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                          placeholder="you@example.com"
-                          dir="ltr"
-                          className={`h-9 ps-9 text-sm rounded-lg ${errors.email ? "border-destructive" : ""}`}
-                        />
-                      </div>
-                      {errors.email && <p className="text-[11px] text-destructive">{errors.email}</p>}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="req-notes" className="text-xs font-medium">
-                      {isAr ? "ملاحظات" : "Additional Notes"}{" "}
-                      <span className="text-muted-foreground font-normal">({isAr ? "اختياري" : "optional"})</span>
-                    </Label>
-                    <Textarea
-                      id="req-notes"
-                      data-testid="input-signup-notes"
-                      value={form.notes}
-                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                      placeholder={isAr ? "أي تفاصيل إضافية..." : "Any additional details..."}
-                      rows={2}
-                      className="rounded-lg resize-none text-sm min-h-[4rem]"
-                    />
-                  </div>
-                </div>
-
-                <div className="shrink-0 border-t border-border bg-card p-3 pt-2 space-y-2">
-                  {stripeEnabled && pricing.stripe && (
-                    <>
-                      <div className="rounded-lg bg-violet-500/5 border border-violet-500/15 px-3 py-2 text-xs text-muted-foreground">
-                        <p className="font-medium text-foreground mb-1">
-                          {isAr ? "الأسعار" : "Pricing"}
-                        </p>
-                        <p>
-                          {fmtIqd(pricing.monthly)} {isAr ? "د.ع / شهر (عرض)" : "IQD / mo (display)"}
-                          {" · "}
-                          <span className="text-[#635BFF] font-semibold">
-                            {fmtStripeMoney(pricing.stripe.amount, pricing.stripe.currency)} {isAr ? "بالبطاقة" : "by card"}
-                          </span>
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        className="w-full h-10 rounded-lg bg-gradient-to-r from-[#635BFF] to-indigo-600 hover:from-[#5851ea] hover:to-indigo-700 text-white font-semibold text-sm shadow-sm"
-                        disabled={stripeCheckoutMutation.isPending}
-                        onClick={handleStripeCheckout}
-                        data-testid="button-stripe-signup"
-                      >
-                        {stripeCheckoutMutation.isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                            {isAr ? "جاري التحويل..." : "Redirecting..."}
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="h-4 w-4 me-2" />
-                            {isAr ? "اشترك وادفع بالبطاقة" : "Subscribe & Pay with Card"}
-                          </>
-                        )}
-                      </Button>
-                      <div className="flex justify-center pb-1">
-                        <PoweredByStripe isAr={isAr} variant="muted" />
-                      </div>
-                    </>
-                  )}
-                  <Button
-                    type="submit"
-                    className="w-full h-10 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-md shadow-amber-500/20 border-0 text-sm"
-                    disabled={mutation.isPending}
-                    data-testid="button-signup-submit"
-                  >
-                    {mutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                        {isAr ? "جاري الإرسال..." : "Sending..."}
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 me-2" />
-                        {isAr ? "إرسال الطلب" : "Send Request"}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </>
-          ) : (
-            <div className="py-10 px-6 text-center space-y-4 bg-card">
-              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto ring-4 ring-green-500/10">
-                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="font-bold text-xl">
-                {isAr ? "تم إرسال طلبك!" : "Request Sent!"}
-              </h3>
-              <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
-                {isAr
-                  ? "شكراً لك. سيتواصل معك فريقنا قريباً عبر الهاتف أو البريد الإلكتروني."
-                  : "Thank you! Our team will contact you soon via phone or email."}
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-                data-testid="button-signup-close"
-                className="mt-2 rounded-xl"
-              >
-                {isAr ? "إغلاق" : "Close"}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

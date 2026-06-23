@@ -56,11 +56,83 @@ export async function getStripePriceId(): Promise<string> {
 /** Card-only checkout — avoids Cash App / bank methods that often hang for Iraq-region customers. */
 export const CHECKOUT_SESSION_DEFAULTS: Pick<
   Stripe.Checkout.SessionCreateParams,
-  "payment_method_types" | "billing_address_collection"
+  "payment_method_types" | "billing_address_collection" | "wallet_options"
 > = {
   payment_method_types: ["card"],
   billing_address_collection: "auto",
+  wallet_options: {
+    link: { display: "never" },
+  },
 };
+
+/** Signup checkout — prefill contact fields from the linked Stripe Customer. */
+export const SIGNUP_CHECKOUT_SESSION_DEFAULTS: Pick<
+  Stripe.Checkout.SessionCreateParams,
+  "payment_method_types" | "billing_address_collection" | "phone_number_collection" | "customer_update"
+> = {
+  ...CHECKOUT_SESSION_DEFAULTS,
+  phone_number_collection: { enabled: true },
+  customer_update: {
+    name: "auto",
+    address: "auto",
+  },
+};
+
+export type SignupCheckoutCustomerInput = {
+  email: string;
+  name: string;
+  phone: string;
+  businessName: string;
+  signupRequestId: number;
+  posSystem: string;
+};
+
+function normalizePhoneForStripe(phone: string): string | undefined {
+  const trimmed = phone.trim();
+  if (!trimmed) return undefined;
+
+  let digits = trimmed.replace(/[^\d+]/g, "");
+  if (digits.startsWith("+")) {
+    return digits.length >= 8 ? digits : undefined;
+  }
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("964")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+964${digits.slice(1)}`;
+  if (digits.length >= 9 && digits.length <= 12) return `+964${digits}`;
+  return undefined;
+}
+
+/** Create or update a Stripe Customer from signup form data so Checkout prefills email, name, and phone. */
+export async function upsertSignupStripeCustomer(input: SignupCheckoutCustomerInput): Promise<Stripe.Customer> {
+  const stripe = getStripe();
+  const email = input.email.trim().toLowerCase();
+  const phone = normalizePhoneForStripe(input.phone);
+  const metadata: Stripe.MetadataParam = {
+    businessName: input.businessName.trim(),
+    signupRequestId: String(input.signupRequestId),
+    posSystem: input.posSystem,
+    source: "iq-pos-signup",
+  };
+
+  const existing = await stripe.customers.list({ email, limit: 1 });
+  const found = existing.data[0];
+
+  if (found) {
+    return stripe.customers.update(found.id, {
+      name: input.name.trim(),
+      email,
+      ...(phone ? { phone } : {}),
+      metadata: { ...found.metadata, ...metadata },
+    });
+  }
+
+  return stripe.customers.create({
+    email,
+    name: input.name.trim(),
+    ...(phone ? { phone } : {}),
+    metadata,
+  });
+}
 
 export async function getPublicStripePrice(): Promise<{
   amount: number;

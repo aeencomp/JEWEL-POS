@@ -8,12 +8,14 @@ import {
   activateSubscriptionFromStripe,
   appBaseUrl,
   CHECKOUT_SESSION_DEFAULTS,
+  SIGNUP_CHECKOUT_SESSION_DEFAULTS,
   extendSubscriptionOneMonth,
   getStripe,
   getStripePriceId,
   getStripeSettings,
   isStripeConfigured,
   saveStripeSettings,
+  upsertSignupStripeCustomer,
 } from "./stripe-service";
 
 async function markSignupPaidFromSession(session: Stripe.Checkout.Session): Promise<boolean> {
@@ -192,32 +194,64 @@ export function registerStripeRoutes(app: Express, helpers: StripeHelpers) {
       if (process.env.NODE_ENV === "production" && !process.env.APP_URL?.trim()) {
         console.warn("[stripe] APP_URL is not set — signup checkout redirect URLs may be wrong. Set APP_URL=https://iq-pos.com in .env");
       }
-      const session = await stripe.checkout.sessions.create({
-        ...CHECKOUT_SESSION_DEFAULTS,
-        mode: "subscription",
-        customer_email: parsed.email,
+
+      const customer = await upsertSignupStripeCustomer({
+        email: parsed.email,
+        name: parsed.name,
+        phone: parsed.phone,
+        businessName: parsed.businessName,
+        signupRequestId: signup.id,
+        posSystem: signup.posSystem,
+      });
+
+      const useHosted = req.body?.checkoutMode === "hosted";
+      const shared = {
+        ...SIGNUP_CHECKOUT_SESSION_DEFAULTS,
+        mode: "subscription" as const,
+        customer: customer.id,
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${base}/?signup=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base}/?signup=cancelled`,
         metadata: {
           type: "signup_subscription",
           signupRequestId: String(signup.id),
           posSystem: signup.posSystem,
+          customerName: parsed.name.trim(),
+          businessName: parsed.businessName.trim(),
+          phone: parsed.phone.trim(),
         },
         subscription_data: {
           metadata: {
             signupRequestId: String(signup.id),
             posSystem: signup.posSystem,
+            customerName: parsed.name.trim(),
+            businessName: parsed.businessName.trim(),
           },
         },
-      });
+      };
+
+      const session = useHosted
+        ? await stripe.checkout.sessions.create({
+            ...shared,
+            success_url: `${base}/signup?signup=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${base}/signup?signup=cancelled`,
+          })
+        : await stripe.checkout.sessions.create({
+            ...shared,
+            ui_mode: "embedded",
+            return_url: `${base}/signup?signup=success&session_id={CHECKOUT_SESSION_ID}`,
+          });
 
       await db
         .update(signupRequests)
         .set({ stripeCheckoutSessionId: session.id })
         .where(eq(signupRequests.id, signup.id));
 
-      res.json({ url: session.url, sessionId: session.id, signupRequestId: signup.id });
+      res.json({
+        clientSecret: session.client_secret ?? null,
+        url: session.url ?? null,
+        sessionId: session.id,
+        signupRequestId: signup.id,
+        mode: useHosted ? "hosted" : "embedded",
+      });
     } catch (err: unknown) {
       console.error("[stripe signup checkout]", err);
       if (err && typeof err === "object" && "issues" in err) {
@@ -288,82 +322,6 @@ export function registerStripeRoutes(app: Express, helpers: StripeHelpers) {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to verify session";
       res.status(500).json({ message });
-    }
-  });
-
-  app.post("/api/stripe/webhook", async (req, res) => {
-    if (!(await isStripeConfigured())) {
-      return res.status(503).send("Stripe not configured");
-    }
-
-    const sig = req.headers["stripe-signature"];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!sig || !webhookSecret) {
-      return res.status(400).send("Missing webhook signature or secret");
-    }
-
-    let event: Stripe.Event;
-    try {
-      const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
-      if (!rawBody) return res.status(400).send("Missing raw body");
-      event = getStripe().webhooks.constructEvent(rawBody, sig, webhookSecret);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Webhook error";
-      console.error("[stripe webhook]", message);
-      return res.status(400).send(`Webhook Error: ${message}`);
-    }
-
-    try {
-      switch (event.type) {
-        case "checkout.session.completed": {
-          const session = event.data.object as Stripe.Checkout.Session;
-          if (session.metadata?.type === "signup_subscription") {
-            await markSignupPaidFromSession(session);
-          } else if (session.metadata?.type === "store_subscription" && session.metadata.storeId) {
-            const storeId = parseInt(session.metadata.storeId, 10);
-            const stripeSubId = session.subscription;
-            if (typeof stripeSubId === "string") {
-              const stripeSub = await getStripe().subscriptions.retrieve(stripeSubId);
-              await activateSubscriptionFromStripe(storeId, stripeSub);
-            } else {
-              await extendSubscriptionOneMonth(storeId);
-            }
-          }
-          break;
-        }
-        case "invoice.paid": {
-          const invoice = event.data.object as Stripe.Invoice;
-          const stripeSubId = invoice.subscription;
-          if (typeof stripeSubId !== "string") break;
-          const stripeSub = await getStripe().subscriptions.retrieve(stripeSubId);
-          const storeId = parseInt(stripeSub.metadata?.storeId || "0", 10);
-          if (storeId > 0) {
-            await activateSubscriptionFromStripe(storeId, stripeSub);
-          }
-          break;
-        }
-        case "customer.subscription.updated":
-        case "customer.subscription.deleted": {
-          const stripeSub = event.data.object as Stripe.Subscription;
-          const storeId = parseInt(stripeSub.metadata?.storeId || "0", 10);
-          if (storeId <= 0) break;
-          if (event.type === "customer.subscription.deleted" || stripeSub.status === "canceled") {
-            const local = await storage.getSubscriptionByStore(storeId);
-            if (local) {
-              await storage.updateSubscription(local.id, { status: "cancelled" });
-            }
-          } else {
-            await activateSubscriptionFromStripe(storeId, stripeSub);
-          }
-          break;
-        }
-        default:
-          break;
-      }
-      res.json({ received: true });
-    } catch (err) {
-      console.error("[stripe webhook handler]", err);
-      res.status(500).json({ message: "Webhook handler failed" });
     }
   });
 }

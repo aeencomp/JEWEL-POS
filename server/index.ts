@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { stripeWebhookHandler } from "./stripe-webhook";
 
 const app = express();
 const httpServer = createServer(app);
@@ -14,6 +15,13 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+// Stripe webhook MUST use raw body and respond quickly — Checkout waits for this before redirecting.
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandler,
+);
 
 app.use(
   express.json({

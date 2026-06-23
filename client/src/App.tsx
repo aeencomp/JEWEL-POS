@@ -32,6 +32,7 @@ import LayawayPage from "@/pages/layaway-page";
 import StoreBranding from "@/pages/store-branding";
 import StoreBackup from "@/pages/store-backup";
 import LandingPage from "@/pages/landing-page";
+import SignupPage from "@/pages/signup-page";
 import StockAudit from "@/pages/stock-audit";
 import PurchasesPage from "@/pages/purchases-page";
 import DebtsPage from "@/pages/debts-page";
@@ -361,6 +362,9 @@ function AppContent() {
     }
     if (location.startsWith("/order/")) {
       return <PublicOrderPage />;
+    }
+    if (location === "/signup") {
+      return <SignupPage />;
     }
     if (location === "/privacy") {
       return <PrivacyPage />;
