@@ -45,21 +45,35 @@ export function PoweredByStripe({ isAr, variant = "light" }: { isAr: boolean; va
 
   return (
     <div
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium tracking-wide ${shell}`}
+      dir="ltr"
+      className={`inline-flex items-center gap-2.5 rounded-full border px-3.5 py-2 text-xs font-medium ${shell}`}
       data-testid="powered-by-stripe"
     >
-      <ShieldCheck className="h-3.5 w-3.5 text-[#635BFF] shrink-0" />
-      <span className="opacity-80">{isAr ? "مدفوعات آمنة عبر" : "Secure payments by"}</span>
-      <StripeWordmark className="h-3.5 w-auto" />
+      <ShieldCheck className="h-4 w-4 text-[#635BFF] shrink-0" aria-hidden />
+      <span className={variant === "dark" ? "text-white/90" : "text-foreground/80"}>
+        {isAr ? "مدفوعات آمنة عبر" : "Secure payments by"}
+      </span>
+      <StripeWordmark variant={variant} />
     </div>
   );
 }
 
-function StripeWordmark({ className }: { className?: string }) {
+function StripeWordmark({ variant = "light" }: { variant?: "light" | "dark" | "muted" }) {
+  const fill = variant === "dark" ? "#FFFFFF" : "#635BFF";
+
   return (
-    <svg className={className} viewBox="0 0 60 25" fill="none" aria-label="Stripe" role="img">
+    <svg
+      width={54}
+      height={22}
+      viewBox="0 0 60 25"
+      fill="none"
+      aria-label="Stripe"
+      role="img"
+      className="shrink-0 block"
+      style={{ minWidth: 54, minHeight: 22 }}
+    >
       <path
-        fill="#635BFF"
+        fill={fill}
         d="M59.64 13.04c0-4.07-1.98-7.3-5.76-7.3-3.82 0-6.1 3.23-6.1 7.26 0 4.78 2.7 7.22 6.63 7.22 1.92 0 3.36-.44 4.44-1.05v-3.2c-1.08.54-2.32.87-3.9.87-1.55 0-2.93-.54-3.1-2.38h7.65c.02-.2.04-.98.04-1.42Zm-7.72-1.52c0-1.78 1.09-2.53 2.96-2.53 1.84 0 2.83.75 2.83 2.53h-5.79ZM40.95 5.74c-1.55 0-2.55.73-3.12 1.24l-.21-1.01H33.5v18.46h3.87V12.8c.72-.53 1.84-1.03 3.08-1.03 1.55 0 1.98.97 1.98 2.52v10.28h3.87V13.9c0-3.28-1.76-5.16-4.45-5.16ZM25.97 5.74c-4.32 0-7.16 2.47-7.16 6.65 0 4.34 2.97 6.88 7.72 6.88 2.26 0 3.95-.5 5.22-1.2v-3.05c-1.27.64-2.72 1.03-4.55 1.03-1.8 0-3.4-.64-3.6-2.72h9.07c0-.24.04-1.2.04-1.95 0-4.05-2.3-6.64-6.74-6.64Zm-.07 2.4c1.84 0 2.76 1.12 2.9 2.97h-6.02c.28-1.68 1.35-2.97 3.12-2.97ZM13.05 5.74c-1.08 0-1.88.2-2.52.47V2.35L6.66 3.28v16.92h3.87V12.4c.5-.36 1.28-.68 2.32-.68 2.34 0 3.05 1.46 3.05 3.57v7.91h3.87V11.9c0-3.45-1.98-6.16-5.72-6.16ZM0 9.18h3.87V24.2H0V9.18Z"
       />
     </svg>
