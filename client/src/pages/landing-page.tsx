@@ -43,6 +43,7 @@ import {
   Phone,
   Mail,
   Loader2,
+  CreditCard,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -538,6 +539,10 @@ export default function LandingPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: stripeConfig } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/stripe/config"],
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [activePlan, setActivePlan] = useState<"jewel" | "fashion" | "oil" | "restaurant" | "pharmacy" | "grocery">("jewel");
@@ -556,6 +561,22 @@ export default function LandingPage() {
     return () => document.documentElement.classList.remove("landing-scroll");
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("signup") === "success") {
+      toast({
+        title: isAr ? "تم الدفع بنجاح" : "Payment successful",
+        description: isAr
+          ? "شكراً! سنراجع طلبك ونفعّل حسابك قريباً."
+          : "Thank you! We will review your request and activate your account soon.",
+      });
+      params.delete("signup");
+      params.delete("session_id");
+      const clean = params.toString();
+      window.history.replaceState({}, "", clean ? `/?${clean}` : "/");
+    }
+  }, [isAr, toast]);
+
   const mutation = useMutation({
     mutationFn: (data: SignupForm) =>
       apiRequest("POST", "/api/signup-requests", data),
@@ -565,6 +586,22 @@ export default function LandingPage() {
     onError: () => {
       toast({
         title: isAr ? "حدث خطأ" : "Something went wrong",
+        description: isAr ? "يرجى المحاولة مرة أخرى" : "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const stripeCheckoutMutation = useMutation({
+    mutationFn: async (data: SignupForm) => {
+      const res = await apiRequest("POST", "/api/stripe/signup-checkout", data);
+      const json = await res.json();
+      if (!json.url) throw new Error("No checkout URL");
+      window.location.href = json.url;
+    },
+    onError: () => {
+      toast({
+        title: isAr ? "فشل الدفع" : "Checkout failed",
         description: isAr ? "يرجى المحاولة مرة أخرى" : "Please try again.",
         variant: "destructive",
       });
@@ -584,6 +621,11 @@ export default function LandingPage() {
     }
     setErrors(e);
     return Object.keys(e).length === 0;
+  }
+
+  function handleStripeCheckout() {
+    if (!validate()) return;
+    stripeCheckoutMutation.mutate(form);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -1252,7 +1294,28 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="shrink-0 border-t border-border bg-card p-3 pt-2">
+                <div className="shrink-0 border-t border-border bg-card p-3 pt-2 space-y-2">
+                  {stripeConfig?.enabled && (
+                    <Button
+                      type="button"
+                      className="w-full h-10 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-sm"
+                      disabled={stripeCheckoutMutation.isPending}
+                      onClick={handleStripeCheckout}
+                      data-testid="button-stripe-signup"
+                    >
+                      {stripeCheckoutMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                          {isAr ? "جاري التحويل..." : "Redirecting..."}
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 me-2" />
+                          {isAr ? "اشترك وادفع بالبطاقة" : "Subscribe & Pay with Card"}
+                        </>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     type="submit"
                     className="w-full h-10 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-md shadow-amber-500/20 border-0 text-sm"

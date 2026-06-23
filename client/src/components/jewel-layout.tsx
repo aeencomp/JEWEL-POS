@@ -13,6 +13,7 @@ import {
   Wifi, Shirt, RotateCcw,
 } from "lucide-react";
 import { isFashionStore, JEWEL_ONLY_PATHS, posSystemLabel, posSystemSubtitle } from "@/lib/pos-system";
+import { StoreSubscriptionPanel } from "@/components/store-subscription-panel";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -224,6 +225,11 @@ export default function JewelLayout({
         className="px-3 py-4 space-y-2"
         style={{ borderTop: `1px solid ${footerBorder}` }}
       >
+        <StoreSubscriptionPanel
+          posSystem={isFashionStore(user?.posSystem) ? "fashion" : "jewel"}
+          variant="dark"
+          buttonClassName="bg-amber-600 hover:bg-amber-500 text-white"
+        />
         {/* User card */}
         <div
           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"

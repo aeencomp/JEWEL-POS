@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { posSystemLabel, posSystemSubtitle } from "@/lib/pos-system";
+import { StoreSubscriptionPanel } from "@/components/store-subscription-panel";
 import {
   LayoutDashboard, ShoppingCart, Package, Users, ClipboardList, RotateCcw,
   ClipboardCheck, HandCoins, Palette, HardDrive, LogOut, Menu, X, Shirt, FileText,
@@ -154,6 +155,11 @@ export default function FashionLayout({
       </nav>
 
       <div className="px-3 py-4 border-t border-white/10 space-y-2">
+        <StoreSubscriptionPanel
+          posSystem="fashion"
+          variant="dark"
+          buttonClassName="bg-pink-600 hover:bg-pink-500 text-white"
+        />
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"

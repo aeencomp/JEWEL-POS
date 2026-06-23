@@ -66,6 +66,8 @@ export const subscriptions = pgTable("subscriptions", {
   endDate: timestamp("end_date"),
   lastPaymentDate: timestamp("last_payment_date"),
   renewalRequestedAt: timestamp("renewal_requested_at"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
 });
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
@@ -376,6 +378,8 @@ export const signupRequests = pgTable("signup_requests", {
   posSystem: text("pos_system", { enum: ["jewel", "oil", "fashion", "restaurant", "pharmacy", "grocery"] }).notNull().default("jewel"),
   notes: text("notes"),
   status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

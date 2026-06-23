@@ -91,6 +91,7 @@ import GroceryPurchases from "@/pages/grocery/grocery-purchases";
 import PrivacyPage from "@/pages/privacy";
 import { Loader2 } from "lucide-react";
 import { resolveUserPosSystem, storeHomePath } from "@/lib/pos-system";
+import { useStripeCheckoutSuccess } from "@/components/store-subscription-panel";
 
 function AdminRouter() {
   return (
@@ -338,6 +339,11 @@ function storeHomePathFromUser(posSystem?: string): string {
 function AppContent() {
   const { user, isLoading, isImpersonating } = useAuth();
   const [location] = useLocation();
+  const posSystemForCheckout =
+    user && (user.role === "store" || isImpersonating)
+      ? resolveUserPosSystem(user as { username?: string; posSystem?: string }, location)
+      : null;
+  useStripeCheckoutSuccess(posSystemForCheckout);
 
   if (isLoading) {
     return (

@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { StoreSubscriptionPanel } from "@/components/store-subscription-panel";
 import { posSystemLabel } from "@/lib/pos-system";
 import { cn } from "@/lib/utils";
 import {
@@ -115,6 +116,11 @@ export default function RestaurantLayout({
       </nav>
 
       <div className="p-4 border-t border-border shrink-0 space-y-3">
+        <StoreSubscriptionPanel
+          posSystem="restaurant"
+          variant="light"
+          buttonClassName="bg-orange-600 hover:bg-orange-500 text-white"
+        />
         <div className="flex items-center gap-1">
           <LanguageToggle />
           <ThemeToggle />

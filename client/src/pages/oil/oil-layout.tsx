@@ -1,23 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import {
   LayoutDashboard, Package, ShoppingCart, Truck, Factory,
   Users, Building2, Receipt, HandCoins, LogOut, Menu, X,
   Droplets, ChevronRight, ScanLine, Palette, ClipboardList, BookOpen,
-  AlertTriangle, CalendarDays, RefreshCcw, FileText, Download, Smartphone, Boxes,
+  AlertTriangle, FileText, Download, Smartphone, Boxes,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { StoreSubscriptionPanel } from "@/components/store-subscription-panel";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 const ALL_NAV_ITEMS = [
@@ -46,10 +42,8 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { language } = useLanguage();
   const { user } = useAuth();
-  const { toast } = useToast();
   const isAr = language === "ar";
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showReminderDialog, setShowReminderDialog] = useState(false);
   const { canShow: canInstall, install, dismiss: dismissInstall } = useInstallPrompt();
 
   const { data: storeInfo } = useQuery<{ name: string; features?: string | null }>({
@@ -57,31 +51,6 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     queryFn: () => fetch("/api/oil/store-info", { credentials: "include" }).then(r => r.json()),
     staleTime: 60000,
   });
-
-  const { data: subscription } = useQuery<{ daysLeft: number | null; endDate: string | null; startDate: string | null; status: string; plan: string; pricePerMonth: string; renewalRequestedAt: string | null }>({
-    queryKey: ["/api/oil/subscription"],
-    queryFn: () => fetch("/api/oil/subscription", { credentials: "include" }).then(r => r.ok ? r.json() : null),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    retry: false,
-  });
-
-  useEffect(() => {
-    if (!subscription) return;
-    const { daysLeft, status } = subscription;
-    if (status === "expired" || (daysLeft !== null && daysLeft <= 2)) {
-      const dismissKey = `sub_reminder_dismissed_${new Date().toDateString()}`;
-      if (!localStorage.getItem(dismissKey)) {
-        setShowReminderDialog(true);
-      }
-    }
-  }, [subscription]);
-
-  function dismissReminder() {
-    const dismissKey = `sub_reminder_dismissed_${new Date().toDateString()}`;
-    localStorage.setItem(dismissKey, "1");
-    setShowReminderDialog(false);
-  }
 
   const allowedFeatures: string[] | null = storeInfo?.features
     ? JSON.parse(storeInfo.features) as string[]
@@ -96,26 +65,6 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     onSuccess: () => {
       queryClient.clear();
       window.location.href = "/oil-login";
-    },
-  });
-
-  const renewalMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/oil/subscription/request-renewal"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/oil/subscription"] });
-      toast({
-        title: isAr ? "تم إرسال طلب التجديد" : "Renewal Request Sent",
-        description: isAr
-          ? "سيتواصل معك المسؤول قريباً لتجديد اشتراكك."
-          : "The administrator will contact you shortly to renew your subscription.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: isAr ? "خطأ" : "Error",
-        description: isAr ? "حدث خطأ. يرجى المحاولة مجدداً." : "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
     },
   });
 
@@ -175,89 +124,11 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
       {/* Footer */}
       <div className="px-3 py-4 border-t border-slate-700/60 space-y-3">
 
-        {/* Subscription card */}
-        {subscription && (
-          <div className="rounded-xl bg-slate-800 border border-slate-700 p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
-                <CalendarDays className="h-3.5 w-3.5 text-blue-400" />
-                {isAr ? "الاشتراك" : "Subscription"}
-              </div>
-              <Badge
-                className={`text-[10px] px-1.5 py-0 h-4 ${
-                  subscription.status === "active"
-                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                    : subscription.status === "trial"
-                    ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                    : "bg-red-500/20 text-red-400 border-red-500/30"
-                }`}
-                variant="outline"
-              >
-                {subscription.status === "active"
-                  ? (isAr ? "فعّال" : "Active")
-                  : subscription.status === "trial"
-                  ? (isAr ? "تجريبي" : "Trial")
-                  : subscription.status === "expired"
-                  ? (isAr ? "منتهي" : "Expired")
-                  : subscription.status}
-              </Badge>
-            </div>
-
-            <div className="space-y-1 text-[10px] text-slate-400">
-              <div className="flex justify-between">
-                <span>{isAr ? "البداية:" : "Start:"}</span>
-                <span className="text-slate-300">
-                  {subscription.startDate
-                    ? new Date(subscription.startDate).toLocaleDateString(isAr ? "ar-IQ" : "en-GB", { day: "numeric", month: "short", year: "numeric" })
-                    : "—"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>{isAr ? "الانتهاء:" : "Expires:"}</span>
-                <span className={`font-medium ${
-                  subscription.daysLeft !== null && subscription.daysLeft <= 2
-                    ? "text-red-400"
-                    : subscription.daysLeft !== null && subscription.daysLeft <= 7
-                    ? "text-amber-400"
-                    : "text-slate-300"
-                }`}>
-                  {subscription.endDate
-                    ? new Date(subscription.endDate).toLocaleDateString(isAr ? "ar-IQ" : "en-GB", { day: "numeric", month: "short", year: "numeric" })
-                    : (isAr ? "غير محدد" : "No limit")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>{isAr ? "السعر:" : "Price:"}</span>
-                <span className="text-slate-300">
-                  {parseFloat(subscription.pricePerMonth || "0").toLocaleString()} {isAr ? "د.ع / شهر" : "IQD/mo"}
-                </span>
-              </div>
-              {subscription.daysLeft !== null && subscription.daysLeft > 0 && (
-                <div className="flex justify-between">
-                  <span>{isAr ? "المتبقي:" : "Remaining:"}</span>
-                  <span className={`font-semibold ${subscription.daysLeft <= 2 ? "text-red-400" : subscription.daysLeft <= 7 ? "text-amber-400" : "text-emerald-400"}`}>
-                    {subscription.daysLeft} {isAr ? "يوم" : "days"}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <Button
-              size="sm"
-              className="w-full h-7 text-[11px] gap-1.5 bg-blue-600 hover:bg-blue-500 text-white"
-              onClick={() => renewalMutation.mutate()}
-              disabled={renewalMutation.isPending || !!subscription.renewalRequestedAt}
-              data-testid="button-request-renewal"
-            >
-              <RefreshCcw className="h-3 w-3" />
-              {renewalMutation.isPending
-                ? (isAr ? "جارٍ الإرسال..." : "Sending...")
-                : subscription.renewalRequestedAt
-                ? (isAr ? "تم إرسال الطلب ✓" : "Request Sent ✓")
-                : (isAr ? "طلب تجديد" : "Request Renewal")}
-            </Button>
-          </div>
-        )}
+        <StoreSubscriptionPanel
+          posSystem="oil"
+          variant="dark"
+          buttonClassName="bg-blue-600 hover:bg-blue-500 text-white"
+        />
 
         {/* User pill */}
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800">
@@ -289,78 +160,8 @@ export default function OilLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 
-  const isExpired = subscription?.status === "expired";
-  const daysLeft = subscription?.daysLeft ?? null;
-  const endDateStr = subscription?.endDate
-    ? new Date(subscription.endDate).toLocaleDateString(isAr ? "ar-IQ" : "en-GB", { year: "numeric", month: "long", day: "numeric" })
-    : null;
-
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950" dir={isAr ? "rtl" : "ltr"}>
-
-      {/* Subscription Reminder Dialog */}
-      <Dialog open={showReminderDialog} onOpenChange={(open) => { if (!open) dismissReminder(); }}>
-        <DialogContent className="max-w-md" data-testid="subscription-reminder-dialog">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-              {isExpired
-                ? (isAr ? "انتهت صلاحية الاشتراك" : "Subscription Expired")
-                : (isAr ? "تنبيه: اشتراكك على وشك الانتهاء" : "Subscription Expiring Soon")}
-            </DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-3 pt-1">
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-4 text-sm">
-                  {isExpired ? (
-                    <div className="space-y-1">
-                      <p className="font-semibold text-amber-800 dark:text-amber-300">
-                        {isAr ? "لقد انتهت صلاحية اشتراكك." : "Your subscription has expired."}
-                      </p>
-                      <p className="text-amber-700 dark:text-amber-400">
-                        {isAr
-                          ? "بعض الميزات قد تكون محدودة. يرجى التواصل مع المسؤول لتجديد الاشتراك."
-                          : "Some features may be limited. Please contact the administrator to renew your subscription."}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <p className="font-semibold text-amber-800 dark:text-amber-300">
-                        {isAr
-                          ? `ينتهي اشتراكك خلال ${daysLeft} ${daysLeft === 1 ? "يوم" : "أيام"}.`
-                          : `Your subscription expires in ${daysLeft} ${daysLeft === 1 ? "day" : "days"}.`}
-                      </p>
-                      {endDateStr && (
-                        <p className="text-amber-700 dark:text-amber-400">
-                          {isAr ? `تاريخ الانتهاء: ${endDateStr}` : `Expiry date: ${endDateStr}`}
-                        </p>
-                      )}
-                      <p className="text-amber-700 dark:text-amber-400 mt-2">
-                        {isAr
-                          ? "يرجى التواصل مع المسؤول لتجديد اشتراكك وضمان استمرارية الخدمة."
-                          : "Please contact the administrator to renew your subscription and ensure uninterrupted service."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className={`text-xs text-slate-500 dark:text-slate-400 ${isAr ? "text-right" : "text-left"}`}>
-                  {isAr ? "سيتم تذكيرك مرة واحدة يومياً." : "You will be reminded once per day."}
-                </div>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className={`flex gap-2 ${isAr ? "flex-row-reverse" : ""}`}>
-            <Button
-              variant="outline"
-              onClick={dismissReminder}
-              data-testid="button-dismiss-reminder"
-              className="flex-1"
-            >
-              {isAr ? "إغلاق" : "Dismiss for Today"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-60 flex-shrink-0 shadow-xl">

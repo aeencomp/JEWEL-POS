@@ -174,14 +174,21 @@ export default function AdminSignupRequests() {
                       <span className="text-sm">{posSystemLabel(req.posSystem as any, isAr)}</span>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`text-[11px] px-2 py-0.5 flex items-center gap-1 w-fit ${statusColors[req.status]}`}>
-                        <StatusIcon className="h-3 w-3" />
-                        {req.status === "pending"
-                          ? (isAr ? "انتظار" : "Pending")
-                          : req.status === "approved"
-                          ? (isAr ? "موافق" : "Approved")
-                          : (isAr ? "مرفوض" : "Rejected")}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge className={`text-[11px] px-2 py-0.5 flex items-center gap-1 w-fit ${statusColors[req.status]}`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {req.status === "pending"
+                            ? (isAr ? "انتظار" : "Pending")
+                            : req.status === "approved"
+                            ? (isAr ? "موافق" : "Approved")
+                            : (isAr ? "مرفوض" : "Rejected")}
+                        </Badge>
+                        {(req as { paidAt?: string | null }).paidAt && (
+                          <Badge className="text-[10px] w-fit bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                            {isAr ? "مدفوع" : "Paid"}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(req.createdAt).toLocaleDateString(isAr ? "ar-IQ" : "en-GB")}

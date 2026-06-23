@@ -12,6 +12,8 @@ import { registerRestaurantRoutes } from "./restaurant-routes";
 import { registerPharmacyRoutes } from "./pharmacy-routes";
 import { GROCERY_DEFAULT_CATEGORIES } from "@shared/grocery-defaults";
 import { registerGroceryRoutes } from "./grocery-routes";
+import { registerStripeRoutes } from "./stripe-routes";
+import { subscriptionPayload } from "./stripe-service";
 import { registerIqOrderRoutes } from "./iq-order-routes";
 import { registerDriverRoutes, ensureDemoDriver } from "./driver-routes";
 import { registerPushRoutes } from "./push-routes";
@@ -839,6 +841,23 @@ export async function registerRoutes(
       lastPaymentDate: new Date(),
       renewalRequestedAt: null,
     });
+    res.json(updated);
+  });
+
+  app.get("/api/subscription", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const sub = await storage.getSubscriptionByStore(storeId);
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    res.json(subscriptionPayload(sub));
+  });
+
+  app.post("/api/subscription/request-renewal", requireAuth, async (req, res) => {
+    const storeId = getEffectiveStoreId(req);
+    if (!storeId) return res.status(400).json({ message: "No store assigned" });
+    const sub = await storage.getSubscriptionByStore(storeId);
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    const updated = await storage.updateSubscription(sub.id, { renewalRequestedAt: new Date() } as any);
     res.json(updated);
   });
 
@@ -2420,12 +2439,7 @@ export async function registerRoutes(
   app.get("/api/oil/subscription", requireOilAuth, async (req, res) => {
     const sub = await storage.getSubscriptionByStore(req.user!.storeId!);
     if (!sub) return res.status(404).json({ message: "Subscription not found" });
-    const now = new Date();
-    const endDate = sub.endDate ? new Date(sub.endDate) : null;
-    const daysLeft = endDate
-      ? Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-      : null;
-    res.json({ ...sub, daysLeft });
+    res.json(subscriptionPayload(sub));
   });
 
   app.post("/api/oil/subscription/request-renewal", requireOilAuth, async (req, res) => {
@@ -2953,6 +2967,7 @@ export async function registerRoutes(
   registerRestaurantRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
   registerPharmacyRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
   registerGroceryRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
+  registerStripeRoutes(app, { requireAuth, requireAdmin, getEffectiveStoreId });
   registerIqOrderRoutes(app, { sendValidationError });
   registerDriverRoutes(app, { requireAuth, getEffectiveStoreId, sendValidationError });
   registerPushRoutes(app, { sendValidationError });
