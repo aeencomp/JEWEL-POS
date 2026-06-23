@@ -380,6 +380,7 @@ export const signupRequests = pgTable("signup_requests", {
   status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
   stripeCheckoutSessionId: text("stripe_checkout_session_id"),
   paidAt: timestamp("paid_at"),
+  storeId: integer("store_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

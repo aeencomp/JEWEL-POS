@@ -89,9 +89,9 @@ SESSION_SECRET=long-random-string-here
 PORT=5000
 NODE_ENV=production
 
-# Optional — store 2FA emails
+# Optional — signup welcome emails + store 2FA
 # RESEND_API_KEY=re_xxxxx
-# RESEND_FROM_EMAIL=JewelPOS <noreply@yourdomain.com>
+# RESEND_FROM_EMAIL=IQ-POS <noreply@yourdomain.com>
 ```
 
 Use the Neon URL that **has your tables and data** (not an empty database).

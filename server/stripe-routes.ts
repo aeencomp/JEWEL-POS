@@ -17,22 +17,7 @@ import {
   saveStripeSettings,
   upsertSignupStripeCustomer,
 } from "./stripe-service";
-
-async function markSignupPaidFromSession(session: Stripe.Checkout.Session): Promise<boolean> {
-  if (session.metadata?.type !== "signup_subscription" || !session.metadata.signupRequestId) {
-    return false;
-  }
-  const paid =
-    session.payment_status === "paid" ||
-    session.status === "complete";
-  if (!paid) return false;
-
-  await db
-    .update(signupRequests)
-    .set({ paidAt: new Date(), stripeCheckoutSessionId: session.id })
-    .where(eq(signupRequests.id, parseInt(session.metadata.signupRequestId, 10)));
-  return true;
-}
+import { finalizeSignupPayment } from "./signup-provision";
 
 type StripeHelpers = {
   requireAuth: (req: Request, res: Response, next: () => void) => void;
@@ -274,16 +259,29 @@ export function registerStripeRoutes(app: Express, helpers: StripeHelpers) {
 
     try {
       const stripe = getStripe();
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["subscription"],
+      });
       if (session.metadata?.type !== "signup_subscription") {
         return res.status(403).json({ message: "Not a signup checkout session" });
       }
 
-      const paid = await markSignupPaidFromSession(session);
+      const paid = session.payment_status === "paid" || session.status === "complete";
+      const provision = paid ? await finalizeSignupPayment(session) : null;
       res.json({
         status: session.status,
         paymentStatus: session.payment_status,
-        paid: paid || session.payment_status === "paid" || session.status === "complete",
+        paid,
+        provision: provision
+          ? {
+              storeId: provision.storeId,
+              username: provision.username,
+              tempPassword: provision.tempPassword ?? null,
+              loginPath: provision.loginPath,
+              emailSent: provision.emailSent,
+              alreadyProvisioned: provision.alreadyProvisioned,
+            }
+          : null,
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to verify session";

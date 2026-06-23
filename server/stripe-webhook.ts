@@ -1,8 +1,5 @@
 import type { Request, Response } from "express";
 import Stripe from "stripe";
-import { db } from "./db";
-import { signupRequests } from "@shared/schema";
-import { eq } from "drizzle-orm";
 import { storage } from "./storage";
 import {
   activateSubscriptionFromStripe,
@@ -10,27 +7,14 @@ import {
   getStripe,
   isStripeConfigured,
 } from "./stripe-service";
-
-async function markSignupPaidFromSession(session: Stripe.Checkout.Session): Promise<boolean> {
-  if (session.metadata?.type !== "signup_subscription" || !session.metadata.signupRequestId) {
-    return false;
-  }
-  const paid = session.payment_status === "paid" || session.status === "complete";
-  if (!paid) return false;
-
-  await db
-    .update(signupRequests)
-    .set({ paidAt: new Date(), stripeCheckoutSessionId: session.id })
-    .where(eq(signupRequests.id, parseInt(session.metadata.signupRequestId, 10)));
-  return true;
-}
+import { finalizeSignupPayment } from "./signup-provision";
 
 async function processStripeEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.metadata?.type === "signup_subscription") {
-        await markSignupPaidFromSession(session);
+        await finalizeSignupPayment(session);
       } else if (session.metadata?.type === "store_subscription" && session.metadata.storeId) {
         const storeId = parseInt(session.metadata.storeId, 10);
         const stripeSubId = session.subscription;

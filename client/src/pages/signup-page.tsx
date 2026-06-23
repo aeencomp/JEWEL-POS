@@ -20,6 +20,8 @@ import {
   CreditCard,
   CheckCircle,
   Shield,
+  KeyRound,
+  LogIn,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +62,15 @@ function IqPosLogo({ size = 32 }: { size?: number }) {
 
 const DEFAULT_PRICING: LandingPricing = { monthly: 45000, stripe: null };
 
+type SignupProvision = {
+  storeId: number;
+  username: string;
+  tempPassword: string | null;
+  loginPath: string;
+  emailSent: boolean;
+  alreadyProvisioned: boolean;
+};
+
 export default function SignupPage() {
   const [, navigate] = useLocation();
   const { language } = useLanguage();
@@ -79,6 +90,7 @@ export default function SignupPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [provision, setProvision] = useState<SignupProvision | null>(null);
   const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null);
   const [form, setForm] = useState<SignupForm>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -126,16 +138,24 @@ export default function SignupPage() {
     (async () => {
       try {
         const res = await fetch(`/api/stripe/signup-session/${encodeURIComponent(sessionId)}`);
-        const data = (await res.json()) as { paid?: boolean };
+        const data = (await res.json()) as {
+          paid?: boolean;
+          provision?: SignupProvision | null;
+        };
         if (cancelled) return;
 
         if (data.paid) {
           setSubmitted(true);
+          if (data.provision) setProvision(data.provision);
           toast({
             title: isAr ? "تم الدفع بنجاح" : "Payment successful",
-            description: isAr
-              ? "شكراً! سنراجع طلبك ونفعّل حسابك قريباً."
-              : "Thank you! We will review your request and activate your account soon.",
+            description: data.provision
+              ? isAr
+                ? "تم إنشاء متجرك وتفعيل الاشتراك. استخدم بيانات الدخول أدناه."
+                : "Your store is ready and your subscription is active. Use the login details below."
+              : isAr
+                ? "تم الدفع. جاري تجهيز حسابك..."
+                : "Payment received. Setting up your account...",
           });
         } else {
           toast({
@@ -241,6 +261,7 @@ export default function SignupPage() {
   }
 
   if (submitted) {
+    const paidWithStore = !!provision?.storeId;
     return (
       <div className="min-h-screen bg-background flex flex-col" dir={isAr ? "rtl" : "ltr"}>
         <header className="border-b bg-background/90 backdrop-blur-lg">
@@ -262,14 +283,65 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <h1 className="text-2xl sm:text-3xl font-bold">
-                {isAr ? "تم إرسال طلبك!" : "Request Sent!"}
+                {paidWithStore
+                  ? isAr
+                    ? "متجرك جاهز!"
+                    : "Your Store Is Ready!"
+                  : isAr
+                    ? "تم إرسال طلبك!"
+                    : "Request Sent!"}
               </h1>
               <p className="text-muted-foreground leading-relaxed">
-                {isAr
-                  ? "شكراً لك. سيتواصل معك فريقنا قريباً عبر الهاتف أو البريد الإلكتروني لتفعيل حسابك."
-                  : "Thank you! Our team will contact you soon via phone or email to activate your account."}
+                {paidWithStore
+                  ? isAr
+                    ? "تم إنشاء متجرك وتفعيل الاشتراك. يمكنك تسجيل الدخول الآن."
+                    : "Your store has been created and your subscription is active. You can log in now."
+                  : isAr
+                    ? "شكراً لك. سيتواصل معك فريقنا قريباً عبر الهاتف أو البريد الإلكتروني لتفعيل حسابك."
+                    : "Thank you! Our team will contact you soon via phone or email to activate your account."}
               </p>
             </div>
+
+            {paidWithStore && provision && (
+              <div className="rounded-2xl border bg-card text-start p-5 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <KeyRound className="h-4 w-4 text-amber-600" />
+                  {isAr ? "بيانات الدخول" : "Login credentials"}
+                </div>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <span className="text-muted-foreground">{isAr ? "اسم المستخدم:" : "Username:"}</span>{" "}
+                    <span className="font-mono font-semibold" dir="ltr">{provision.username}</span>
+                  </p>
+                  {provision.tempPassword && !provision.emailSent && (
+                    <p>
+                      <span className="text-muted-foreground">{isAr ? "كلمة المرور:" : "Password:"}</span>{" "}
+                      <span className="font-mono font-semibold" dir="ltr">{provision.tempPassword}</span>
+                    </p>
+                  )}
+                  {provision.emailSent ? (
+                    <p className="text-muted-foreground text-xs">
+                      {isAr
+                        ? "أرسلنا اسم المستخدم وكلمة المرور إلى بريدك الإلكتروني."
+                        : "We emailed your username and password to your inbox."}
+                    </p>
+                  ) : (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">
+                      {isAr
+                        ? "احفظ بيانات الدخول أدناه — لم نتمكن من إرسالها بالبريد."
+                        : "Save the login details below — we could not email them."}
+                    </p>
+                  )}
+                </div>
+                <Link href={provision.loginPath}>
+                  <Button className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white">
+                    <LogIn className="h-4 w-4 me-2" />
+                    {isAr ? "تسجيل الدخول إلى المتجر" : "Log in to your store"}
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             <Button variant="outline" className="rounded-xl" onClick={() => navigate("/")}>
               {isAr ? "العودة للرئيسية" : "Back to Home"}
             </Button>
